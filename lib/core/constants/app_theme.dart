@@ -36,7 +36,7 @@ class AppTheme {
       ),
 
       // Card Theme (Glassmorphism fallbacks)
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.cardSurface.withValues(alpha: 0.6),
         elevation: 0,
         shape: RoundedRectangleBorder(
