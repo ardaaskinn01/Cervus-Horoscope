@@ -138,16 +138,20 @@ class AdService {
     final adUnitId = _getRewardedAdUnitId(placement);
     
     // Show a loading dialog first
+    BuildContext? dialogContext;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: SizedBox(
-          width: 32,
-          height: 32,
-          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
-        ),
-      ),
+      builder: (dContext) {
+        dialogContext = dContext;
+        return const Center(
+          child: SizedBox(
+            width: 32,
+            height: 32,
+            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+          ),
+        );
+      },
     );
 
     RewardedAd.load(
@@ -155,8 +159,10 @@ class AdService {
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
-          // Close the loading dialog
-          Navigator.of(context).pop();
+          // Close the loading dialog safely
+          if (dialogContext != null) {
+            Navigator.of(dialogContext!).pop();
+          }
           
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
@@ -176,8 +182,10 @@ class AdService {
           );
         },
         onAdFailedToLoad: (error) {
-          // Close the loading dialog
-          Navigator.of(context).pop();
+          // Close the loading dialog safely
+          if (dialogContext != null) {
+            Navigator.of(dialogContext!).pop();
+          }
           debugPrint('⚠️ RewardedAd failed to load: $error');
           // Fallback: trigger reward immediately during test/failure
           onRewardEarned();
