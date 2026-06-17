@@ -180,7 +180,7 @@ class _MoonPhasesScreenState extends ConsumerState<MoonPhasesScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: AppColors.primaryGold,
               onPrimary: AppColors.cardSurface,
               surface: AppColors.cardSurface,

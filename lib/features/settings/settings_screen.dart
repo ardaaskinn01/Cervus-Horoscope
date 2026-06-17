@@ -11,6 +11,7 @@ import 'package:horoscope/core/constants/app_colors.dart';
 import 'package:horoscope/core/constants/app_text_styles.dart';
 import 'package:horoscope/core/providers/user_provider.dart';
 import 'package:horoscope/core/providers/language_provider.dart';
+import 'package:horoscope/core/providers/theme_provider.dart';
 import 'package:horoscope/core/providers/navigation_provider.dart';
 import 'package:horoscope/core/services/notification_service.dart';
 import 'package:horoscope/core/utils/astrology_utils.dart';
@@ -154,7 +155,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: AppColors.primaryGold,
               onPrimary: AppColors.cardSurface,
               surface: AppColors.cardSurface,
@@ -190,7 +191,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: AppColors.primaryGold,
               onPrimary: AppColors.cardSurface,
               surface: AppColors.cardSurface,
@@ -290,7 +291,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text(isTr ? 'İptal' : 'Cancel', style: const TextStyle(color: AppColors.textSecondary)),
+            child: Text(isTr ? 'İptal' : 'Cancel', style: TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -326,6 +327,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final locale = ref.watch(languageProvider);
     final isTr = locale.languageCode == 'tr';
+    final themeMode = ref.watch(themeProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -344,6 +346,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
             // 2. Dil Ayarları Kartı
             _buildLanguageSection(isTr, locale.languageCode),
+            const SizedBox(height: 20),
+
+            // Tema Tercihi Kartı
+            _buildThemeSection(isTr, themeMode),
             const SizedBox(height: 20),
 
             // 3. Bildirim Tercihleri Kartı
@@ -421,10 +427,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // İsim
           TextField(
             controller: _nameController,
-            style: const TextStyle(color: AppColors.textPrimary),
+            style: TextStyle(color: AppColors.textPrimary),
             decoration: InputDecoration(
               labelText: isTr ? 'Adınız' : 'Your Name',
-              labelStyle: const TextStyle(color: AppColors.textSecondary),
+              labelStyle: TextStyle(color: AppColors.textSecondary),
               prefixIcon: const Icon(Icons.person, color: AppColors.primaryGold),
               border: const OutlineInputBorder(),
             ),
@@ -435,11 +441,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           TextField(
             controller: _birthPlaceController,
             readOnly: true,
-            style: const TextStyle(color: AppColors.textPrimary),
+            style: TextStyle(color: AppColors.textPrimary),
             onTap: () => _selectBirthPlace(context),
             decoration: InputDecoration(
               labelText: isTr ? 'Doğum Yeri' : 'Birth Place',
-              labelStyle: const TextStyle(color: AppColors.textSecondary),
+              labelStyle: TextStyle(color: AppColors.textSecondary),
               prefixIcon: const Icon(Icons.map_rounded, color: AppColors.primaryGold),
               border: const OutlineInputBorder(),
             ),
@@ -453,7 +459,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => _selectBirthDate(context),
                   icon: const Icon(Icons.calendar_month_rounded, color: AppColors.primaryGold),
-                  label: Text(dateDisplay, style: const TextStyle(color: AppColors.textPrimary)),
+                  label: Text(dateDisplay, style: TextStyle(color: AppColors.textPrimary)),
                 ),
               ),
               const SizedBox(width: 12),
@@ -461,7 +467,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => _selectBirthTime(context),
                   icon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGold),
-                  label: Text(timeDisplay, style: const TextStyle(color: AppColors.textPrimary)),
+                  label: Text(timeDisplay, style: TextStyle(color: AppColors.textPrimary)),
                 ),
               ),
             ],
@@ -502,7 +508,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onPressed: () {
                   setState(() { _isProfileEditing = false; });
                 },
-                child: Text(isTr ? 'İptal' : 'Cancel', style: const TextStyle(color: AppColors.textSecondary)),
+                child: Text(isTr ? 'İptal' : 'Cancel', style: TextStyle(color: AppColors.textSecondary)),
               ),
               const SizedBox(width: 12),
               _isSavingProfile
@@ -599,6 +605,92 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ).animate().fade(delay: 80.ms, duration: 350.ms);
   }
 
+  // 2b. Tema Seçimi
+  Widget _buildThemeSection(bool isTr, ThemeMode themeMode) {
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isTr ? 'Tema Tercihi' : 'Theme Preference',
+            style: AppTextStyles.label.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+          ),
+          const Divider(),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(themeProvider.notifier).changeThemeMode(ThemeMode.light);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: themeMode == ThemeMode.light
+                          ? AppColors.primaryGold.withValues(alpha: 0.15)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: themeMode == ThemeMode.light ? AppColors.primaryGold : AppColors.borderLight,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('☀️', style: TextStyle(fontSize: 24)),
+                        const SizedBox(height: 4),
+                        Text(
+                          isTr ? 'Açık' : 'Light',
+                          style: AppTextStyles.label.copyWith(
+                            fontWeight: themeMode == ThemeMode.light ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    ref.read(themeProvider.notifier).changeThemeMode(ThemeMode.dark);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: themeMode == ThemeMode.dark
+                          ? AppColors.primaryGold.withValues(alpha: 0.15)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: themeMode == ThemeMode.dark ? AppColors.primaryGold : AppColors.borderLight,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text('🔮', style: TextStyle(fontSize: 24)),
+                        const SizedBox(height: 4),
+                        Text(
+                          isTr ? 'Karanlık' : 'Dark',
+                          style: AppTextStyles.label.copyWith(
+                            fontWeight: themeMode == ThemeMode.dark ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fade(delay: 120.ms, duration: 350.ms);
+  }
+
   // 3. Bildirimler
   Widget _buildNotificationsSection(bool isTr) {
     return GlassCard(
@@ -653,7 +745,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.privacy_tip_rounded, color: AppColors.primaryGold),
             title: Text(isTr ? 'Gizlilik Politikası' : 'Privacy Policy', style: AppTextStyles.bodyMedium),
-            trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            trailing: Icon(Icons.chevron_right, color: AppColors.textSecondary),
             onTap: _openPrivacyPolicy,
           ),
           const Divider(height: 1, color: Colors.white12),

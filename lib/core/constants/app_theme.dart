@@ -12,7 +12,7 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.background,
       
       // Color Scheme
-      colorScheme: const ColorScheme.dark(
+      colorScheme: ColorScheme.dark(
         primary: AppColors.primaryGold,
         secondary: AppColors.warmAmber,
         surface: AppColors.cardSurface,
@@ -41,7 +41,7 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(
+          side: BorderSide(
             color: AppColors.borderLight,
             width: 1,
           ),
@@ -62,7 +62,72 @@ class AppTheme {
       ),
 
       // Divider Theme
-      dividerTheme: const DividerThemeData(
+      dividerTheme: DividerThemeData(
+        color: AppColors.borderLight,
+        thickness: 1,
+        space: 24,
+      ),
+    );
+  }
+
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: AppColors.background,
+      
+      // Color Scheme
+      colorScheme: ColorScheme.light(
+        primary: const Color(0xFFB58E2E), // Daha okunaklı koyu altın/bronz tonu
+        secondary: AppColors.warmAmber,
+        surface: AppColors.cardSurface,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
+        onSurface: AppColors.textPrimary,
+      ),
+
+      // App Bar Theme
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: AppTextStyles.h3.copyWith(
+          color: const Color(0xFFB58E2E),
+          fontWeight: FontWeight.bold,
+        ),
+        iconTheme: const IconThemeData(
+          color: Color(0xFFB58E2E),
+        ),
+      ),
+
+      // Card Theme
+      cardTheme: CardThemeData(
+        color: AppColors.cardSurface.withValues(alpha: 0.75),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: AppColors.borderLight,
+            width: 1,
+          ),
+        ),
+      ),
+
+      // Button Theme
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFB58E2E),
+          foregroundColor: Colors.white,
+          textStyle: AppTextStyles.label,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        ),
+      ),
+
+      // Divider Theme
+      dividerTheme: DividerThemeData(
         color: AppColors.borderLight,
         thickness: 1,
         space: 24,

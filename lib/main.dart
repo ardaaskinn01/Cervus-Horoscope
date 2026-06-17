@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'core/constants/app_theme.dart';
 import 'core/providers/language_provider.dart';
+import 'core/providers/theme_provider.dart';
 import 'core/services/dashboard_service.dart';
 import 'core/services/notification_service.dart';
 import 'shared/router/app_router.dart';
@@ -51,11 +52,14 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(languageProvider);
+    final themeMode = ref.watch(themeProvider);
 
     return MaterialApp.router(
       title: 'Mistik Burçlar',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       locale: locale,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

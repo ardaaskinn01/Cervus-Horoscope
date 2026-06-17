@@ -1,34 +1,41 @@
 import 'package:flutter/material.dart';
+import 'app_text_styles.dart';
 
 class AppColors {
   AppColors._();
 
   // Ana Renkler
-  static const Color background = Color(0xFF0D0A1A); // Derin Uzay Moru
+  static Color get background => AppTextStyles.isDark ? const Color(0xFF0D0A1A) : const Color(0xFFF9F7FA); // Derin Uzay Moru / Krem
   static const Color primaryGold = Color(0xFFD4A843); // Altın Vurgu
   static const Color warmAmber = Color(0xFFC17B2A); // Sıcak Kehribar
   static const Color deepBrown = Color(0xFF3D1F0A); // Koyu Kahve
-  static const Color cardSurface = Color(0xFF1A1428); // Glassmorphism Tabanı
+  static Color get cardSurface => AppTextStyles.isDark ? const Color(0xFF1A1428) : const Color(0xFFFFFFFF); // Glassmorphism / Beyaz
   
   // Metin Renkleri
-  static const Color textPrimary = Color(0xFFF5E6C8); // Krem Beyaz
-  static const Color textSecondary = Color(0xFFB8A88A); // Mistik İkincil Altın
+  static Color get textPrimary => AppTextStyles.isDark ? const Color(0xFFF5E6C8) : const Color(0xFF2E2214); // Krem Beyaz / Koyu Kahve
+  static Color get textSecondary => AppTextStyles.isDark ? const Color(0xFFB8A88A) : const Color(0xFF705C49); // Mistik İkincil Altın / Orta Kahve
   static const Color textDark = Color(0xFF0D0A1A); // Buton içi vb. için koyu renk
 
   // Yardımcı Renkler
   static const Color accentPurple = Color(0xFF7B5EA7); // Yıldız Tozu Moru
   static const Color shadowColor = Color(0x80000000); // Gölgeler
-  static const Color borderLight = Color(0x14FFFFFF); // %8 Opak Beyaz Border
+  static Color get borderLight => AppTextStyles.isDark ? const Color(0x14FFFFFF) : const Color(0x1B0D0A1A); // %8 Opak Beyaz / %10 Koyu
 
   // Gradiyentler
-  static const LinearGradient cosmicGradient = LinearGradient(
+  static LinearGradient get cosmicGradient => LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [
-      Color(0xFF0D0A1A),
-      Color(0xFF1D1635),
-      Color(0xFF0D0A1A),
-    ],
+    colors: AppTextStyles.isDark 
+        ? [
+            const Color(0xFF0D0A1A),
+            const Color(0xFF1D1635),
+            const Color(0xFF0D0A1A),
+          ]
+        : [
+            const Color(0xFFF9F7FA),
+            const Color(0xFFF1EDF5),
+            const Color(0xFFF9F7FA),
+          ],
   );
 
   static const LinearGradient goldGradient = LinearGradient(
@@ -41,12 +48,17 @@ class AppColors {
     ],
   );
 
-  static const LinearGradient glassGradient = LinearGradient(
+  static LinearGradient get glassGradient => LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Color(0x1FFFFFFF), // %12 Opak
-      Color(0x0AFFFFFF), // %4 Opak
-    ],
+    colors: AppTextStyles.isDark
+        ? [
+            const Color(0x1FFFFFFF), // %12 Opak
+            const Color(0x0AFFFFFF), // %4 Opak
+          ]
+        : [
+            const Color(0x1F0D0A1A), // %12 Opak Koyu
+            const Color(0x0A0D0A1A), // %4 Opak Koyu
+          ],
   );
 }

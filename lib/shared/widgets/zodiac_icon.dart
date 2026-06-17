@@ -73,7 +73,7 @@ class ZodiacIcon extends StatelessWidget {
         child: Container(
           width: size - 4,
           height: size - 4,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: AppColors.cardSurface,
           ),

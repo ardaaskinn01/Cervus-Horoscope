@@ -357,7 +357,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.workspace_premium_rounded, color: AppColors.cardSurface, size: 14),
+                                Icon(Icons.workspace_premium_rounded, color: AppColors.cardSurface, size: 14),
                                 const SizedBox(width: 4),
                                 Text(
                                   isTr ? 'Yükselt' : 'Upgrade',
@@ -671,7 +671,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
                   _submitQuestion();
                 }
               },
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
                 hintText: isLocked
                     ? (isTr ? 'Görüşme kotası doldu.' : 'Daily limit reached.')

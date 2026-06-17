@@ -87,7 +87,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: AppColors.primaryGold,
               onPrimary: AppColors.cardSurface,
               surface: AppColors.cardSurface,
@@ -113,7 +113,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            timePickerTheme: const TimePickerThemeData(
+            timePickerTheme: TimePickerThemeData(
               backgroundColor: AppColors.cardSurface,
               dialHandColor: AppColors.primaryGold,
               dialBackgroundColor: Colors.white12,
@@ -381,7 +381,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
               children: [
                 TextField(
                   controller: _nameController,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     icon: const Icon(Icons.person_outline_rounded, color: AppColors.primaryGold),
                     border: const UnderlineInputBorder(),

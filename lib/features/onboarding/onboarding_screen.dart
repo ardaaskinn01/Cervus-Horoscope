@@ -329,11 +329,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.5)),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.borderLight),
+                borderSide: BorderSide(color: AppColors.borderLight),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.borderLight),
+                borderSide: BorderSide(color: AppColors.borderLight),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -419,7 +419,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 builder: (context, child) {
                   return Theme(
                     data: Theme.of(context).copyWith(
-                      colorScheme: const ColorScheme.dark(
+                      colorScheme: ColorScheme.dark(
                         primary: AppColors.primaryGold,
                         onPrimary: AppColors.textDark,
                         surface: AppColors.cardSurface,
@@ -488,7 +488,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   builder: (context, child) {
                     return Theme(
                       data: Theme.of(context).copyWith(
-                        colorScheme: const ColorScheme.dark(
+                        colorScheme: ColorScheme.dark(
                           primary: AppColors.primaryGold,
                           onPrimary: AppColors.textDark,
                           surface: AppColors.cardSurface,

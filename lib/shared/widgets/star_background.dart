@@ -54,6 +54,9 @@ class _StarBackgroundState extends State<StarBackground>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final starColor = isDark ? Colors.white : const Color(0xFFC17B2A); // Açık temada altın/kehribar rengi yıldızlar
+
     return NotificationListener<ScrollNotification>(
       onNotification: (ScrollNotification notification) {
         if (notification is ScrollUpdateNotification) {
@@ -77,6 +80,7 @@ class _StarBackgroundState extends State<StarBackground>
                     stars: _stars,
                     animationValue: _controller.value,
                     scrollOffset: _scrollOffset,
+                    starColor: starColor,
                   ),
                 );
               },
@@ -112,24 +116,26 @@ class StarPainter extends CustomPainter {
   final List<Star> stars;
   final double animationValue;
   final double scrollOffset;
+  final Color starColor;
 
   StarPainter({
     required this.stars,
     required this.animationValue,
     required this.scrollOffset,
+    required this.starColor,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()..color = Colors.white;
+    final Paint paint = Paint()..color = starColor;
 
     for (final star in stars) {
       // Sinüs dalgası kullanarak yumuşak parıldama efekti elde edelim
       final double angle = (animationValue * pi * 2 * star.speed) + star.phase;
       final double pulse = (sin(angle) + 1.0) / 2.0; // 0.0 - 1.0 arasına normalize et
-      final double opacity = pulse * star.maxOpacity;
+      final double opacity = pulse * star.maxOpacity * (starColor == Colors.white ? 1.0 : 0.6); // Açık temada yıldızları daha naif/yumuşak yapmak için hafifçe kısalım
 
-      paint.color = Colors.white.withValues(alpha: opacity);
+      paint.color = starColor.withValues(alpha: opacity);
 
       final double px = star.x * size.width;
       
@@ -146,7 +152,7 @@ class StarPainter extends CustomPainter {
       // Daha parlak yıldızlar için hafif bir hale (glow) efekti ekleyelim
       if (star.size > 2.0 && opacity > 0.6) {
         final Paint glowPaint = Paint()
-          ..color = Colors.white.withValues(alpha: opacity * 0.15)
+          ..color = starColor.withValues(alpha: opacity * 0.15)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
         canvas.drawCircle(Offset(px, py), star.size * 2.5, glowPaint);
       }
@@ -156,6 +162,7 @@ class StarPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant StarPainter oldDelegate) {
     return oldDelegate.animationValue != animationValue ||
-        oldDelegate.scrollOffset != scrollOffset;
+        oldDelegate.scrollOffset != scrollOffset ||
+        oldDelegate.starColor != starColor;
   }
 }

@@ -87,7 +87,7 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: AppColors.primaryGold,
               onPrimary: AppColors.cardSurface,
               surface: AppColors.cardSurface,
@@ -418,7 +418,7 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
         children: [
           TextField(
             controller: _nameController,
-            style: const TextStyle(color: AppColors.textPrimary),
+            style: TextStyle(color: AppColors.textPrimary),
             decoration: InputDecoration(
               icon: const Icon(Icons.person_outline_rounded, color: AppColors.primaryGold),
               border: const UnderlineInputBorder(),

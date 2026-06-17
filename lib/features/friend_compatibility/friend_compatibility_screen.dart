@@ -87,7 +87,7 @@ class _FriendCompatibilityScreenState extends ConsumerState<FriendCompatibilityS
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: AppColors.primaryGold,
               onPrimary: AppColors.cardSurface,
               surface: AppColors.cardSurface,
@@ -398,7 +398,7 @@ class _FriendCompatibilityScreenState extends ConsumerState<FriendCompatibilityS
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: TextField(
               controller: _nameController,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: AppColors.textPrimary),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: isTr ? 'Arkadaşınızın İsmi' : 'Friend\'s Name',
@@ -470,7 +470,7 @@ class _FriendCompatibilityScreenState extends ConsumerState<FriendCompatibilityS
                   builder: (context, child) {
                     return Theme(
                       data: Theme.of(context).copyWith(
-                        colorScheme: const ColorScheme.dark(
+                        colorScheme: ColorScheme.dark(
                           primary: AppColors.primaryGold,
                           onPrimary: AppColors.cardSurface,
                           surface: AppColors.cardSurface,

@@ -114,7 +114,7 @@ class _BirthPlaceSearchSheetState extends ConsumerState<BirthPlaceSearchSheet> {
                   style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                  icon: Icon(Icons.close_rounded, color: AppColors.textSecondary),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -125,14 +125,14 @@ class _BirthPlaceSearchSheetState extends ConsumerState<BirthPlaceSearchSheet> {
             TextField(
               controller: _searchController,
               onChanged: _onSearchChanged,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: AppColors.textPrimary),
               decoration: InputDecoration(
                 hintText: isTr ? 'İl veya ülke adı yazın...' : 'Type city or country...',
-                hintStyle: const TextStyle(color: Colors.white30),
-                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primaryGold),
+                hintStyle: TextStyle(color: Colors.white30),
+                prefixIcon: Icon(Icons.search_rounded, color: AppColors.primaryGold),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, color: AppColors.textSecondary),
+                        icon: Icon(Icons.clear_rounded, color: AppColors.textSecondary),
                         onPressed: () {
                           _searchController.clear();
                           _onSearchChanged('');
@@ -143,11 +143,11 @@ class _BirthPlaceSearchSheetState extends ConsumerState<BirthPlaceSearchSheet> {
                 fillColor: Colors.white.withValues(alpha: 0.05),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderLight),
+                  borderSide: BorderSide(color: AppColors.borderLight),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderLight),
+                  borderSide: BorderSide(color: AppColors.borderLight),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
