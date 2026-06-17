@@ -964,7 +964,7 @@ JSON formatı:
     _requestTimestamps.add(DateTime.now());
 
     final url = Uri.parse(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=$_apiKey",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_apiKey",
     );
 
     try {
@@ -999,11 +999,31 @@ JSON formatı:
     }
   }
 
+  String _mapToEnglishZodiac(String zodiac) {
+    final Map<String, String> trToEn = {
+      'koç': 'aries',
+      'boğa': 'taurus',
+      'ikizler': 'gemini',
+      'yengeç': 'cancer',
+      'aslan': 'leo',
+      'başak': 'virgo',
+      'terazi': 'libra',
+      'akrep': 'scorpio',
+      'yay': 'sagittarius',
+      'oğlak': 'capricorn',
+      'kova': 'aquarius',
+      'balık': 'pisces',
+    };
+    final lower = zodiac.toLowerCase().trim();
+    return trToEn[lower] ?? lower;
+  }
+
   Future<DailyCommentModel?> _loadDailyCommentFromDemo(String zodiac, String gender) async {
     try {
+      final String mappedZodiac = _mapToEnglishZodiac(zodiac);
       final jsonStr = await rootBundle.loadString('assets/data/demo_comments.json');
       final Map<String, dynamic> data = jsonDecode(jsonStr);
-      final zodiacData = data[zodiac.toLowerCase()];
+      final zodiacData = data[mappedZodiac.toLowerCase()];
       if (zodiacData != null) {
         final genderData = zodiacData[gender.toLowerCase()] as List<dynamic>?;
         if (genderData != null && genderData.isNotEmpty) {
