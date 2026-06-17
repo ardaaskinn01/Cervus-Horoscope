@@ -88,7 +88,7 @@ class NotificationService {
       'Bugünün kozmik enerjileri ve burç yorumun seni bekliyor. Hemen oku!',
       scheduledTime,
       details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time, // Her gün aynı saatte tekrarlar
     );
     
