@@ -62,8 +62,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
-    final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final currentMonthStr = DateFormat('yyyy-MM').format(DateTime.now());
+    final now = DateTime.now();
+    final adjustedDate = now.hour < 4 ? now.subtract(const Duration(days: 1)) : now;
+    final todayStr = DateFormat('yyyy-MM-dd').format(adjustedDate);
+    final currentMonthStr = DateFormat('yyyy-MM').format(adjustedDate);
     final zodiac = user.zodiacSign ?? 'aries';
     final gender = user.gender ?? 'female';
 
@@ -155,7 +157,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final locale = ref.watch(languageProvider);
     final isTr = locale.languageCode == 'tr';
     
-    final formattedDate = DateFormat('d MMMM yyyy', locale.languageCode).format(DateTime.now());
+    final now = DateTime.now();
+    final adjustedDate = now.hour < 4 ? now.subtract(const Duration(days: 1)) : now;
+    final formattedDate = DateFormat('d MMMM yyyy', locale.languageCode).format(adjustedDate);
     final greeting = _getGreeting(locale.languageCode);
     final userName = user?.name ?? (isTr ? 'Gezgin' : 'Traveler');
     final userSign = user?.zodiacSign ?? 'aries';
