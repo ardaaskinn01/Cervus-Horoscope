@@ -265,6 +265,11 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
       if (result != null && mounted) {
         // Firestore'dan limitleri ve geçmişi yeniden çek
         await _loadHistoryData();
+        if (mounted) {
+          setState(() {
+            _isGenerating = false;
+          });
+        }
       } else {
         _handleError(isTr);
       }
