@@ -1,0 +1,106 @@
+# Uncomment this line to define a global platform for your project
+platform :ios, '15.0'
+
+# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
+end
+
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+flutter_ios_podfile_setup
+
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+
+    # FIX: Remove unsupported '-GCC_WARN_INHIBIT_ALL_WARNINGS' flag from BoringSSL-GRPC
+    # This flag gets passed as '-G' to the compiler which is unsupported on arm64-apple-ios
+    # and causes build failures on Xcode 15/16 with newer LLVM versions.
+    if target.name == 'BoringSSL-GRPC'
+      target.source_build_phase.files.each do |file|
+        if file.settings && file.settings['COMPILER_FLAGS']
+          flags = file.settings['COMPILER_FLAGS'].split
+          flags.reject! { |flag| flag == '-GCC_WARN_INHIBIT_ALL_WARNINGS' }
+          file.settings['COMPILER_FLAGS'] = flags.join(' ')
+        end
+      end
+    end
+
+    # Ensure all targets have the correct minimum iOS deployment target and Xcode 16 fixes
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+      
+      # FIX: Xcode 16 compatibility compiler flag for CWG 96 (missing template argument list after template keyword)
+      # This prevents compilation failure by suppressing the strict compiler check.
+      config.build_settings['OTHER_CPLUSPLUSFLAGS'] ||= ['$(inherited)']
+      config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-missing-template-arg-list-after-template-kw'
+
+      # FIX: Allow non-modular includes in framework modules for newer Clang strict checking
+      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+    end
+  end
+
+  # FIX: Patch gRPC-Core & gRPC-C++ basic_seq.h template issue for Xcode 16 compatibility
+  # Using wildcard search to cover all gRPC pods (like gRPC-Core and gRPC-C++)
+  Dir.glob(File.join(installer.sandbox.root.to_s, '**/basic_seq.h')).each do |grpc_file_path|
+    if File.exist?(grpc_file_path)
+      puts "gRPC file found at #{grpc_file_path}. Checking for template issue..."
+      file_content = File.read(grpc_file_path)
+      # Use negative lookahead to robustly replace the line if not already patched
+      if file_content.match?(/Traits::template CallSeqFactory(?!<>)/)
+        puts "Patching gRPC file for Xcode 16 compliance: #{grpc_file_path}"
+        file_content.gsub!(/Traits::template CallSeqFactory(?!<>)/, 'Traits::template CallSeqFactory<>')
+        File.open(grpc_file_path, "w") { |file| file.puts file_content }
+        puts "gRPC file patched successfully."
+      else
+        puts "gRPC file already patched or clean."
+      end
+    end
+  end
+
+  # FIX: Allow non-modular includes in framework modules for the Runner target and project-level configs in the main project
+  main_project_path = File.join(File.dirname(__FILE__), 'Runner.xcodeproj')
+  if File.exist?(main_project_path)
+    require 'xcodeproj'
+    puts "Main project found at #{main_project_path}. Updating build settings..."
+    project = Xcodeproj::Project.open(main_project_path)
+    project.build_configurations.each do |config|
+      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+    end
+    project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      end
+    end
+    project.save
+    puts "Main project build settings updated successfully."
+  end
+end
