@@ -1,0 +1,146 @@
+{
+  "aries": {
+    "female": [
+      {"comment_tr": "Bugün Mars'ın güçlü enerjisiyle dolup taşıyorsunuz. Hedeflerinize odaklanın.", "comment_en": "Today you are full of Mars's strong energy. Focus on your goals.", "love": 85, "money": 70, "career": 80, "energy": 95},
+      {"comment_tr": "İlişkilerinizde daha sabırlı olmalısınız. Aceleci kararlar vermeyin.", "comment_en": "You should be more patient in relationships. Do not make hasty decisions.", "love": 90, "money": 60, "career": 75, "energy": 80},
+      {"comment_tr": "Maddi konularda dengeli harcamalar yapın. Sürpriz bir iş fırsatı doğabilir.", "comment_en": "Spend wisely on financial matters. A surprise career opportunity may arise.", "love": 75, "money": 85, "career": 85, "energy": 90}
+    ],
+    "male": [
+      {"comment_tr": "Liderlik özelliklerinizin ön plana çıkacağı bir gün. Cesur adımlar atın.", "comment_en": "A day where your leadership qualities shine. Take bold steps.", "love": 80, "money": 75, "career": 90, "energy": 95},
+      {"comment_tr": "Gereksiz risklerden kaçının. Karşınızdakileri daha çok dinlemeye çalışın.", "comment_en": "Avoid unnecessary risks. Try to listen to others more.", "love": 85, "money": 65, "career": 70, "energy": 80},
+      {"comment_tr": "Yeni yatırımlar için araştırma yapın. Akşam saatlerinde dinlenmeye vakit ayırın.", "comment_en": "Research for new investments. Take time to relax in the evening.", "love": 70, "money": 80, "career": 80, "energy": 85}
+    ]
+  },
+  "taurus": {
+    "female": [
+      {"comment_tr": "Venüs'ün etkisiyle kendinizi huzurlu hissedeceksiniz. Sanatsal konulara zaman ayırın.", "comment_en": "With Venus's touch, you will feel peaceful. Dedicate time to artistic events.", "love": 90, "money": 80, "career": 70, "energy": 85},
+      {"comment_tr": "Kararlarınızda inatçı olmamaya özen gösterin. Esneklik size kazandıracaktır.", "comment_en": "Take care not to be stubborn in decisions. Flexibility will reward you.", "love": 80, "money": 75, "career": 80, "energy": 75},
+      {"comment_tr": "Maddi olarak şanslı bir dönemdesiniz. Birikim yapmaya başlayabilirsiniz.", "comment_en": "You are in a financially lucky period. You can start saving up.", "love": 85, "money": 90, "career": 75, "energy": 80}
+    ],
+    "male": [
+      {"comment_tr": "İş hayatınızda sabırlı çalışmanız meyvelerini veriyor. İstikrarınızı koruyun.", "comment_en": "Your patient work in business is yielding results. Keep your stability.", "love": 80, "money": 85, "career": 85, "energy": 80},
+      {"comment_tr": "Partnerinizle fikir ayrılıklarını büyütmeyin. Empati kurmak sorunları çözer.", "comment_en": "Do not escalate differences with your partner. Empathy solves issues.", "love": 85, "money": 70, "career": 75, "energy": 75},
+      {"comment_tr": "Doğada vakit geçirmek enerjinizi tazeleyecektir. Maddi planlarınızı gözden geçirin.", "comment_en": "Spending time in nature will refresh your energy. Review your financial plans.", "love": 75, "money": 90, "career": 80, "energy": 90}
+    ]
+  },
+  "gemini": {
+    "female": [
+      {"comment_tr": "Zihniniz son derece aktif ve yaratıcı fikirlerle dolu. İletişimde şanslısınız.", "comment_en": "Your mind is highly active and filled with creative ideas. Lucky in communication.", "love": 80, "money": 70, "career": 85, "energy": 90},
+      {"comment_tr": "Aynı anda çok fazla işe odaklanmak yorucu olabilir. Planlı hareket edin.", "comment_en": "Focusing on too many things at once can be exhausting. Act planned.", "love": 75, "money": 65, "career": 70, "energy": 75},
+      {"comment_tr": "Sosyal çevrenizden destek alacaksınız. Eski bir dostla karşılaşabilirsiniz.", "comment_en": "You will receive support from your social circle. You might run into an old friend.", "love": 85, "money": 75, "career": 80, "energy": 85}
+    ],
+    "male": [
+      {"comment_tr": "Bugün ikna kabiliyetiniz oldukça yüksek. Sunum ve toplantılarda öne çıkabilirsiniz.", "comment_en": "Today your persuasion skills are quite high. Stand out in presentations.", "love": 75, "money": 75, "career": 90, "energy": 85},
+      {"comment_tr": "Kararsızlıktan kaçının. Net hedefler belirleyip onlara sadık kalın.", "comment_en": "Avoid indecisiveness. Set clear goals and stick to them.", "love": 80, "money": 60, "career": 75, "energy": 70},
+      {"comment_tr": "Yeni seyahat planları veya eğitimler gündeme gelebilir. Zihninizi açık tutun.", "comment_en": "New travel plans or educational topics may arise. Keep your mind open.", "love": 85, "money": 80, "career": 80, "energy": 90}
+    ]
+  },
+  "cancer": {
+    "female": [
+      {"comment_tr": "Sezgileriniz bugün yol göstericiniz olacak. Ailenizle vakit geçirmek iyi gelecektir.", "comment_en": "Your intuition will be your guide today. Spending time with family feels good.", "love": 95, "money": 65, "career": 70, "energy": 80},
+      {"comment_tr": "Duygusal iniş çıkışlara dikkat edin. Kendinize şefkat gösterin.", "comment_en": "Watch out for emotional ups and downs. Show self-compassion.", "love": 80, "money": 70, "career": 75, "energy": 70},
+      {"comment_tr": "Ev ve yaşam alanınızda değişiklikler yapabilirsiniz. İçsel huzurunuz artıyor.", "comment_en": "You can make changes in your home space. Your inner peace increases.", "love": 85, "money": 80, "career": 80, "energy": 85}
+    ],
+    "male": [
+      {"comment_tr": "Korumacı yönünüz sevdiklerinize güven veriyor. İş ortaklıklarında dürüst olun.", "comment_en": "Your protective nature reassures loved ones. Be honest in partnerships.", "love": 90, "money": 70, "career": 80, "energy": 80},
+      {"comment_tr": "Geçmişe takılı kalmayın. Geleceğe odaklanmak için güzel bir gün.", "comment_en": "Do not get stuck in the past. A beautiful day to focus on the future.", "love": 75, "money": 75, "career": 70, "energy": 75},
+      {"comment_tr": "Maddi konularda güvenli limanları tercih edin. Evinizde dinlenin.", "comment_en": "Prefer safe harbors in financial matters. Rest at your home.", "love": 80, "money": 85, "career": 75, "energy": 85}
+    ]
+  },
+  "leo": {
+    "female": [
+      {"comment_tr": "Bugün spot ışıkları üzerinizde. Özgüveninizle çevrenizi etkileyeceksiniz.", "comment_en": "The spot lights are on you today. Impress those around with your self-confidence.", "love": 90, "money": 75, "career": 85, "energy": 95},
+      {"comment_tr": "Gururlu davranmaktan kaçının. İlişkilerde alçakgönüllü olmak kazandırır.", "comment_en": "Avoid acting prideful. Being humble in relationships pays off.", "love": 80, "money": 70, "career": 75, "energy": 80},
+      {"comment_tr": "Yaratıcı projelerinizi hayata geçirmek için harika bir gün. Kendinizi gösterin.", "comment_en": "A great day to launch your creative projects. Show yourself.", "love": 85, "money": 80, "career": 90, "energy": 90}
+    ],
+    "male": [
+      {"comment_tr": "Karizmanız ve enerjiniz çevrenizde fark ediliyor. İş hayatında liderlik yapın.", "comment_en": "Your charisma and energy are noticed around. Take lead in business.", "love": 85, "money": 80, "career": 90, "energy": 95},
+      {"comment_tr": "Cömertliğiniz takdir ediliyor ancak sınırlarınızı bilin. Enerjinizi tüketmeyin.", "comment_en": "Your generosity is appreciated but know your limits. Do not exhaust yourself.", "love": 90, "money": 70, "career": 75, "energy": 80},
+      {"comment_tr": "Finansal konularda yeni adımlar atabilirsiniz. Spor yapmak iyi gelecektir.", "comment_en": "You can take new steps in financial matters. Working out will feel good.", "love": 75, "money": 85, "career": 85, "energy": 90}
+    ]
+  },
+  "virgo": {
+    "female": [
+      {"comment_tr": "Detayları gözden kaçırmadığınız, üretken bir gün. Düzen oluşturmak içsel rahatlık sağlar.", "comment_en": "A productive day where you don't miss details. Creating order gives inner ease.", "love": 80, "money": 85, "career": 90, "energy": 85},
+      {"comment_tr": "Kendinizi aşırı eleştirmekten vazgeçin. Hatalar da öğrenmenin bir parçasıdır.", "comment_en": "Stop criticizing yourself excessively. Errors are part of learning.", "love": 75, "money": 70, "career": 80, "energy": 70},
+      {"comment_tr": "Sağlıklı yaşam kararları almak için uygun zaman. Planlarınızı titizlikle uygulayın.", "comment_en": "A good time to take healthy living decisions. Apply your plans meticulously.", "love": 85, "money": 80, "career": 85, "energy": 80}
+    ],
+    "male": [
+      {"comment_tr": "Analitik zekanız sayesinde karmaşık sorunları kolayca çözeceksiniz. Başarı kapıda.", "comment_en": "Thanks to your analytical mind, you will solve complex problems easily. Success is near.", "love": 75, "money": 80, "career": 90, "energy": 85},
+      {"comment_tr": "Detaylarda boğulup büyük resmi kaçırmayın. İşlerinizi delege etmeyi öğrenin.", "comment_en": "Don't drown in details and miss the big picture. Learn to delegate.", "love": 80, "money": 75, "career": 75, "energy": 75},
+      {"comment_tr": "Finansal bütçenizi kontrol edin. Mantıklı adımlar birikimlerinizi büyütecektir.", "comment_en": "Check your financial budget. Logical steps will grow your savings.", "love": 80, "money": 85, "career": 80, "energy": 80}
+    ]
+  },
+  "libra": {
+    "female": [
+      {"comment_tr": "İlişkilerinizde denge ve uyum arayışı içindesiniz. Sanatsal etkinlikler ruhunuza iyi gelecek.", "comment_en": "You are seeking balance and harmony in relationships. Art events feel good for your soul.", "love": 90, "money": 75, "career": 75, "energy": 80},
+      {"comment_tr": "Kararsız kalmak fırsatları kaçırmanıza yol açabilir. İç sesinize güvenin.", "comment_en": "Being indecisive can cause you to miss opportunities. Trust your inner voice.", "love": 80, "money": 70, "career": 70, "energy": 70},
+      {"comment_tr": "Sosyal ortamlarda parlayacaksınız. Adaleti ve barışı koruyan tavrınız takdir görecek.", "comment_en": "You will shine in social gatherings. Your peace-keeping attitude is appreciated.", "love": 85, "money": 80, "career": 80, "energy": 85}
+    ],
+    "male": [
+      {"comment_tr": "Diplomatik tavrınız sayesinde işteki anlaşmazlıkları çözeceksiniz. Sosyal ilişkiler öne çıkıyor.", "comment_en": "Thanks to your diplomatic approach, you will resolve work disputes. Social connections shine.", "love": 85, "money": 80, "career": 80, "energy": 85},
+      {"comment_tr": "Hayır demeyi öğrenmelisiniz. Başkalarını memnun etmek için kendinizden vermeyin.", "comment_en": "You must learn to say no. Do not compromise yourself to please others.", "love": 80, "money": 70, "career": 75, "energy": 70},
+      {"comment_tr": "Partnerinizle keyifli bir akşam yemeği planlayabilirsiniz. Uyumlu ve dengeli bir gün.", "comment_en": "You can plan a pleasant dinner with your partner. A balanced and harmonious day.", "love": 90, "money": 75, "career": 80, "energy": 80}
+    ]
+  },
+  "scorpio": {
+    "female": [
+      {"comment_tr": "Gizemli ve çekici enerjinizle dikkat çekiyorsunuz. Derin sezgileriniz bugün sizi yönlendirsin.", "comment_en": "You attract attention with mysterious and charming energy. Let deep intuition guide you.", "love": 95, "money": 70, "career": 80, "energy": 85},
+      {"comment_tr": "Kıskançlık veya şüpheci duygulardan uzak durun. Akışa güvenmeyi deneyin.", "comment_en": "Stay away from jealous or suspicious feelings. Try to trust the flow.", "love": 80, "money": 65, "career": 75, "energy": 75},
+      {"comment_tr": "Finansal konularda sezgileriniz kazandırabilir. Dönüşüm ve yenilenme sürecindesiniz.", "comment_en": "Your intuition in finances can pay off. You are in a renewal process.", "love": 85, "money": 85, "career": 85, "energy": 90}
+    ],
+    "male": [
+      {"comment_tr": "Kararlılığınız ve odaklanma gücünüz sayesinde aşamayacağınız engel yok. Tutkuyla hareket edin.", "comment_en": "With determination and focus, no obstacle is too big. Act with passion.", "love": 90, "money": 80, "career": 85, "energy": 90},
+      {"comment_tr": "İnsanları kontrol etmeye çalışmayın. Güven duygunuzu pekiştirmeye odaklanın.", "comment_en": "Do not try to control people. Focus on strengthening your sense of trust.", "love": 80, "money": 70, "career": 75, "energy": 80},
+      {"comment_tr": "Gizli projeler veya araştırmalar için harika bir gün. Enerjiniz oldukça yüksek.", "comment_en": "A great day for secret projects or research. Your energy is quite high.", "love": 85, "money": 80, "career": 90, "energy": 85}
+    ]
+  },
+  "sagittarius": {
+    "female": [
+      {"comment_tr": "Maceracı ruhunuz bugün sizi yeni keşiflere çağırıyor. İyimserliğiniz bulaşıcı.", "comment_en": "Your adventurous spirit calls you to new discoveries. Optimism is contagious.", "love": 85, "money": 70, "career": 80, "energy": 95},
+      {"comment_tr": "Sözlerinize dikkat edin, bazen aşırı dürüstlük kırıcı olabilir. İncitmemeye çalışın.", "comment_en": "Watch your words, sometimes honesty can hurt. Try not to offend.", "love": 75, "money": 65, "career": 75, "energy": 85},
+      {"comment_tr": "Yeni kültürler veya felsefi konularla ilgilenmek ufkunu açacak. Finansal şanslar kapıda.", "comment_en": "Interests in new cultures or philosophy expands horizons. Financial luck is near.", "love": 80, "money": 85, "career": 85, "energy": 90}
+    ],
+    "male": [
+      {"comment_tr": "Özgürlüğünüze düşkünlüğünüz ve coşkunuz çevrenize ilham veriyor. Yeni vizyonlar edinin.", "comment_en": "Your passion for freedom inspires those around you. Gain new visions.", "love": 80, "money": 75, "career": 85, "energy": 95},
+      {"comment_tr": "Sorumluluklarınızı aksatmayın. Sabırsız davranmak işlerinizi zorlaştırabilir.", "comment_en": "Do not neglect responsibilities. Acting impatient can complicate things.", "love": 75, "money": 70, "career": 70, "energy": 80},
+      {"comment_tr": "Seyahat veya keşif planları yapabilirsiniz. Şans gezegeniniz sizi destekliyor.", "comment_en": "You can make travel or discovery plans. Your lucky planet supports you.", "love": 85, "money": 80, "career": 80, "energy": 90}
+    ]
+  },
+  "capricorn": {
+    "female": [
+      {"comment_tr": "Disiplinli ve kararlı duruşunuzla hedeflerinize adım adım ilerliyorsunuz. Kariyerde yükseliş zamanı.", "comment_en": "With a disciplined and firm stance, you progress step by step. Rise time in career.", "love": 75, "money": 85, "career": 95, "energy": 90},
+      {"comment_tr": "Hayatı çok fazla ciddiye alıp kendinizi hırpalamayın. Eğlenmeye de zaman ayırın.", "comment_en": "Do not take life too seriously and strain yourself. Make time for fun too.", "love": 80, "money": 75, "career": 80, "energy": 75},
+      {"comment_tr": "Uzun vadeli yatırımlar için mantıklı kararlar alacaksınız. Güvenli adımlar atın.", "comment_en": "You will make logical decisions for long-term investments. Take safe steps.", "love": 80, "money": 90, "career": 85, "energy": 80}
+    ],
+    "male": [
+      {"comment_tr": "İş hayatındaki sorumluluk bilinciniz yöneticiler tarafından takdir ediliyor. Gücünüzü gösterin.", "comment_en": "Your sense of duty in business is appreciated by managers. Show your strength.", "love": 80, "money": 85, "career": 90, "energy": 85},
+      {"comment_tr": "Duygularınızı ifade etmekten çekinmeyin. Soğuk ve mesafeli tavır ilişkileri zorlaştırabilir.", "comment_en": "Don't hesitate to express feelings. A cold and distant stance can strain relationships.", "love": 75, "money": 75, "career": 80, "energy": 75},
+      {"comment_tr": "Finansal planlamalarınız tıkırında gidiyor. İstikrarlı adımlar başarıyı getirecek.", "comment_en": "Your financial planning is going well. Stable steps will bring success.", "love": 85, "money": 90, "career": 85, "energy": 80}
+    ]
+  },
+  "aquarius": {
+    "female": [
+      {"comment_tr": "Sıra dışı ve yenilikçi fikirlerinizle fark yaratıyorsunuz. Özgürlüğünüz bugün ön planda.", "comment_en": "You make a difference with extraordinary and innovative ideas. Freedom is key today.", "love": 80, "money": 70, "career": 85, "energy": 90},
+      {"comment_tr": "Sosyal sorumluluk projelerine yönelebilirsiniz. Bireysel olmaktan kaçının.", "comment_en": "You can direct focus to social projects. Avoid being too individualistic.", "love": 85, "money": 65, "career": 75, "energy": 80},
+      {"comment_tr": "Geleceğe dair vizyoner planlar yapacaksınız. Teknoloji ve bilimsel konular şanslı.", "comment_en": "You will make visionary plans for the future. Tech and science are lucky fields.", "love": 75, "money": 80, "career": 80, "energy": 85}
+    ],
+    "male": [
+      {"comment_tr": "Entelektüel birikiminizle çevrenizdekileri etkileyeceksiniz. Topluluklara liderlik yapabilirsiniz.", "comment_en": "You will impress those around with your intellect. You can lead communities.", "love": 75, "money": 75, "career": 90, "energy": 85},
+      {"comment_tr": "İlişkilerinizde duygusal mesafeyi çok açmayın. Paylaşımcı olmak bağları güçlendirir.", "comment_en": "Do not widen emotional distance in relationships. Sharing strengthens bonds.", "love": 80, "money": 70, "career": 75, "energy": 80},
+      {"comment_tr": "Orijinal projelerinizi hayata geçirmek için doğru ortakları bulabilirsiniz. Zihniniz aktif.", "comment_en": "You can find right partners to launch original projects. Your mind is active.", "love": 85, "money": 80, "career": 80, "energy": 90}
+    ]
+  },
+  "pisces": {
+    "female": [
+      {"comment_tr": "Ruhsal yönünüzün ve empati yeteneğinizin çok yüksek olduğu bir gün. Rüyalarınıza dikkat edin.", "comment_en": "A day when your spiritual side and empathy are very high. Pay attention to dreams.", "love": 95, "money": 65, "career": 70, "energy": 80},
+      {"comment_tr": "Hayal dünyasında fazla kaybolup gerçeklerden kopmayın. Sınırlarınızı koruyun.", "comment_en": "Don't get too lost in dreamlands and detach from reality. Protect boundaries.", "love": 85, "money": 70, "career": 75, "energy": 70},
+      {"comment_tr": "Yaratıcı sanat dalları veya meditasyon ruhunuzu dinlendirecek. Sevgi dolusunuz.", "comment_en": "Creative arts or meditation will soothe your soul. You are filled with love.", "love": 90, "money": 75, "career": 80, "energy": 85}
+    ],
+    "male": [
+      {"comment_tr": "Sezgilerinizin gücüyle işteki gizli sorunları sezeceksiniz. Çevrenize merhametle yaklaşın.", "comment_en": "With intuitive power you will detect hidden issues at work. Approach others with mercy.", "love": 85, "money": 70, "career": 80, "energy": 80},
+      {"comment_tr": "Kurban psikolojisinden kaçının. Gücünüzün farkına varıp kararlı davranın.", "comment_en": "Avoid victim mentality. Realize your strength and act decisively.", "love": 80, "money": 70, "career": 75, "energy": 75},
+      {"comment_tr": "Sanatsal projeler veya ruhsal konular için ilham dolu bir gün. Dinlenmeye zaman ayırın.", "comment_en": "An inspiring day for artistic projects or spiritual matters. Make time to rest.", "love": 90, "money": 80, "career": 80, "energy": 85}
+    ]
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "fullMoons": [
+    {"date": "2026-01-03", "nameTr": "Kurt Dolunayı", "nameEn": "Wolf Moon"},
+    {"date": "2026-02-01", "nameTr": "Kar Dolunayı", "nameEn": "Snow Moon"},
+    {"date": "2026-03-03", "nameTr": "Solucan Dolunayı", "nameEn": "Worm Moon"},
+    {"date": "2026-04-02", "nameTr": "Pembe Dolunay", "nameEn": "Pink Moon"},
+    {"date": "2026-05-01", "nameTr": "Çiçek Dolunayı", "nameEn": "Flower Moon"},
+    {"date": "2026-05-31", "nameTr": "Çilek Dolunayı", "nameEn": "Strawberry Moon"},
+    {"date": "2026-06-29", "nameTr": "Geyik Dolunayı", "nameEn": "Buck Moon"},
+    {"date": "2026-07-29", "nameTr": "Mersin Balığı Dolunayı", "nameEn": "Sturgeon Moon"},
+    {"date": "2026-08-28", "nameTr": "Hasat Dolunayı", "nameEn": "Harvest Moon"},
+    {"date": "2026-09-26", "nameTr": "Avcı Dolunayı", "nameEn": "Hunter's Moon"},
+    {"date": "2026-10-26", "nameTr": "Kunduz Dolunayı", "nameEn": "Beaver Moon"},
+    {"date": "2026-11-24", "nameTr": "Soğuk Dolunay", "nameEn": "Cold Moon"},
+    {"date": "2026-12-24", "nameTr": "Meşe Dolunayı", "nameEn": "Oak Moon"}
+  ],
+  "newMoons": [
+    {"date": "2026-01-18", "nameTr": "Oğlak Yeniayı", "nameEn": "Capricorn New Moon"},
+    {"date": "2026-02-17", "nameTr": "Kova Yeniayı", "nameEn": "Aquarius New Moon"},
+    {"date": "2026-03-18", "nameTr": "Balık Yeniayı", "nameEn": "Pisces New Moon"},
+    {"date": "2026-04-17", "nameTr": "Koç Yeniayı", "nameEn": "Aries New Moon"},
+    {"date": "2026-05-16", "nameTr": "Boğa Yeniayı", "nameEn": "Taurus New Moon"},
+    {"date": "2026-06-15", "nameTr": "İkizler Yeniayı", "nameEn": "Gemini New Moon"},
+    {"date": "2026-07-14", "nameTr": "Yengeç Yeniayı", "nameEn": "Cancer New Moon"},
+    {"date": "2026-08-12", "nameTr": "Aslan Yeniayı", "nameEn": "Leo New Moon"},
+    {"date": "2026-09-11", "nameTr": "Başak Yeniayı", "nameEn": "Virgo New Moon"},
+    {"date": "2026-10-10", "nameTr": "Terazi Yeniayı", "nameEn": "Libra New Moon"},
+    {"date": "2026-11-09", "nameTr": "Akrep Yeniayı", "nameEn": "Scorpio New Moon"},
+    {"date": "2026-12-08", "nameTr": "Yay Yeniayı", "nameEn": "Sagittarius New Moon"}
+  ],
+  "retrogrades": [
+    {
+      "planet": "Merkür",
+      "planetEn": "Mercury",
+      "symbol": "☿",
+      "start": "2026-02-25",
+      "end": "2026-03-20",
+      "areaTr": "İletişim, teknoloji, anlaşmalar ve seyahat planları.",
+      "areaEn": "Communication, technology, contracts, and travel plans.",
+      "descTr": "Eski arkadaşlardan haberler gelebilir. Yeni imza ve sözleşmelerden kaçının, veri yedeklemeyi unutmayın.",
+      "descEn": "News from old friends might arrive. Avoid new signatures or contracts, remember to back up data."
+    },
+    {
+      "planet": "Merkür",
+      "planetEn": "Mercury",
+      "symbol": "☿",
+      "start": "2026-06-29",
+      "end": "2026-07-23",
+      "areaTr": "Duygusal ifadeler, aile içi diyaloglar ve geçmiş meseleler.",
+      "areaEn": "Emotional expressions, family dialogues, and past issues.",
+      "descTr": "Yanlış anlaşılmalara karşı sakin kalın. Eski projeleri gözden geçirmek ve eksikleri tamamlamak için harika bir zaman.",
+      "descEn": "Stay calm in the face of misunderstandings. Great time to review old projects and wrap up loose ends."
+    },
+    {
+      "planet": "Merkür",
+      "planetEn": "Mercury",
+      "symbol": "☿",
+      "start": "2026-10-24",
+      "end": "2026-11-13",
+      "areaTr": "Finansal planlama, ortaklık kararları ve derin düşünceler.",
+      "areaEn": "Financial planning, partnership decisions, and deep thoughts.",
+      "descTr": "Harcamalarda dikkatli olun. Parasal hesapları kontrol etmek ve borçları düzenlemek için olumlu bir süreç.",
+      "descEn": "Be careful with spending. A positive process to check monetary calculations and organize debts."
+    },
+    {
+      "planet": "Venüs",
+      "planetEn": "Venus",
+      "symbol": "♀",
+      "start": "2026-05-18",
+      "end": "2026-06-29",
+      "areaTr": "İlişkiler, evlilik, sevgi bağı ve finansal yatırımlar.",
+      "areaEn": "Relationships, marriage, love bonds, and financial investments.",
+      "descTr": "Aşk hayatında eski defterler açılabilir. İlişkilerde aceleci kararlar almayın, finansal risklerden kaçının.",
+      "descEn": "Old chapters might reopen in love life. Avoid hasty decisions in relationships, bypass financial risks."
+    },
+    {
+      "planet": "Mars",
+      "planetEn": "Mars",
+      "symbol": "♂",
+      "start": "2026-12-08",
+      "end": "2027-02-21",
+      "areaTr": "Eylem, enerji, motivasyon ve fiziksel aktiviteler.",
+      "areaEn": "Action, energy, motivation, and physical activities.",
+      "descTr": "Fiziksel gücü dengeli kullanın, öfke patlamalarına dikkat edin. Yeni büyük projeler başlatmak yerine mevcut olanları koruyun.",
+      "descEn": "Use physical strength in a balanced way, watch out for anger outbursts. Protect current projects instead of starting major new ones."
+    }
+  ],
+  "yearlyEvents": [
+    {"date": "2026-03-20", "nameTr": "İlkbahar Ekinoksu (Koç Girişi)", "nameEn": "Spring Equinox (Aries Ingress)"},
+    {"date": "2026-06-21", "nameTr": "Yaz Gündönümü (Yengeç Girişi)", "nameEn": "Summer Solstice (Cancer Ingress)"},
+    {"date": "2026-09-23", "nameTr": "Sonbahar Ekinoksu (Terazi Girişi)", "nameEn": "Autumn Equinox (Libra Ingress)"},
+    {"date": "2026-12-21", "nameTr": "Kış Gündönümü (Oğlak Girişi)", "nameEn": "Winter Solstice (Capricorn Ingress)"},
+    {"date": "2026-02-17", "nameTr": "Halkalı Güneş Tutulması (Kova)", "nameEn": "Annular Solar Eclipse (Aquarius)"},
+    {"date": "2026-03-03", "nameTr": "Parçalı Ay Tutulması (Başak)", "nameEn": "Partial Lunar Eclipse (Virgo)"},
+    {"date": "2026-08-12", "nameTr": "Tam Güneş Tutulması (Aslan)", "nameEn": "Total Solar Eclipse (Leo)"},
+    {"date": "2026-08-28", "nameTr": "Kısmi Ay Tutulması (Kova)", "nameEn": "Partial Lunar Eclipse (Aquarius)"}
+  ],
+  "monthlyNotes": {
+    "1": [
+      {"day": 3, "moonSign": "yengeç", "type": "positive", "descTr": "Duygusal bağlar güçleniyor, sevdiklerinizle vakit geçirmek için harika bir gün.", "descEn": "Emotional bonds are strengthening, a great day to spend time with loved ones."},
+      {"day": 9, "moonSign": "akrep", "type": "warning", "descTr": "Finansal konularda acele karar vermeyin, imza atmaktan kaçının.", "descEn": "Do not make hasty financial decisions, avoid signing agreements."},
+      {"day": 15, "moonSign": "oğlak", "type": "positive", "descTr": "Kariyer adımları için destekleyici enerjiler hakim, disiplinli olun.", "descEn": "Supportive energies rule for career steps, stay disciplined."},
+      {"day": 18, "moonSign": "kova", "type": "positive", "descTr": "Sosyal ortamlarda parlayacağınız, yenilikçi fikirler üreteceğiniz bir gün.", "descEn": "A day to shine in social settings and produce innovative ideas."},
+      {"day": 22, "moonSign": "balık", "type": "positive", "descTr": "Mistik konular, yoga ve meditasyon için derin ruhsal enerjiler devrede.", "descEn": "Deep spiritual energies are active for mystical practices, yoga, and meditation."}
+    ],
+    "2": [
+      {"day": 1, "moonSign": "aslan", "type": "positive", "descTr": "Yaratıcı projeleriniz için destekleyici enerjiler, kendinizi ifade edin.", "descEn": "Supportive energies for your creative projects, express yourself."},
+      {"day": 11, "moonSign": "akrep", "type": "warning", "descTr": "İlişkilerde gizli kıskançlık veya gerilimler oluşabilir, dürüst olun.", "descEn": "Secret jealousy or tension may arise in relationships, remain honest."},
+      {"day": 17, "moonSign": "kova", "type": "positive", "descTr": "Kişisel hedeflerinize odaklanmak ve geleceği planlamak için mükemmel süreç.", "descEn": "Perfect period to focus on personal goals and plan the future."},
+      {"day": 25, "moonSign": "balık", "type": "warning", "descTr": "Merkür retrosu başlıyor. İletişim hatalarına karşı sakin ve dikkatli kalın.", "descEn": "Mercury retrograde begins. Stay calm and careful against communication errors."}
+    ],
+    "3": [
+      {"day": 3, "moonSign": "başak", "type": "warning", "descTr": "Ay tutulması gerçekleşiyor. Sağlığınıza dikkat edin, aşırı yorulmayın.", "descEn": "Lunar eclipse occurs. Take care of your health, do not overexert yourself."},
+      {"day": 12, "moonSign": "akrep", "type": "positive", "descTr": "Sezgileriniz çok güçlü, rüyalarınız size rehberlik edebilir.", "descEn": "Your intuition is very strong, your dreams may guide you."},
+      {"day": 20, "moonSign": "koç", "type": "positive", "descTr": "İlkbahar Ekinoksu. Yeni başlangıçlar ve taze niyetler için kozmik kapılar açılıyor.", "descEn": "Spring Equinox. Cosmic doors open for new beginnings and fresh intentions."}
+    ],
+    "4": [
+      {"day": 2, "moonSign": "terazi", "type": "positive", "descTr": "İkili ilişkiler ve ortaklıklarda uyum ve barış rüzgarları esiyor.", "descEn": "Winds of harmony and peace are blowing in dual relationships and partnerships."},
+      {"day": 10, "moonSign": "oğlak", "type": "warning", "descTr": "İş hayatında otorite figürleriyle sürtüşmelerden kaçının.", "descEn": "Avoid friction with authority figures in business life."},
+      {"day": 17, "moonSign": "koç", "type": "positive", "descTr": "İçinizdeki liderlik enerjisini ortaya çıkarın, inisiyatif alın.", "descEn": "Bring out your inner leadership energy, take initiative."}
+    ],
+    "5": [
+      {"day": 1, "moonSign": "akrep", "type": "positive", "descTr": "Finansal yatırımları planlamak ve derin analizler yapmak için elverişli.", "descEn": "Favorable for planning financial investments and making deep analysis."},
+      {"day": 16, "moonSign": "boğa", "type": "positive", "descTr": "Doğa ile vakit geçirmek, topraklanmak ve zihni dinlendirmek için ideal.", "descEn": "Ideal for spending time with nature, grounding, and resting the mind."},
+      {"day": 18, "moonSign": "ikizler", "type": "warning", "descTr": "Venüs retrosu başlıyor. İlişkilerde acele kararlardan kaçının.", "descEn": "Venus retrograde begins. Avoid hasty decisions in relationships."}
+    ],
+    "6": [
+      {"day": 5, "moonSign": "yengeç", "type": "positive", "descTr": "Ev ve aile yerleşiminde huzuru yakalamak için güzel kozmik etkiler.", "descEn": "Nice cosmic influences to capture peace in home and family layouts."},
+      {"day": 15, "moonSign": "ikizler", "type": "positive", "descTr": "Merak ettiğiniz konularda araştırmalar yapmak ve okumak için elverişli gün.", "descEn": "Favorable day to do research and read on topics you are curious about."},
+      {"day": 21, "moonSign": "yengeç", "type": "positive", "descTr": "Yaz Gündönümü. En uzun günü sevgi dolu ve enerjik geçirin.", "descEn": "Summer Solstice. Spend the longest day filled with love and energy."}
+    ],
+    "7": [
+      {"day": 10, "moonSign": "terazi", "type": "positive", "descTr": "Estetik, güzellik ve sanatla ilgilenmek için ruhsal uyum yüksek.", "descEn": "Spiritual harmony is high for engaging in aesthetics, beauty, and art."},
+      {"day": 18, "moonSign": "oğlak", "type": "warning", "descTr": "Sorumluluklar omuzlarınıza ağır gelebilir, planlı hareket edin.", "descEn": "Responsibilities may feel heavy on your shoulders, act in a planned manner."},
+      {"day": 29, "moonSign": "kova", "type": "positive", "descTr": "Farklı bakış açıları kazanabilir, zihinsel sınırları aşabilirsiniz.", "descEn": "You can gain different perspectives and transcend mental boundaries."}
+    ],
+    "8": [
+      {"day": 5, "moonSign": "balık", "type": "positive", "descTr": "Ruhsal şifa, affetme ve arınma çalışmaları için çok olumlu etkiler.", "descEn": "Very positive influences for spiritual healing, forgiveness, and purification work."},
+      {"day": 12, "moonSign": "aslan", "type": "warning", "descTr": "Güneş tutulması gerçekleşiyor. Egolu yaklaşımlardan uzak durun.", "descEn": "Solar eclipse occurs. Stay away from egoistic approaches."},
+      {"day": 22, "moonSign": "başak", "type": "positive", "descTr": "Detaylara odaklanıp işlerinizi organize etmek için verimli bir gün.", "descEn": "A productive day to focus on details and organize your tasks."}
+    ],
+    "9": [
+      {"day": 7, "moonSign": "akrep", "type": "warning", "descTr": "Manipülatif diyaloglara dikkat edin, sınırlarınızı koruyun.", "descEn": "Watch out for manipulative dialogues, protect your boundaries."},
+      {"day": 15, "moonSign": "yay", "type": "positive", "descTr": "İyimserlik ve seyahat enerjisi yüksek, yeni yerler keşfedin.", "descEn": "Optimism and travel energy are high, explore new places."},
+      {"day": 23, "moonSign": "terazi", "type": "positive", "descTr": "Sonbahar Ekinoksu. Gece ve gündüz eşitlenirken hayatınızda denge kurun.", "descEn": "Autumn Equinox. Establish balance in your life as day and night equalize."}
+    ],
+    "10": [
+      {"day": 5, "moonSign": "oğlak", "type": "positive", "descTr": "Geleceğe yönelik planları netleştirmek ve somut adımlar atmak için uygun.", "descEn": "Suitable for clarifying plans for the future and taking concrete steps."},
+      {"day": 14, "moonSign": "balık", "type": "positive", "descTr": "İlham dolu fikirler üretebilirsiniz, sanatsal yönlerinizi besleyin.", "descEn": "You can produce inspiring ideas, feed your artistic sides."},
+      {"day": 24, "moonSign": "akrep", "type": "warning", "descTr": "Merkür retrosu başlıyor. İletişimde sözlerinize dikkat edin.", "descEn": "Mercury retrograde begins. Pay attention to your words in communication."}
+    ],
+    "11": [
+      {"day": 6, "moonSign": "kova", "type": "positive", "descTr": "Toplumsal projeler ve grup çalışmalarında başarı getiren enerjiler.", "descEn": "Energies that bring success in social projects and group work."},
+      {"day": 15, "moonSign": "koç", "type": "positive", "descTr": "Hızlı kararlar alıp cesurca harekete geçmek için destekleniyorsunuz.", "descEn": "You are supported to make quick decisions and take bold action."},
+      {"day": 20, "moonSign": "boğa", "type": "warning", "descTr": "İnatçı davranışlardan kaçının, değişime açık olun.", "descEn": "Avoid stubborn behavior, be open to change."}
+    ],
+    "12": [
+      {"day": 5, "moonSign": "ikizler", "type": "positive", "descTr": "Sosyal ilişkilerde canlanma, tatlı sohbetler ve yeni arkadaşlıklar.", "descEn": "Revitalization in social relationships, sweet chats, and new friendships."},
+      {"day": 8, "moonSign": "yengeç", "type": "warning", "descTr": "Mars retrosu başlıyor. Enerjiniz düşük hissedilebilir, dinlenmeye vakit ayırın.", "descEn": "Mars retrograde begins. Your energy may feel low, make time to rest."},
+      {"day": 21, "moonSign": "oğlak", "type": "positive", "descTr": "Kış Gündönümü. Yılın en uzun gecesini sakin, huzurlu ve plan yaparak geçirin.", "descEn": "Winter Solstice. Spend the longest night of the year calm, peaceful, and planning."}
+    ]
+  }
+}

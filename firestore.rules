@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Kullanıcı bilgileri: Sadece giriş yapmış kullanıcı kendi dokümanını okuyabilir ve yazabilir
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Kullanıcının alt koleksiyonları (natal_chart, compatibility, character_analysis, best_matches)
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Günlük yorumlar: Giriş yapmış tüm kullanıcılar okuyabilir, kimse yazamaz (sadece backend/Cloud Functions yazar)
+    match /daily_comments/{date}/{zodiacGender} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Aylık yorumlar: Giriş yapmış tüm kullanıcılar okuyabilir, kimse yazamaz
+    match /monthly_comments/{month}/{zodiacGender} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}

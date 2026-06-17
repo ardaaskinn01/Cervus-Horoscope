@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "809913113584",
+    "project_id": "horoscope-be21b",
+    "storage_bucket": "horoscope-be21b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:809913113584:android:59762fa1e5cc586c1d9b35",
+        "android_client_info": {
+          "package_name": "com.cervus.horoscope"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsDFB0xLtW4kvhUUQHQ9W2DIbeGt8c3t4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
