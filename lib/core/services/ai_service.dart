@@ -73,7 +73,9 @@ JSON formatı:
 
     try {
       final response = await _callGemini(prompt);
-      if (response == null) return null;
+      if (response == null) {
+        throw Exception('Gemini response is null');
+      }
 
       final Map<String, dynamic> data = jsonDecode(response);
       final dailyComment = DailyCommentModel(
@@ -150,7 +152,9 @@ JSON formatı:
 
     try {
       final response = await _callGemini(prompt);
-      if (response == null) return null;
+      if (response == null) {
+        throw Exception('Gemini response is null');
+      }
 
       final Map<String, dynamic> data = jsonDecode(response);
       final monthlyData = {
