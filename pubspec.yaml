@@ -54,6 +54,7 @@ dependencies:
   timezone: ^0.10.1
   google_mobile_ads: ^6.0.0
   flutter_dotenv: ^5.2.1
+  webview_flutter: ^4.14.0
 
 dev_dependencies:
   flutter_test:
