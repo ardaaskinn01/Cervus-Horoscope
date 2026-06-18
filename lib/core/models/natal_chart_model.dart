@@ -8,6 +8,10 @@ class NatalChartModel {
   final Map<String, double> planetAngles; // e.g. {'Güneş': 15.5, 'Ay': 124.2} - 0-360 derece arası boylam
   final Map<String, dynamic>? planetDetails; // Detailed planet coordinates map
   final Map<String, dynamic>? houseDetails; // Detailed houses coordinates map
+  final Map<String, dynamic>? aspects; // Calculated planetary aspects
+  final Map<String, int>? elements; // Fire, Earth, Air, Water counts
+  final Map<String, int>? modalities; // Cardinal, Fixed, Mutable counts
+  final Map<String, dynamic> interpretations; // AI generated interpretations per planet
   final DateTime calculatedAt;
 
   NatalChartModel({
@@ -18,8 +22,13 @@ class NatalChartModel {
     required this.planetAngles,
     this.planetDetails,
     this.houseDetails,
+    this.aspects,
+    this.elements,
+    this.modalities,
+    Map<String, dynamic>? interpretations,
     required this.calculatedAt,
-  });
+  })  : interpretations = interpretations ?? <String, dynamic>{},
+        super();
 
   Map<String, dynamic> toMap() {
     return {
@@ -30,6 +39,10 @@ class NatalChartModel {
       'planetAngles': planetAngles,
       if (planetDetails != null) 'planetDetails': planetDetails,
       if (houseDetails != null) 'houseDetails': houseDetails,
+      if (aspects != null) 'aspects': aspects,
+      if (elements != null) 'elements': elements,
+      if (modalities != null) 'modalities': modalities,
+      'interpretations': interpretations,
       'calculatedAt': Timestamp.fromDate(calculatedAt),
     };
   }
@@ -58,6 +71,10 @@ class NatalChartModel {
       planetAngles: angles,
       planetDetails: map['planetDetails'] != null ? Map<String, dynamic>.from(map['planetDetails']) : null,
       houseDetails: map['houseDetails'] != null ? Map<String, dynamic>.from(map['houseDetails']) : null,
+      aspects: map['aspects'] != null ? Map<String, dynamic>.from(map['aspects']) : null,
+      elements: map['elements'] != null ? Map<String, int>.from(map['elements']) : null,
+      modalities: map['modalities'] != null ? Map<String, int>.from(map['modalities']) : null,
+      interpretations: map['interpretations'] != null ? Map<String, dynamic>.from(map['interpretations']) : <String, dynamic>{},
       calculatedAt: map['calculatedAt'] != null
           ? (map['calculatedAt'] as Timestamp).toDate()
           : DateTime.now(),

@@ -1,14 +1,46 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Her boyut için sol tarafın yüzdesi (0-100).
+/// Örnek: IntrovertExtrovert için 70 → %70 İçe Dönük, %30 Dışa Dönük
+class PersonalityDimension {
+  final String leftLabelTr;
+  final String rightLabelTr;
+  final String leftLabelEn;
+  final String rightLabelEn;
+  final int leftPercent; // 0-100
+
+  PersonalityDimension({
+    required this.leftLabelTr,
+    required this.rightLabelTr,
+    required this.leftLabelEn,
+    required this.rightLabelEn,
+    required this.leftPercent,
+  });
+
+  Map<String, dynamic> toMap() => {
+        'leftLabelTr': leftLabelTr,
+        'rightLabelTr': rightLabelTr,
+        'leftLabelEn': leftLabelEn,
+        'rightLabelEn': rightLabelEn,
+        'leftPercent': leftPercent,
+      };
+
+  factory PersonalityDimension.fromMap(Map<String, dynamic> map) =>
+      PersonalityDimension(
+        leftLabelTr: map['leftLabelTr'] ?? '',
+        rightLabelTr: map['rightLabelTr'] ?? '',
+        leftLabelEn: map['leftLabelEn'] ?? '',
+        rightLabelEn: map['rightLabelEn'] ?? '',
+        leftPercent: (map['leftPercent'] as num?)?.toInt() ?? 50,
+      );
+}
+
 class CharacterAnalysisModel {
-  final int intuitiveScore;
-  final int passionateScore;
-  final int analyticalScore;
+  final List<PersonalityDimension> personalityDimensions;
   final List<String> strengthsTr;
   final List<String> strengthsEn;
   final List<String> weaknessesTr;
   final List<String> weaknessesEn;
-  final Map<String, int> loveLanguages; // touch, words, time, etc.
   final List<String> careersTr;
   final List<String> careersEn;
   final String secretSelfTr;
@@ -18,14 +50,11 @@ class CharacterAnalysisModel {
   final DateTime generatedAt;
 
   CharacterAnalysisModel({
-    required this.intuitiveScore,
-    required this.passionateScore,
-    required this.analyticalScore,
+    required this.personalityDimensions,
     required this.strengthsTr,
     required this.strengthsEn,
     required this.weaknessesTr,
     required this.weaknessesEn,
-    required this.loveLanguages,
     required this.careersTr,
     required this.careersEn,
     required this.secretSelfTr,
@@ -37,14 +66,11 @@ class CharacterAnalysisModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'intuitiveScore': intuitiveScore,
-      'passionateScore': passionateScore,
-      'analyticalScore': analyticalScore,
+      'personalityDimensions': personalityDimensions.map((d) => d.toMap()).toList(),
       'strengthsTr': strengthsTr,
       'strengthsEn': strengthsEn,
       'weaknessesTr': weaknessesTr,
       'weaknessesEn': weaknessesEn,
-      'loveLanguages': loveLanguages,
       'careersTr': careersTr,
       'careersEn': careersEn,
       'secretSelfTr': secretSelfTr,
@@ -56,17 +82,19 @@ class CharacterAnalysisModel {
   }
 
   factory CharacterAnalysisModel.fromMap(Map<String, dynamic> map) {
+    List<PersonalityDimension> dims = [];
+    if (map['personalityDimensions'] != null) {
+      dims = (map['personalityDimensions'] as List)
+          .map((d) => PersonalityDimension.fromMap(Map<String, dynamic>.from(d)))
+          .toList();
+    }
+
     return CharacterAnalysisModel(
-      intuitiveScore: map['intuitiveScore'] ?? 50,
-      passionateScore: map['passionateScore'] ?? 50,
-      analyticalScore: map['analyticalScore'] ?? 50,
+      personalityDimensions: dims,
       strengthsTr: List<String>.from(map['strengthsTr'] ?? []),
       strengthsEn: List<String>.from(map['strengthsEn'] ?? []),
       weaknessesTr: List<String>.from(map['weaknessesTr'] ?? []),
       weaknessesEn: List<String>.from(map['weaknessesEn'] ?? []),
-      loveLanguages: Map<String, int>.from(map['loveLanguages']?.map(
-            (k, v) => MapEntry(k.toString(), (v as num).toInt()),
-          ) ?? {}),
       careersTr: List<String>.from(map['careersTr'] ?? []),
       careersEn: List<String>.from(map['careersEn'] ?? []),
       secretSelfTr: map['secretSelfTr'] ?? '',

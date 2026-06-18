@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -12,8 +13,8 @@ import 'package:horoscope/core/services/ai_service.dart';
 import 'package:horoscope/shared/widgets/glass_card.dart';
 import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/star_background.dart';
-import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/shared/widgets/birth_place_search_sheet.dart';
+import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/features/natal_chart/natal_chart_screen.dart'; // To reuse NatalChartPainter
 import 'package:horoscope/core/services/ad_service.dart';
 
@@ -319,7 +320,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(isTr ? 'Doğum Haritası Hesapla' : 'Partner\'s Natal Chart'),
+        title: Text(isTr ? 'Astro Portre Hesapla' : 'Astro Portrait Creator'),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
@@ -330,6 +331,12 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
               : _result != null
                   ? _buildResultView(isTr)
                   : _buildFormView(isTr),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: AdService.instance.getBannerAdWidget(
+          'partner_chart_banner',
+          isPremium: ref.watch(userProvider)?.isPremium ?? false,
         ),
       ),
     );
@@ -367,7 +374,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
     final placeStr = _selectedPlace ?? (isTr ? 'Doğum Yeri Seç' : 'Select Birth Place');
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 80.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -486,8 +493,6 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
             const SizedBox(height: 12),
             _buildHistoryList(isTr),
           ],
-          const SizedBox(height: 24),
-          AdService.instance.getBannerAdWidget('partner_chart_banner', isPremium: ref.watch(userProvider)?.isPremium ?? false),
         ],
       ),
     );
@@ -498,38 +503,14 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
     final List<MapEntry<String, String>> positions = chart.planetPositions.entries.toList();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 40.0),
+      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 80.0),
       child: Column(
         children: [
           Text(
-            isTr ? '${_currentResultName ?? ""}\'ın Yıldız Haritası' : '${_currentResultName ?? ""}\'s Natal Chart',
+            isTr ? '${_currentResultName ?? ""}\'ın Astro Portresi' : '${_currentResultName ?? ""}\'s Astro Portrait',
             style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold),
           ),
           const SizedBox(height: 12),
-          // 1. Dairesel CustomPainter Haritası
-          AspectRatio(
-            aspectRatio: 1,
-            child: GlassCard(
-              padding: EdgeInsets.zero,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 1500),
-                  builder: (context, value, child) {
-                    return CustomPaint(
-                      painter: NatalChartPainter(
-                        planetAngles: chart.planetAngles,
-                        risingAngle: chart.planetAngles['Yükselen'] ?? 0.0,
-                        animationValue: value,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ).animate().fade().scale(duration: 400.ms),
-          const SizedBox(height: 24),
 
           // 2. Önemli Burçlar Kartı
           Row(
@@ -547,49 +528,63 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
           ),
           const SizedBox(height: 24),
 
-          // 3. Gezegen Konumları Listesi
+          // 3. Elements and Modalities
+          if (chart.elements != null && chart.modalities != null) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                isTr ? 'Element & Nitelik Dağılımı' : 'Elements & Modalities',
+                style: AppTextStyles.h3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildElementsAndModalitiesCard(chart.elements!, chart.modalities!, isTr),
+            const SizedBox(height: 24),
+          ],
+
+          // 4. Aspects
+          if (chart.aspects != null && chart.aspects!['list'] != null && (chart.aspects!['list'] as List).isNotEmpty) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                isTr ? 'Açılar (Aspects)' : 'Aspects',
+                style: AppTextStyles.h3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildAspectsTable(chart.aspects!['list'] as List<dynamic>, isTr),
+            const SizedBox(height: 24),
+          ],
+
+          // 5. Gezegenler ve Evler (Planets & Houses Table)
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              isTr ? 'Gezegen Konumları ve Evler' : 'Planetary Positions & Houses',
+              isTr ? 'Gezegenler' : 'Planets',
               style: AppTextStyles.h3,
             ),
           ),
           const SizedBox(height: 12),
-          GlassCard(
-            child: ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: positions.length,
-              separatorBuilder: (context, index) => const Divider(height: 16),
-              itemBuilder: (context, index) {
-                final entry = positions[index];
-                final symbol = _getPlanetSymbol(entry.key);
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Text(symbol, style: const TextStyle(fontSize: 18, color: AppColors.primaryGold)),
-                        const SizedBox(width: 12),
-                        Text(
-                          entry.key,
-                          style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      entry.value,
-                      style: AppTextStyles.bodyMedium,
-                    ),
-                  ],
-                );
-              },
+          if (chart.planetDetails != null && chart.planetDetails!.isNotEmpty)
+            _buildPlanetsTable(chart.planetDetails!, isTr)
+          else
+            _buildLegacyPlanetPositions(positions),
+
+          const SizedBox(height: 24),
+          if (chart.houseDetails != null && chart.houseDetails!.isNotEmpty) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                isTr ? 'Evler' : 'Houses',
+                style: AppTextStyles.h3,
+              ),
             ),
-          ),
+            const SizedBox(height: 12),
+            _buildHousesTable(chart.houseDetails!, isTr),
+          ],
           const SizedBox(height: 32),
           GradientButton(
-            text: isTr ? 'Başka Bir Harita Hesapla 🔄' : 'Calculate Another Chart 🔄',
+            text: isTr ? 'Başka Bir Portre Hesapla 🔄' : 'Calculate Another Portrait 🔄',
             onTap: () {
               setState(() {
                 _result = null;
@@ -601,25 +596,113 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
               });
             },
           ),
-          const SizedBox(height: 24),
-          AdService.instance.getBannerAdWidget('partner_chart_banner', isPremium: ref.watch(userProvider)?.isPremium ?? false),
         ],
       ),
     );
   }
 
-  Widget _buildSignSummaryCard(String label, String icon, String signName) {
+  Widget _buildElementsAndModalitiesCard(Map<String, int> elements, Map<String, int> modalities, bool isTr) {
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildElementStat('🔥', isTr ? 'Ateş' : 'Fire', elements['Fire'] ?? 0),
+              _buildElementStat('🌍', isTr ? 'Toprak' : 'Earth', elements['Earth'] ?? 0),
+              _buildElementStat('💨', isTr ? 'Hava' : 'Air', elements['Air'] ?? 0),
+              _buildElementStat('💧', isTr ? 'Su' : 'Water', elements['Water'] ?? 0),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12.0),
+            child: Divider(color: Colors.white12),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildElementStat('⚡', isTr ? 'Öncü' : 'Cardinal', modalities['Cardinal'] ?? 0),
+              _buildElementStat('⚓', isTr ? 'Sabit' : 'Fixed', modalities['Fixed'] ?? 0),
+              _buildElementStat('🌊', isTr ? 'Değişken' : 'Mutable', modalities['Mutable'] ?? 0),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildElementStat(String emoji, String name, int count) {
+    return Column(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 20)),
+        const SizedBox(height: 4),
+        Text(name, style: AppTextStyles.caption),
+        const SizedBox(height: 2),
+        Text(count.toString(), style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold)),
+      ],
+    );
+  }
+
+  Widget _buildAspectsTable(List<dynamic> aspectsList, bool isTr) {
+    return GlassCard(
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: aspectsList.length,
+        separatorBuilder: (context, index) => const Divider(height: 8, color: Colors.white12),
+        itemBuilder: (context, index) {
+          final aspect = aspectsList[index] as Map<String, dynamic>;
+          final p1 = aspect['planet1'] as String;
+          final p2 = aspect['planet2'] as String;
+          final aspectName = aspect['aspect'] as String;
+          final orb = aspect['orb'] as double;
+          final isHard = aspect['isHard'] as bool;
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            child: Row(
+              children: [
+                Text(_getPlanetSymbol(p1), style: const TextStyle(fontSize: 16, color: AppColors.primaryGold)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '$p1 - $p2',
+                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                Text(
+                  aspectName,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isHard ? Colors.redAccent : Colors.lightBlueAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Orb: ${orb.toStringAsFixed(1)}°',
+                  style: AppTextStyles.caption.copyWith(color: Colors.white70),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSignSummaryCard(String title, String iconOrEmoji, String signName) {
     return Expanded(
       child: GlassCard(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         child: Column(
           children: [
-            Text(label, style: AppTextStyles.caption),
+            Text(title, style: AppTextStyles.caption),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(icon, style: const TextStyle(fontSize: 22)),
+                Text(iconOrEmoji, style: const TextStyle(fontSize: 22)),
                 const SizedBox(width: 8),
                 Text(
                   signName,
@@ -685,6 +768,364 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
       case 'Plüton': return '♇';
       default: return '✦';
     }
+  }
+
+  void _showPlanetInterpretationBottomSheet(String planet, String sign, String house, bool isTr) {
+    final user = ref.read(userProvider);
+    if (user == null) return;
+    final docName = _currentResultName!.toLowerCase().replaceAll(' ', '_');
+    final docPath = 'users/${user.uid}/partner_natal_charts/$docName';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return PlanetInterpretationSheet(
+          planet: planet,
+          sign: sign,
+          house: house,
+          isTr: isTr,
+          docPath: docPath,
+          initialInterpretations: _result?.interpretations,
+        );
+      },
+    );
+  }
+
+  Widget _buildPlanetsTable(Map<String, dynamic> planetDetails, bool isTr) {
+    final planetsList = [
+      'Güneş',
+      'Ay',
+      'Merkür',
+      'Venüs',
+      'Mars',
+      'Jüpiter',
+      'Satürn',
+      'Uranüs',
+      'Neptün',
+      'Plüton',
+      'Kuzey Düğümü',
+      'Lilith',
+      'Chiron',
+    ];
+
+    final Map<String, String> planetNameEn = {
+      'Güneş': 'Sun',
+      'Ay': 'Moon',
+      'Merkür': 'Mercury',
+      'Venüs': 'Venus',
+      'Mars': 'Mars',
+      'Jüpiter': 'Jupiter',
+      'Satürn': 'Saturn',
+      'Uranüs': 'Uranus',
+      'Neptün': 'Neptune',
+      'Plüton': 'Pluto',
+      'Kuzey Düğümü': 'North Node',
+      'Lilith': 'Lilith',
+      'Chiron': 'Chiron',
+    };
+
+    final Map<String, String> signNameEn = {
+      'Koç': 'Aries',
+      'Boğa': 'Taurus',
+      'İkizler': 'Gemini',
+      'Yengeç': 'Cancer',
+      'Aslan': 'Leo',
+      'Başak': 'Virgo',
+      'Terazi': 'Libra',
+      'Akrep': 'Scorpio',
+      'Yay': 'Sagittarius',
+      'Oğlak': 'Capricorn',
+      'Kova': 'Aquarius',
+      'Balık': 'Pisces',
+    };
+
+    String getDirection(String raw, bool isTr) {
+      final r = raw.toLowerCase();
+      if (r.contains('retro') || r.contains('retró')) {
+        return isTr ? 'Retro' : 'Retro';
+      }
+      return isTr ? 'Düz' : 'Direct';
+    }
+
+    final tableRows = <TableRow>[];
+
+    // Header row
+    tableRows.add(
+      TableRow(
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: AppColors.primaryGold.withValues(alpha: 0.3), width: 1.2)),
+        ),
+        children: [
+          _buildHeaderCell(isTr ? 'Gezegen' : 'Planet'),
+          _buildHeaderCell(isTr ? 'Burç' : 'Sign'),
+          _buildHeaderCell(isTr ? 'Derece' : 'Degree'),
+          _buildHeaderCell(isTr ? 'Ev' : 'House', alignment: Alignment.center),
+          _buildHeaderCell(isTr ? 'Yön' : 'Dir'),
+          _buildHeaderCell(isTr ? 'Yorum' : 'Info', alignment: Alignment.center),
+        ],
+      ),
+    );
+
+    for (final p in planetsList) {
+      final data = planetDetails[p];
+      if (data == null) continue;
+
+      final sign = data['sign'] ?? '';
+      final degree = data['degree'] ?? '';
+      final house = data['house']?.toString() ?? '';
+      final direction = data['direction'] ?? '';
+
+      final localizedPlanetName = isTr ? p : (planetNameEn[p] ?? p);
+      final localizedSignName = isTr ? sign : (signNameEn[sign] ?? sign);
+
+      tableRows.add(
+        TableRow(
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.05), width: 1)),
+          ),
+          children: [
+            // Gezegen Symbol + Name
+            _buildWidgetCell(
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_getPlanetSymbol(p), style: const TextStyle(fontSize: 16, color: AppColors.primaryGold)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      localizedPlanetName,
+                      style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Burç Name
+            _buildCell(localizedSignName),
+            // Derece
+            _buildCell(degree),
+            // Ev
+            _buildCell(house, alignment: Alignment.center),
+            // Yön
+            _buildCell(getDirection(direction, isTr)),
+            // Yorum lock
+            _buildWidgetCell(
+              InkWell(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _showPlanetInterpretationBottomSheet(p, localizedSignName, house, isTr);
+                },
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGold.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome, size: 12, color: AppColors.primaryGold),
+                        const SizedBox(width: 4),
+                        Text(
+                          isTr ? 'Yorum' : 'Read',
+                          style: const TextStyle(fontSize: 10, color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              alignment: Alignment.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GlassCard(
+      padding: const EdgeInsets.all(12),
+      child: Table(
+        columnWidths: const {
+          0: FlexColumnWidth(2.1),
+          1: FlexColumnWidth(1.7),
+          2: FlexColumnWidth(1.2),
+          3: FlexColumnWidth(0.8),
+          4: FlexColumnWidth(1.0),
+          5: FlexColumnWidth(2.2),
+        },
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: tableRows,
+      ),
+    );
+  }
+
+  Widget _buildHousesTable(Map<String, dynamic> houseDetails, bool isTr) {
+    return GlassCard(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: _buildHousesSubTable(1, 6, houseDetails, isTr)),
+          const SizedBox(width: 16),
+          Expanded(child: _buildHousesSubTable(7, 12, houseDetails, isTr)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHousesSubTable(int start, int end, Map<String, dynamic> houseDetails, bool isTr) {
+    final Map<String, String> signNameEn = {
+      'Koç': 'Aries',
+      'Boğa': 'Taurus',
+      'İkizler': 'Gemini',
+      'Yengeç': 'Cancer',
+      'Aslan': 'Leo',
+      'Başak': 'Virgo',
+      'Terazi': 'Libra',
+      'Akrep': 'Scorpio',
+      'Yay': 'Sagittarius',
+      'Oğlak': 'Capricorn',
+      'Kova': 'Aquarius',
+      'Balık': 'Pisces',
+    };
+
+    final tableRows = <TableRow>[];
+
+    // Header row
+    tableRows.add(
+      TableRow(
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: AppColors.primaryGold.withValues(alpha: 0.3), width: 1.2)),
+        ),
+        children: [
+          _buildHeaderCell(isTr ? 'Ev' : 'House'),
+          _buildHeaderCell(isTr ? 'Burç' : 'Sign'),
+          _buildHeaderCell(isTr ? 'Derece' : 'Degree'),
+        ],
+      ),
+    );
+
+    for (int i = start; i <= end; i++) {
+      final data = houseDetails[i.toString()];
+      if (data == null) continue;
+
+      final sign = data['sign'] ?? '';
+      final degree = data['degree'] ?? '';
+      final annotation = data['annotation'] ?? '';
+
+      final localizedSignName = isTr ? sign : (signNameEn[sign] ?? sign);
+
+      String houseLabel = i.toString();
+      if (annotation.toString().isNotEmpty) {
+        houseLabel += ' ($annotation)';
+      }
+
+      tableRows.add(
+        TableRow(
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.05), width: 1)),
+          ),
+          children: [
+            _buildCell(houseLabel, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+            // Burç Name
+            _buildCell(localizedSignName),
+            _buildCell(degree),
+          ],
+        ),
+      );
+    }
+
+    return Table(
+      columnWidths: const {
+        0: FlexColumnWidth(1.6),
+        1: FlexColumnWidth(2.0),
+        2: FlexColumnWidth(1.6),
+      },
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      children: tableRows,
+    );
+  }
+
+  Widget _buildLegacyPlanetPositions(List<MapEntry<String, String>> positions) {
+    return GlassCard(
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: positions.length,
+        separatorBuilder: (context, index) => const Divider(height: 16),
+        itemBuilder: (context, index) {
+          final entry = positions[index];
+          final symbol = _getPlanetSymbol(entry.key);
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Text(symbol, style: const TextStyle(fontSize: 18, color: AppColors.primaryGold)),
+                  const SizedBox(width: 12),
+                  Text(
+                    entry.key,
+                    style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              Text(
+                entry.value,
+                style: AppTextStyles.bodyMedium,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeaderCell(String text, {Alignment alignment = Alignment.centerLeft}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 2.0),
+      child: Align(
+        alignment: alignment,
+        child: Text(
+          text,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.primaryGold,
+            fontWeight: FontWeight.bold,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCell(String text, {Alignment alignment = Alignment.centerLeft, TextStyle? style}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 2.0),
+      child: Align(
+        alignment: alignment,
+        child: Text(
+          text,
+          style: style ?? AppTextStyles.bodyMedium,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWidgetCell(Widget child, {Alignment alignment = Alignment.centerLeft}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 2.0),
+      child: Align(
+        alignment: alignment,
+        child: child,
+      ),
+    );
   }
 
   Widget _buildHistoryList(bool isTr) {

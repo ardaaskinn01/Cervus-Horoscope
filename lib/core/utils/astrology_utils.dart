@@ -168,4 +168,106 @@ class AstrologyUtils {
     final offset = getTurkeyOffsetInHours(localEstimated);
     return utcDateTime.add(Duration(hours: offset));
   }
+
+  /// Calculate Element and Modality counts from planet signs.
+  static Map<String, Map<String, int>> calculateElementsAndModalities(Map<String, dynamic> planetDetails) {
+    final elements = {'Fire': 0, 'Earth': 0, 'Air': 0, 'Water': 0};
+    final modalities = {'Cardinal': 0, 'Fixed': 0, 'Mutable': 0};
+
+    for (final planetData in planetDetails.values) {
+      final sign = (planetData['sign']?.toString() ?? '').toLowerCase();
+      
+      if (['koç', 'aries', 'aslan', 'leo', 'yay', 'sagittarius'].contains(sign)) {
+        elements['Fire'] = (elements['Fire'] ?? 0) + 1;
+      } else if (['boğa', 'taurus', 'başak', 'virgo', 'oğlak', 'capricorn'].contains(sign)) {
+        elements['Earth'] = (elements['Earth'] ?? 0) + 1;
+      } else if (['ikizler', 'gemini', 'terazi', 'libra', 'kova', 'aquarius'].contains(sign)) {
+        elements['Air'] = (elements['Air'] ?? 0) + 1;
+      } else if (['yengeç', 'cancer', 'akrep', 'scorpio', 'balık', 'pisces'].contains(sign)) {
+        elements['Water'] = (elements['Water'] ?? 0) + 1;
+      }
+
+      if (['koç', 'aries', 'yengeç', 'cancer', 'terazi', 'libra', 'oğlak', 'capricorn'].contains(sign)) {
+        modalities['Cardinal'] = (modalities['Cardinal'] ?? 0) + 1;
+      } else if (['boğa', 'taurus', 'aslan', 'leo', 'akrep', 'scorpio', 'kova', 'aquarius'].contains(sign)) {
+        modalities['Fixed'] = (modalities['Fixed'] ?? 0) + 1;
+      } else if (['ikizler', 'gemini', 'başak', 'virgo', 'yay', 'sagittarius', 'balık', 'pisces'].contains(sign)) {
+        modalities['Mutable'] = (modalities['Mutable'] ?? 0) + 1;
+      }
+    }
+
+    return {
+      'elements': elements,
+      'modalities': modalities,
+    };
+  }
+
+  /// Calculate major planetary aspects based on planet angles.
+  static Map<String, dynamic> calculateAspects(Map<String, double> planetAngles) {
+    final List<Map<String, dynamic>> aspectList = [];
+    final List<String> planets = [
+      'Güneş', 'Ay', 'Merkür', 'Venüs', 'Mars', 'Jüpiter', 'Satürn', 'Uranüs', 'Neptün', 'Plüton'
+    ];
+
+    final Map<int, String> aspectNames = {
+      0: 'Kavuşum (Conjunction)',
+      60: 'Sekstil (Sextile)',
+      90: 'Kare (Square)',
+      120: 'Üçgen (Trine)',
+      180: 'Karşıt (Opposition)',
+    };
+
+    final Map<int, double> aspectOrbs = {
+      0: 8.0,
+      60: 4.0,
+      90: 8.0,
+      120: 8.0,
+      180: 8.0,
+    };
+
+    final Map<int, bool> aspectHardness = {
+      0: false, // Conjunction is neutral/variable but let's call it soft for drawing, or we can handle it later
+      60: false,
+      90: true,
+      120: false,
+      180: true,
+    };
+
+    for (int i = 0; i < planets.length; i++) {
+      for (int j = i + 1; j < planets.length; j++) {
+        final p1 = planets[i];
+        final p2 = planets[j];
+        final angle1 = planetAngles[p1];
+        final angle2 = planetAngles[p2];
+
+        if (angle1 == null || angle2 == null) continue;
+
+        double diff = (angle1 - angle2).abs();
+        if (diff > 180) {
+          diff = 360 - diff;
+        }
+
+        for (final aspect in aspectNames.keys) {
+          final target = aspect.toDouble();
+          final orb = aspectOrbs[aspect]!;
+          if ((diff - target).abs() <= orb) {
+            aspectList.add({
+              'planet1': p1,
+              'planet2': p2,
+              'aspect': aspectNames[aspect],
+              'angle': aspect,
+              'orb': (diff - target).abs(),
+              'isHard': aspectHardness[aspect],
+            });
+            break;
+          }
+        }
+      }
+    }
+
+    // Sort by tightest orb
+    aspectList.sort((a, b) => (a['orb'] as double).compareTo(b['orb'] as double));
+
+    return {'list': aspectList};
+  }
 }

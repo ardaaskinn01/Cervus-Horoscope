@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:horoscope/core/constants/app_colors.dart';
 import 'package:horoscope/core/constants/app_text_styles.dart';
 import 'package:horoscope/core/models/natal_chart_model.dart';
@@ -11,8 +11,6 @@ import 'package:horoscope/core/providers/language_provider.dart';
 import 'package:horoscope/core/services/ai_service.dart';
 import 'package:horoscope/shared/widgets/glass_card.dart';
 import 'package:horoscope/shared/widgets/gradient_button.dart';
-import 'package:horoscope/shared/widgets/custom_toast.dart';
-import 'package:horoscope/core/services/ad_service.dart';
 
 class NatalChartScreen extends ConsumerStatefulWidget {
   const NatalChartScreen({super.key});
@@ -78,7 +76,7 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text(isTr ? 'Doğum Haritam' : 'Natal Chart'),
+        title: Text(isTr ? 'Astro Portrem' : 'Astro Portrait'),
       ),
       body: _isLoading
           ? const Center(
@@ -116,8 +114,8 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
               const SizedBox(height: 12),
               Text(
                 isTr
-                    ? 'Doğum haritanızı çıkarabilmemiz için doğum tarihi, saati ve doğum yeri bilgileriniz gereklidir. Lütfen Ayarlar sekmesine gidip bu bilgileri doldurun.'
-                    : 'We need your birth date, time, and place to calculate your natal chart. Please update them in the Settings tab.',
+                    ? 'Astro portrenizi çıkarabilmemiz için doğum tarihi, saati ve doğum yeri bilgileriniz gereklidir. Lütfen Ayarlar sekmesine gidip bu bilgileri doldurun.'
+                    : 'We need your birth date, time, and place to calculate your Astro Portrait. Please update them in the Settings tab.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium,
               ),
@@ -139,7 +137,7 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
               const Text('✨', style: TextStyle(fontSize: 48)),
               const SizedBox(height: 16),
               Text(
-                isTr ? 'Yıldız Haritanız Çıkarılmaya Hazır' : 'Chart Ready to Calculate',
+                isTr ? 'Astro Portreniz Çıkarılmaya Hazır' : 'Portrait Ready to Calculate',
                 style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold),
               ),
               const SizedBox(height: 12),
@@ -152,7 +150,7 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
               ),
               const SizedBox(height: 24),
               GradientButton(
-                text: isTr ? 'Haritamı Çıkar 🗺️' : 'Calculate Chart 🗺️',
+                text: isTr ? 'Portremi Çıkar 🗺️' : 'Calculate Portrait 🗺️',
                 onTap: _checkAndLoadNatalChart,
               ),
             ],
@@ -166,7 +164,6 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
   Widget _buildChartView(bool isTr) {
     final chart = _natalChart!;
     final List<MapEntry<String, String>> positions = chart.planetPositions.entries.toList();
-    final user = ref.watch(userProvider);
 
     return RefreshIndicator(
       onRefresh: () => _checkAndLoadNatalChart(forceRecalculate: true),
@@ -174,34 +171,10 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
       backgroundColor: AppColors.cardSurface,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 90.0),
+        padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 160.0),
         child: Column(
           children: [
-            // 1. Dairesel CustomPainter Haritası
-            AspectRatio(
-              aspectRatio: 1,
-              child: GlassCard(
-                padding: EdgeInsets.zero,
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween<double>(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 1500),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, value, child) {
-                      return CustomPaint(
-                        painter: NatalChartPainter(
-                          planetAngles: chart.planetAngles,
-                          risingAngle: chart.planetAngles['Yükselen'] ?? 0.0,
-                          animationValue: value,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ).animate().fade().scale(duration: 400.ms),
-            const SizedBox(height: 24),
+
 
             // 2. Önemli Burçlar Kartı
             Row(
@@ -212,11 +185,7 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                _buildSignSummaryCard(isTr ? 'Yükselen Burç' : 'Rising Sign (ASC)', '🌅', _getZodiacTrName(chart.risingSign, isTr)),
-              ],
-            ),
+            _buildRisingSignCard(chart.risingSign, isTr),
             const SizedBox(height: 24),
 
             // 3. Gezegen Konumları / Tablo
@@ -234,6 +203,32 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
               _buildLegacyPlanetPositions(positions),
 
             const SizedBox(height: 24),
+            if (chart.elements != null && chart.modalities != null) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  isTr ? 'Element & Nitelik Dağılımı' : 'Elements & Modalities',
+                  style: AppTextStyles.h3,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildElementsAndModalitiesCard(chart.elements!, chart.modalities!, isTr),
+            ],
+
+            const SizedBox(height: 24),
+            if (chart.aspects != null && chart.aspects!['list'] != null && (chart.aspects!['list'] as List).isNotEmpty) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  isTr ? 'Açılar (Aspects)' : 'Aspects',
+                  style: AppTextStyles.h3,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildAspectsTable(chart.aspects!['list'] as List<dynamic>, isTr),
+            ],
+
+            const SizedBox(height: 24),
             if (chart.houseDetails != null && chart.houseDetails!.isNotEmpty) ...[
               Align(
                 alignment: Alignment.centerLeft,
@@ -245,8 +240,6 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
               const SizedBox(height: 12),
               _buildHousesTable(chart.houseDetails!, isTr),
             ],
-            const SizedBox(height: 24),
-            AdService.instance.getBannerAdWidget('chart_banner', isPremium: user?.isPremium ?? false),
           ],
         ),
       ),
@@ -376,31 +369,29 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
               InkWell(
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  CustomToast.show(
-                    context,
-                    isTr
-                        ? 'Bu özellik Premium abonelerimize özeldir! 🚀'
-                        : 'This feature is exclusive to Premium subscribers! 🚀',
-                  );
+                  _showPlanetInterpretationBottomSheet(p, localizedSignName, house, isTr);
                 },
                 borderRadius: BorderRadius.circular(6),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: AppColors.primaryGold.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.lock_outline_rounded, size: 10, color: Colors.white.withValues(alpha: 0.5)),
-                      const SizedBox(width: 2),
-                      Text(
-                        isTr ? 'Yorum' : 'Unlock',
-                        style: const TextStyle(fontSize: 9, color: Colors.white70),
-                      ),
-                    ],
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome, size: 12, color: AppColors.primaryGold),
+                        const SizedBox(width: 4),
+                        Text(
+                          isTr ? 'Yorum' : 'Read',
+                          style: const TextStyle(fontSize: 10, color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -415,12 +406,12 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
       padding: const EdgeInsets.all(12),
       child: Table(
         columnWidths: const {
-          0: FlexColumnWidth(2.3),
-          1: FlexColumnWidth(1.9),
-          2: FlexColumnWidth(1.5),
-          3: FlexColumnWidth(0.9),
-          4: FlexColumnWidth(1.2),
-          5: FlexColumnWidth(1.7),
+          0: FlexColumnWidth(2.1),
+          1: FlexColumnWidth(1.7),
+          2: FlexColumnWidth(1.2),
+          3: FlexColumnWidth(0.8),
+          4: FlexColumnWidth(1.0),
+          5: FlexColumnWidth(2.2),
         },
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
         children: tableRows,
@@ -428,21 +419,68 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
     );
   }
 
-  Widget _buildHousesTable(Map<String, dynamic> houseDetails, bool isTr) {
+  Widget _buildRisingSignCard(String risingSign, bool isTr) {
     return GlassCard(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: _buildHousesSubTable(1, 6, houseDetails, isTr)),
-          const SizedBox(width: 16),
-          Expanded(child: _buildHousesSubTable(7, 12, houseDetails, isTr)),
+          const Text('🌅', style: TextStyle(fontSize: 26)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isTr ? 'Yükselen Burç (ASC)' : 'Rising Sign (ASC)',
+                  style: AppTextStyles.caption,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _getZodiacTrName(risingSign, isTr),
+                  style: AppTextStyles.label.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _showRisingSignInterpretationSheet(risingSign, isTr);
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.35)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.auto_awesome, size: 13, color: AppColors.primaryGold),
+                  const SizedBox(width: 5),
+                  Text(
+                    isTr ? 'Yorum' : 'Read',
+                    style: const TextStyle(fontSize: 11, color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHousesSubTable(int start, int end, Map<String, dynamic> houseDetails, bool isTr) {
+  Widget _buildHousesTable(Map<String, dynamic> houseDetails, bool isTr) {
+    return GlassCard(
+      padding: const EdgeInsets.all(12),
+      child: _buildHousesFullTable(houseDetails, isTr),
+    );
+  }
+
+  Widget _buildHousesFullTable(Map<String, dynamic> houseDetails, bool isTr) {
     final Map<String, String> signNameEn = {
       'Koç': 'Aries',
       'Boğa': 'Taurus',
@@ -469,12 +507,13 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
         children: [
           _buildHeaderCell(isTr ? 'Ev' : 'House'),
           _buildHeaderCell(isTr ? 'Burç' : 'Sign'),
-          _buildHeaderCell(isTr ? 'Derece' : 'Degree'),
+          _buildHeaderCell(isTr ? 'Derece' : 'Deg.'),
+          _buildHeaderCell(isTr ? 'Yorum' : 'Info', alignment: Alignment.center),
         ],
       ),
     );
 
-    for (int i = start; i <= end; i++) {
+    for (int i = 1; i <= 12; i++) {
       final data = houseDetails[i.toString()];
       if (data == null) continue;
 
@@ -486,7 +525,7 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
 
       String houseLabel = i.toString();
       if (annotation.toString().isNotEmpty) {
-        houseLabel += ' ($annotation)';
+        houseLabel += '\n($annotation)';
       }
 
       tableRows.add(
@@ -496,9 +535,40 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
           ),
           children: [
             _buildCell(houseLabel, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
-            // Burç Name
             _buildCell(localizedSignName),
             _buildCell(degree),
+            _buildWidgetCell(
+              InkWell(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _showHouseInterpretationBottomSheet(i.toString(), localizedSignName, sign, isTr);
+                },
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGold.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome, size: 12, color: AppColors.primaryGold),
+                        const SizedBox(width: 4),
+                        Text(
+                          isTr ? 'Yorum' : 'Read',
+                          style: const TextStyle(fontSize: 10, color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              alignment: Alignment.center,
+            ),
           ],
         ),
       );
@@ -506,9 +576,10 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
 
     return Table(
       columnWidths: const {
-        0: FlexColumnWidth(1.6),
-        1: FlexColumnWidth(2.0),
-        2: FlexColumnWidth(1.6),
+        0: FlexColumnWidth(1.4),
+        1: FlexColumnWidth(1.8),
+        2: FlexColumnWidth(1.4),
+        3: FlexColumnWidth(1.8),
       },
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
       children: tableRows,
@@ -652,6 +723,160 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
     }
   }
 
+  Widget _buildElementsAndModalitiesCard(Map<String, int> elements, Map<String, int> modalities, bool isTr) {
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildElementStat('🔥', isTr ? 'Ateş' : 'Fire', elements['Fire'] ?? 0),
+              _buildElementStat('🌍', isTr ? 'Toprak' : 'Earth', elements['Earth'] ?? 0),
+              _buildElementStat('💨', isTr ? 'Hava' : 'Air', elements['Air'] ?? 0),
+              _buildElementStat('💧', isTr ? 'Su' : 'Water', elements['Water'] ?? 0),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12.0),
+            child: Divider(color: Colors.white12),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildElementStat('⚡', isTr ? 'Öncü' : 'Cardinal', modalities['Cardinal'] ?? 0),
+              _buildElementStat('⚓', isTr ? 'Sabit' : 'Fixed', modalities['Fixed'] ?? 0),
+              _buildElementStat('🌊', isTr ? 'Değişken' : 'Mutable', modalities['Mutable'] ?? 0),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildElementStat(String emoji, String name, int count) {
+    return Column(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 20)),
+        const SizedBox(height: 4),
+        Text(name, style: AppTextStyles.caption),
+        const SizedBox(height: 2),
+        Text(count.toString(), style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold)),
+      ],
+    );
+  }
+
+  Widget _buildAspectsTable(List<dynamic> aspectsList, bool isTr) {
+    return GlassCard(
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: aspectsList.length,
+        separatorBuilder: (context, index) => const Divider(height: 8, color: Colors.white12),
+        itemBuilder: (context, index) {
+          final aspect = aspectsList[index] as Map<String, dynamic>;
+          final p1 = aspect['planet1'] as String;
+          final p2 = aspect['planet2'] as String;
+          final aspectName = aspect['aspect'] as String;
+          final orb = aspect['orb'] as double;
+          final isHard = aspect['isHard'] as bool;
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            child: Row(
+              children: [
+                Text(_getPlanetSymbol(p1), style: const TextStyle(fontSize: 16, color: AppColors.primaryGold)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '$p1 - $p2',
+                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                Text(
+                  aspectName,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isHard ? Colors.redAccent : Colors.lightBlueAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Orb: ${orb.toStringAsFixed(1)}°',
+                  style: AppTextStyles.caption.copyWith(color: Colors.white70),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showPlanetInterpretationBottomSheet(String planet, String sign, String house, bool isTr) {
+    final user = ref.read(userProvider);
+    if (user == null) return;
+    final docPath = 'users/${user.uid}/natal_chart/data';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return PlanetInterpretationSheet(
+          planet: planet,
+          sign: sign,
+          house: house,
+          isTr: isTr,
+          docPath: docPath,
+          initialInterpretations: _natalChart?.interpretations,
+        );
+      },
+    );
+  }
+
+  void _showRisingSignInterpretationSheet(String risingSign, bool isTr) {
+    final user = ref.read(userProvider);
+    if (user == null) return;
+    final docPath = 'users/${user.uid}/natal_chart/data';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return RisingSignInterpretationSheet(
+          risingSign: risingSign,
+          isTr: isTr,
+          docPath: docPath,
+          initialInterpretations: _natalChart?.interpretations,
+        );
+      },
+    );
+  }
+
+  void _showHouseInterpretationBottomSheet(String houseNumber, String localizedSign, String rawSign, bool isTr) {
+    final user = ref.read(userProvider);
+    if (user == null) return;
+    final docPath = 'users/${user.uid}/natal_chart/data';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return HouseInterpretationSheet(
+          houseNumber: houseNumber,
+          localizedSign: localizedSign,
+          rawSign: rawSign,
+          isTr: isTr,
+          docPath: docPath,
+          initialInterpretations: _natalChart?.interpretations,
+        );
+      },
+    );
+  }
+
   String _getPlanetSymbol(String name) {
     switch (name) {
       case 'Güneş': return '☉';
@@ -675,11 +900,13 @@ class NatalChartPainter extends CustomPainter {
   final Map<String, double> planetAngles;
   final double risingAngle; // Yükselen derecesi sol kenara (180°) sabitlenecek
   final double animationValue; // Çizim animasyonu değeri (0.0 - 1.0)
+  final List<dynamic>? aspectsList;
 
   NatalChartPainter({
     required this.planetAngles,
     required this.risingAngle,
     required this.animationValue,
+    this.aspectsList,
   });
 
   @override
@@ -813,6 +1040,48 @@ class NatalChartPainter extends CustomPainter {
         pt.paint(canvas, Offset(px - pt.width / 2, py - pt.height / 2 - 8));
       }
     });
+
+    // Draw aspects if available
+    if (aspectsList != null && animationValue > 0.8) {
+      final aspectOpacity = ((animationValue - 0.8) * 5).clamp(0.0, 1.0);
+      for (final aspect in aspectsList!) {
+        final p1 = aspect['planet1'] as String;
+        final p2 = aspect['planet2'] as String;
+        final isHard = aspect['isHard'] as bool;
+        final aType = aspect['angle'] as int;
+
+        final a1 = planetAngles[p1];
+        final a2 = planetAngles[p2];
+        if (a1 == null || a2 == null) continue;
+
+        final rad1 = a1 * pi / 180.0 + rotationOffset;
+        final rad2 = a2 * pi / 180.0 + rotationOffset;
+        final innerRadius = radius * 0.45;
+
+        final x1 = center.dx + innerRadius * cos(rad1);
+        final y1 = center.dy + innerRadius * sin(rad1);
+        final x2 = center.dx + innerRadius * cos(rad2);
+        final y2 = center.dy + innerRadius * sin(rad2);
+
+        Color aspectColor;
+        if (aType == 120) {
+          aspectColor = Colors.lightBlueAccent; // Trine
+        } else if (aType == 60) {
+          aspectColor = Colors.greenAccent; // Sextile
+        } else if (isHard) {
+          aspectColor = Colors.redAccent; // Square, Opposition
+        } else {
+          aspectColor = Colors.white54; // Conjunction
+        }
+
+        final aspectPaint = Paint()
+          ..color = aspectColor.withValues(alpha: aspectOpacity * 0.4)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0;
+
+        canvas.drawLine(Offset(x1, y1), Offset(x2, y2), aspectPaint);
+      }
+    }
   }
 
   void _drawLabel(Canvas canvas, String text, Offset offset, double fontSize, double opacity) {
@@ -851,5 +1120,414 @@ class NatalChartPainter extends CustomPainter {
     return oldDelegate.planetAngles != planetAngles || 
         oldDelegate.risingAngle != risingAngle ||
         oldDelegate.animationValue != animationValue;
+  }
+}
+
+// ─── Rising Sign Interpretation Sheet ───────────────────────────────────────
+class RisingSignInterpretationSheet extends StatefulWidget {
+  final String risingSign;
+  final bool isTr;
+  final String docPath;
+  final Map<String, dynamic>? initialInterpretations;
+
+  const RisingSignInterpretationSheet({
+    super.key,
+    required this.risingSign,
+    required this.isTr,
+    required this.docPath,
+    this.initialInterpretations,
+  });
+
+  @override
+  State<RisingSignInterpretationSheet> createState() => _RisingSignInterpretationSheetState();
+}
+
+class _RisingSignInterpretationSheetState extends State<RisingSignInterpretationSheet> {
+  bool _isLoading = true;
+  String? _interpretation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchInterpretation();
+  }
+
+  Future<void> _fetchInterpretation() async {
+    final langCode = widget.isTr ? 'tr' : 'en';
+    final cacheKey = 'rising_${widget.risingSign}';
+
+    // 1. Önce lokal önbelleği kontrol et
+    final cachedText = widget.initialInterpretations?[langCode]?[cacheKey];
+    if (cachedText != null && cachedText.toString().isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _interpretation = cachedText.toString();
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
+    // 2. Gemini'dan üret
+    final result = await AiService().generateRisingSignInterpretation(
+      risingSign: widget.risingSign,
+      languageCode: langCode,
+    );
+
+    if (result != null && result.isNotEmpty) {
+      // 3. Firestore'a kaydet
+      try {
+        final docRef = FirebaseFirestore.instance.doc(widget.docPath);
+        await docRef.update({
+          'interpretations.$langCode.$cacheKey': result,
+        });
+        if (widget.initialInterpretations != null) {
+          widget.initialInterpretations![langCode] ??= <String, dynamic>{};
+          widget.initialInterpretations![langCode][cacheKey] = result;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Rising sign yorumu kaydedilemedi: $e');
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _interpretation = result;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  widget.isTr
+                      ? '🌅 Yükselen Burç Yorumu'
+                      : '🌅 Rising Sign Interpretation',
+                  style: AppTextStyles.h2.copyWith(color: AppColors.primaryGold),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white70),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          Text(
+            widget.isTr
+                ? 'ASC · ${widget.risingSign}'
+                : 'ASC · ${widget.risingSign}',
+            style: AppTextStyles.bodyMedium.copyWith(color: Colors.white70),
+          ),
+          const SizedBox(height: 24),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator(color: AppColors.primaryGold))
+          else if (_interpretation == null)
+            Center(
+              child: Text(
+                widget.isTr ? 'Yorum yüklenemedi.' : 'Failed to load interpretation.',
+                style: AppTextStyles.bodyMedium.copyWith(color: Colors.redAccent),
+              ),
+            )
+          else
+            Flexible(
+              child: SingleChildScrollView(
+                child: Text(_interpretation!, style: AppTextStyles.bodyLarge.copyWith(height: 1.6)),
+              ),
+            ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── House Interpretation Sheet ──────────────────────────────────────────────
+class HouseInterpretationSheet extends StatefulWidget {
+  final String houseNumber;
+  final String localizedSign;
+  final String rawSign;
+  final bool isTr;
+  final String docPath;
+  final Map<String, dynamic>? initialInterpretations;
+
+  const HouseInterpretationSheet({
+    super.key,
+    required this.houseNumber,
+    required this.localizedSign,
+    required this.rawSign,
+    required this.isTr,
+    required this.docPath,
+    this.initialInterpretations,
+  });
+
+  @override
+  State<HouseInterpretationSheet> createState() => _HouseInterpretationSheetState();
+}
+
+class _HouseInterpretationSheetState extends State<HouseInterpretationSheet> {
+  bool _isLoading = true;
+  String? _interpretation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchInterpretation();
+  }
+
+  Future<void> _fetchInterpretation() async {
+    final langCode = widget.isTr ? 'tr' : 'en';
+    final cacheKey = 'house_${widget.houseNumber}';
+
+    // 1. Lokal önbellek
+    final cachedText = widget.initialInterpretations?[langCode]?[cacheKey];
+    if (cachedText != null && cachedText.toString().isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _interpretation = cachedText.toString();
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
+    // 2. Gemini'dan üret
+    final result = await AiService().generateHouseInterpretation(
+      houseNumber: widget.houseNumber,
+      sign: widget.rawSign,
+      languageCode: langCode,
+    );
+
+    if (result != null && result.isNotEmpty) {
+      try {
+        final docRef = FirebaseFirestore.instance.doc(widget.docPath);
+        await docRef.update({
+          'interpretations.$langCode.$cacheKey': result,
+        });
+        if (widget.initialInterpretations != null) {
+          widget.initialInterpretations![langCode] ??= <String, dynamic>{};
+          widget.initialInterpretations![langCode][cacheKey] = result;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Ev yorumu kaydedilemedi: $e');
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _interpretation = result;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  widget.isTr
+                      ? '🏠 ${widget.houseNumber}. Ev Yorumu'
+                      : '🏠 House ${widget.houseNumber} Interpretation',
+                  style: AppTextStyles.h2.copyWith(color: AppColors.primaryGold),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white70),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          Text(
+            widget.localizedSign,
+            style: AppTextStyles.bodyMedium.copyWith(color: Colors.white70),
+          ),
+          const SizedBox(height: 24),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator(color: AppColors.primaryGold))
+          else if (_interpretation == null)
+            Center(
+              child: Text(
+                widget.isTr ? 'Yorum yüklenemedi.' : 'Failed to load interpretation.',
+                style: AppTextStyles.bodyMedium.copyWith(color: Colors.redAccent),
+              ),
+            )
+          else
+            Flexible(
+              child: SingleChildScrollView(
+                child: Text(_interpretation!, style: AppTextStyles.bodyLarge.copyWith(height: 1.6)),
+              ),
+            ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class PlanetInterpretationSheet extends StatefulWidget {
+  final String planet;
+  final String sign;
+  final String house;
+  final bool isTr;
+  final String docPath;
+  final Map<String, dynamic>? initialInterpretations;
+
+  const PlanetInterpretationSheet({
+    super.key,
+    required this.planet,
+    required this.sign,
+    required this.house,
+    required this.isTr,
+    required this.docPath,
+    this.initialInterpretations,
+  });
+
+  @override
+  State<PlanetInterpretationSheet> createState() => PlanetInterpretationSheetState();
+}
+
+class PlanetInterpretationSheetState extends State<PlanetInterpretationSheet> {
+  bool _isLoading = true;
+  String? _interpretation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchInterpretation();
+  }
+
+  Future<void> _fetchInterpretation() async {
+    final langCode = widget.isTr ? 'tr' : 'en';
+    
+    // 1. Önce lokal/hafızadaki önbelleği kontrol et
+    final cachedText = widget.initialInterpretations?[langCode]?[widget.planet];
+    if (cachedText != null && cachedText.toString().isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _interpretation = cachedText.toString();
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
+    // 2. Yoksa Gemini'dan üret
+    final result = await AiService().generatePlanetInterpretation(
+      planet: widget.planet,
+      sign: widget.sign,
+      house: widget.house,
+      languageCode: langCode,
+    );
+
+    if (result != null && result.isNotEmpty) {
+      // 3. Firestore'a kaydet (Astro Portre belgesine yaz)
+      try {
+        final docRef = FirebaseFirestore.instance.doc(widget.docPath);
+        await docRef.update({
+          "interpretations.$langCode.${widget.planet}": result,
+        });
+
+        // Lokal hafızadaki nesneyi de güncelle (aynı oturumda tekrar tıklanırsa API'ye gitmesin)
+        if (widget.initialInterpretations != null) {
+          if (widget.initialInterpretations![langCode] == null) {
+            widget.initialInterpretations![langCode] = <String, dynamic>{};
+          }
+          widget.initialInterpretations![langCode][widget.planet] = result;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Planet yorumu Firestore kaydetme hatası: $e');
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _interpretation = result;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${widget.planet} ${widget.isTr ? 'Yorumu' : 'Interpretation'}',
+                style: AppTextStyles.h2.copyWith(color: AppColors.primaryGold),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white70),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${widget.sign} • ${widget.house}. ${widget.isTr ? 'Ev' : 'House'}',
+            style: AppTextStyles.bodyMedium.copyWith(color: Colors.white70),
+          ),
+          const SizedBox(height: 24),
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGold),
+            )
+          else if (_interpretation == null)
+            Center(
+              child: Text(
+                widget.isTr ? 'Yorum yüklenemedi. Lütfen tekrar deneyin.' : 'Failed to load interpretation. Please try again.',
+                style: AppTextStyles.bodyMedium.copyWith(color: Colors.redAccent),
+              ),
+            )
+          else
+            Flexible(
+              child: SingleChildScrollView(
+                child: Text(
+                  _interpretation!,
+                  style: AppTextStyles.bodyLarge.copyWith(height: 1.6),
+                ),
+              ),
+            ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
   }
 }

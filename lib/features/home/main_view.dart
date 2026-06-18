@@ -10,6 +10,8 @@ import 'package:horoscope/features/who_am_i/who_am_i_screen.dart';
 import 'package:horoscope/features/settings/settings_screen.dart';
 import 'package:horoscope/shared/widgets/glass_card.dart';
 import 'package:horoscope/shared/widgets/star_background.dart';
+import 'package:horoscope/core/services/ad_service.dart';
+import 'package:horoscope/core/providers/user_provider.dart';
 
 class MainView extends ConsumerStatefulWidget {
   const MainView({super.key});
@@ -27,9 +29,26 @@ class _MainViewState extends ConsumerState<MainView> {
     SettingsScreen(),
   ];
 
+  String _getPlacementForIndex(int index) {
+    switch (index) {
+      case 0:
+        return 'home_banner';
+      case 1:
+        return 'chart_banner';
+      case 2:
+        return 'tools_banner';
+      case 3:
+        return 'who_am_i_banner';
+      default:
+        return 'home_banner';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
+    final user = ref.watch(userProvider);
+    final isPremium = user?.isPremium ?? false;
 
     return Scaffold(
       extendBody: true, // Alt barın arkasının görünmesi (cam efekti) için
@@ -39,7 +58,16 @@ class _MainViewState extends ConsumerState<MainView> {
           children: _screens,
         ),
       ),
-      bottomNavigationBar: _buildFloatingBottomBar(currentIndex),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AdService.instance.getBannerAdWidget(
+            _getPlacementForIndex(currentIndex),
+            isPremium: isPremium,
+          ),
+          _buildFloatingBottomBar(currentIndex),
+        ],
+      ),
     );
   }
 

@@ -15,7 +15,6 @@ import 'package:horoscope/core/services/ai_service.dart';
 import 'package:horoscope/shared/widgets/glass_card.dart';
 import 'package:horoscope/shared/widgets/score_bar.dart';
 import 'package:horoscope/shared/widgets/zodiac_icon.dart';
-import 'package:horoscope/core/services/ad_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -36,12 +35,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // Hızlı Erişim Butonları Eşleştirmesi (Yalnızca Hesaplama Araçları)
   final List<Map<String, dynamic>> _quickActions = [
-    {'icon': Icons.map_rounded, 'title': 'Doğum Haritası', 'titleEn': 'Natal Chart', 'route': 1},
+    {'icon': Icons.map_rounded, 'title': 'Astro Portre', 'titleEn': 'Astro Portrait', 'route': 1},
     {'icon': Icons.favorite_rounded, 'title': 'Aşk Uyumu', 'titleEn': 'Love Compatibility', 'route': 'love'},
     {'icon': Icons.people_rounded, 'title': 'Arkadaşlık Uyumu', 'titleEn': 'Friend Compatibility', 'route': 'friend'},
     {'icon': Icons.pin_rounded, 'title': 'Numeroloji', 'titleEn': 'Numerology', 'route': 'numerology'},
     {'icon': Icons.auto_awesome_rounded, 'title': 'Kozmik Kâhin', 'titleEn': 'Cosmic Oracle', 'route': 'cosmic_oracle'},
-    {'icon': Icons.stars_rounded, 'title': 'Başkasının Haritası', 'titleEn': 'Partner\'s Chart', 'route': 'partner_chart'},
+    {'icon': Icons.stars_rounded, 'title': 'Başkasının Portresi', 'titleEn': 'Partner\'s Portrait', 'route': 'partner_chart'},
   ];
 
   @override
@@ -197,7 +196,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         backgroundColor: AppColors.cardSurface,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 90.0), // bottom nav boşluğu
+          padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 160.0), // bottom nav boşluğu
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -332,8 +331,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ],
               ).animate().fade(delay: 350.ms, duration: 400.ms).slideY(begin: 0.05, duration: 400.ms),
-              const SizedBox(height: 24),
-              AdService.instance.getBannerAdWidget('home_banner', isPremium: user?.isPremium ?? false),
             ],
           ),
         ),

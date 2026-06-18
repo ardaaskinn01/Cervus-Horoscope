@@ -12,13 +12,13 @@ service cloud.firestore {
     }
 
     // Günlük yorumlar: Giriş yapmış tüm kullanıcılar okuyabilir ve yazabilir
-    match /daily_comments/{date}/{zodiacGender} {
+    match /daily_comments/{commentId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
 
     // Aylık yorumlar: Giriş yapmış tüm kullanıcılar okuyabilir ve yazabilir
-    match /monthly_comments/{month}/{zodiacGender} {
+    match /monthly_comments/{commentId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null;
     }

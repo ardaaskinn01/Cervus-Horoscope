@@ -8,8 +8,6 @@ import 'package:horoscope/core/constants/app_text_styles.dart';
 import 'package:horoscope/core/providers/language_provider.dart';
 import 'package:horoscope/core/providers/navigation_provider.dart';
 import 'package:horoscope/shared/widgets/glass_card.dart';
-import 'package:horoscope/core/providers/user_provider.dart';
-import 'package:horoscope/core/services/ad_service.dart';
 
 class ToolsScreen extends ConsumerWidget {
   const ToolsScreen({super.key});
@@ -18,7 +16,6 @@ class ToolsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(languageProvider);
     final isTr = locale.languageCode == 'tr';
-    final user = ref.watch(userProvider);
 
     // Araçlar Listesi
     final List<Map<String, dynamic>> tools = [
@@ -80,18 +77,18 @@ class ToolsScreen extends ConsumerWidget {
       },
       {
         'icon': '🗺️',
-        'titleTr': 'Doğum Haritası',
-        'titleEn': 'Natal Chart',
+        'titleTr': 'Astro Portre',
+        'titleEn': 'Astro Portrait',
         'descTr': 'Güneş, Ay, Yükselen konumları ve detaylı gezegen ev dağılımları.',
         'descEn': 'Sun, Moon, Rising positions, and planet house distributions.',
         'route': 1 // Tab değiştir
       },
       {
         'icon': '🌌',
-        'titleTr': 'Başkasının Doğum Haritası',
-        'titleEn': 'Partner\'s Natal Chart',
-        'descTr': 'Arkadaşınızın veya partnerinizin doğum bilgilerine göre yıldız haritasını çıkartın.',
-        'descEn': 'Generate and view the astronomical natal chart for a friend or partner.',
+        'titleTr': 'Başkasının Astro Portresi',
+        'titleEn': 'Partner\'s Astro Portrait',
+        'descTr': 'Arkadaşınızın veya partnerinizin doğum bilgilerine göre astro portresini çıkartın.',
+        'descEn': 'Generate and view the astronomical astro portrait for a friend or partner.',
         'route': '/partner-natal-chart'
       },
       {
@@ -196,8 +193,7 @@ class ToolsScreen extends ConsumerWidget {
               },
             ),
           ),
-          AdService.instance.getBannerAdWidget('tools_banner', isPremium: user?.isPremium ?? false),
-          const SizedBox(height: 90),
+          const SizedBox(height: 160),
         ],
       ),
     );

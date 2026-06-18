@@ -324,7 +324,7 @@ class _NumerologyScreenState extends ConsumerState<NumerologyScreen> {
       body: StarBackground(
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 40.0),
+            padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 80.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -344,11 +344,15 @@ class _NumerologyScreenState extends ConsumerState<NumerologyScreen> {
                 ),
                 const SizedBox(height: 12),
                 _buildAiAnalysisCard(isTr),
-                const SizedBox(height: 24),
-                AdService.instance.getBannerAdWidget('numerology_banner', isPremium: ref.watch(userProvider)?.isPremium ?? false),
               ],
             ),
           ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: AdService.instance.getBannerAdWidget(
+          'numerology_banner',
+          isPremium: ref.watch(userProvider)?.isPremium ?? false,
         ),
       ),
     );

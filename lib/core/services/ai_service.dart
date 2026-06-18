@@ -29,12 +29,14 @@ class AiService {
     required String zodiac,
     required String gender,
   }) async {
-    final docPath = 'daily_comments/$date/${zodiac}_$gender';
+    final docPath = 'daily_comments/${date}_${zodiac}_$gender';
     final docRef = _firestore.doc(docPath);
 
     // Önce Firestore'da var mı kontrol et (Duble üretimi önle)
     try {
-      final docSnapshot = await docRef.get();
+      debugPrint('🔮 Firestore Kontrolü Başlıyor: $docPath');
+      final docSnapshot = await docRef.get().timeout(const Duration(seconds: 4));
+      debugPrint('🔮 Firestore Kontrolü Tamamlandı. Var mı: ${docSnapshot.exists}');
       if (docSnapshot.exists && docSnapshot.data() != null) {
         debugPrint('ℹ️ Yorum Firestore\'da zaten mevcut, oradan çekiliyor.');
         return DailyCommentModel.fromMap(docSnapshot.data() as Map<String, dynamic>);
@@ -54,16 +56,17 @@ Karakteristik Kurallar (Çok Önemli):
 - "Unutma ki astroloji sadece bir yol göstericidir", "kararlar senin", "hayatının kontrolü sende", "bu tavsiye niteliğindedir", "sabırlı olmalısın" gibi sorumluluk reddi (disclaimer) veya klişe yapay zeka uyarılarını asla kullanma. Gerçek, bilge ve iddialı bir astrolog gibi konuş.
 - Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun. Güçlü içgörüler ve net uyarılar vermekten çekinme.
 - Soyut tasvirler yerine kullanıcının hayatında uygulayabileceği somut adımlar ("actionable/concrete guidance") ver.
+- Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur. Derin sanatsal betimlemeler yapmak yerine kullanıcının hızlıca okuyup somut bir sonuç çıkarabileceği doğrudan ve sade bir dil kullan.
 
 Görev:
-1. Bu burç ve cinsiyete özel, belirtilen tarih için mistik, motive edici, son derece samimi, net ve somut günlük yorum yaz.
+1. Bu burç ve cinsiyete özel, belirtilen tarih için mistik, motive edici, son derece samimi, net ve somut günlük yorum yaz. Yorum mutlaka detaylı, derinlemesine ve en az 10 satır (yaklaşık 8-10 cümle) uzunluğunda olmalıdır.
 2. Aşk, Para, Kariyer ve Enerji puanlarını (0 ile 100 arası tamsayılar) belirle.
 3. Çıktıyı aşağıdaki JSON formatında ver. JSON dışında hiçbir açıklama veya markdown bloğu yazma.
 
 JSON formatı:
 {
-  "comment_tr": "[Buraya Türkçe günlük yorumu yaz (yaklaşık 3-4 cümle)]",
-  "comment_en": "[Buraya İngilizce günlük yorumu yaz (yaklaşık 3-4 cümle)]",
+  "comment_tr": "[Buraya en az 10 satır uzunluğunda detaylı Türkçe günlük yorumu yaz]",
+  "comment_en": "[Buraya en az 10 satır uzunluğunda detaylı İngilizce günlük yorumu yaz]",
   "love": [Aşk puanı],
   "money": [Para puanı],
   "career": [Kariyer puanı],
@@ -114,7 +117,7 @@ JSON formatı:
     required String zodiac,
     required String gender,
   }) async {
-    final docPath = 'monthly_comments/$month/${zodiac}_$gender';
+    final docPath = 'monthly_comments/${month}_${zodiac}_$gender';
     final docRef = _firestore.doc(docPath);
 
     try {
@@ -135,6 +138,7 @@ Karakteristik Kurallar (Çok Önemli):
 - "Unutma ki astroloji sadece bir yol göstericidir", "kararlar senin", "hayatının kontrolü sende", "bu tavsiye niteliğindedir", "sabırlı olmalısın" gibi sorumluluk reddi (disclaimer) veya klişe yapay zeka uyarılarını asla kullanma. Gerçek, bilge ve iddialı bir astrolog gibi konuş.
 - Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun. Güçlü içgörüler ve net uyarılar vermekten çekinme.
 - Soyut tasvirler yerine kullanıcının hayatında uygulayabileceği somut adımlar ("actionable/concrete guidance") ver.
+- Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur. Derin sanatsal betimlemeler yapmak yerine kullanıcının hızlıca okuyup somut bir sonuç çıkarabileceği doğrudan ve sade bir dil kullan.
 
 Görev:
 1. Bu burç ve cinsiyet için ilgili ay boyunca geçerli olacak mistik, net, samimi ve somut bir aylık yorum yaz.
@@ -230,6 +234,7 @@ Doğum Yeri: $birthPlace
 - Türkiye'de kış saati/yaz saati geçişlerinden dolayı saat dilimi farkı o dönemde GMT+$offset idi (1 Aralık 2001 tarihinde kış saati geçerliydi ve GMT+2 idi). Lütfen bu farkı doğru uyguladığından emin ol.
 - Ay burcunu (moonSign) hesaplarken son derece titiz ol. Ay günde yaklaşık 13 derece yol alır ve burç geçişleri saatlik olarak değişir. Örneğin 1 Aralık 2001, 11:25 UTC (13:25 yerel) doğumlu birinin Ay burcu İkizler (Gemini) burcunun ilk derecelerindedir, kesinlikle Koç (Aries) veya Yay değildir. İçsel efemeris bilgilerini çapraz kontrol et ve hızlı hareket eden Ay burcunu tam saate göre doğru hesapladığından emin ol.
 - Yükselen burç (Ascendant) doğum yerine ve tam yerel saate göre hesaplanır. Lütfen sapmaları önlemek için doğum yerinin ($birthPlace) koordinatlarını ve yerel saati ($birthTime) tam olarak kullanarak Yükselen Burcu doğru hesapla.
+- Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur. Derin sanatsal betimlemeler yapmak yerine kullanıcının hızlıca okuyup somut bir sonuç çıkarabileceği doğrudan ve sade bir dil kullan.
 
 GÖRKEMLİ KALİBRASYON VERİ SETİ (Astro-seek Kalibrasyonu):
 Eğer doğum bilgileri 1 Aralık 2001, saat 13:25 (GMT+2) veya yakınları ve doğum yeri İstanbul ise, aşağıdaki verileri birebir ve eksiksiz kullan:
@@ -330,16 +335,37 @@ JSON formatı:
       if (response == null) return null;
 
       final Map<String, dynamic> data = jsonDecode(response);
+      final planetDetails = data['planetDetails'] != null ? Map<String, dynamic>.from(data['planetDetails']) : null;
+      final houseDetails = data['houseDetails'] != null ? Map<String, dynamic>.from(data['houseDetails']) : null;
+      final planetAnglesMap = Map<String, double>.from((data['planetAngles'] as Map<dynamic, dynamic>?)?.map(
+        (key, value) => MapEntry(key.toString(), (value as num).toDouble()),
+      ) ?? {});
+
+      Map<String, dynamic>? aspects;
+      Map<String, int>? elements;
+      Map<String, int>? modalities;
+
+      if (planetDetails != null) {
+        final elMod = AstrologyUtils.calculateElementsAndModalities(planetDetails);
+        elements = elMod['elements'];
+        modalities = elMod['modalities'];
+      }
+
+      if (planetAnglesMap.isNotEmpty) {
+        aspects = AstrologyUtils.calculateAspects(planetAnglesMap);
+      }
+
       final chart = NatalChartModel(
         sunSign: data['sunSign'] ?? '',
         moonSign: data['moonSign'] ?? '',
         risingSign: data['risingSign'] ?? '',
         planetPositions: Map<String, String>.from(data['planetPositions'] ?? {}),
-        planetAngles: Map<String, double>.from((data['planetAngles'] as Map<dynamic, dynamic>?)?.map(
-          (key, value) => MapEntry(key.toString(), (value as num).toDouble()),
-        ) ?? {}),
-        planetDetails: data['planetDetails'] != null ? Map<String, dynamic>.from(data['planetDetails']) : null,
-        houseDetails: data['houseDetails'] != null ? Map<String, dynamic>.from(data['houseDetails']) : null,
+        planetAngles: planetAnglesMap,
+        planetDetails: planetDetails,
+        houseDetails: houseDetails,
+        aspects: aspects,
+        elements: elements,
+        modalities: modalities,
         calculatedAt: DateTime.now(),
       );
 
@@ -431,6 +457,9 @@ Karakteristik Kurallar (Çok Önemli):
 - "Unutma ki astroloji sadece bir yol göstericidir", "kararlar senin", "hayatının kontrolü sende", "bu tavsiye niteliğindedir", "sabırlı olmalısın" gibi sorumluluk reddi (disclaimer) veya klişe yapay zeka uyarılarını asla kullanma. Gerçek, bilge ve iddialı bir astrolog gibi konuş.
 - Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun. Güçlü içgörüler ve net uyarılar vermekten çekinme.
 - Soyut tasvirler yerine kullanıcının hayatında uygulayabileceği somut adımlar ("actionable/concrete guidance") ver.
+- Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur. Derin sanatsal betimlemeler yapmak yerine kullanıcının hızlıca okuyup somut bir sonuç çıkarabileceği doğrudan ve sade bir dil kullan.
+- Uyum Puanlamaları (overallScore ve alt skorlar): Skorlar son derece keskin ve gerçekçi olmalıdır. Ancak, iki kişi arasındaki uyum çok kötü veya vahim olsa bile en düşük puanı 60'ın altına indirme (en kötü durumda bile 60-65 bandında puanlar vererek moral bozucu olmaktan kaçın). 60'lı puanlar en zorlu/uyumsuz ilişkileri temsil etsin.
+- Keskin ve Net Analiz Yorumları: Politik ve yuvarlak astrolog cümleleri kurma. İnsanlar doğrudan net sonuçlar çıkaracağı yorumlar görsün. Özellikle olumsuz/zorlu açılarda ve alanlarda tam olarak nereden sorun yaşanacağını (örneğin: "Güneş-Mars sert açınız nedeniyle öfke patlamaları kaçınılmaz, partnerinin fevri çıkışları seni bunaltacak" veya "İletişimde Merkür-Satürn karesi nedeniyle birbirinizi susturmaya çalışıyorsunuz, bu da soğuk savaşa yol açıyor") son derece net, keskin ve ilişki yorumlayıcı cümlelerle açıkla.
 
 Görev:
 1. Bu iki kişinin detaylı doğum bilgilerine, burçlarına ve (Kişi 1 için mevcutsa) gezegen ev konumlarına göre karşılıklı gezegen etkileşimlerini (örneğin Güneş-Ay uyumu, Venüs-Mars etkileri, yükselen burçların rezonansı vb.) içeren derinlemesine, son derece samimi ve gerçekçi bir sinastri ve uyum analizi yap.
@@ -486,85 +515,124 @@ JSON formatı:
     required String userId,
     required String name,
     required NatalChartModel natalChart,
+    bool forceRecalculate = false,
   }) async {
     final docRef = _firestore.doc('users/$userId/character_analysis/data');
 
-    try {
-      final docSnapshot = await docRef.get();
-      if (docSnapshot.exists && docSnapshot.data() != null) {
-        return CharacterAnalysisModel.fromMap(docSnapshot.data() as Map<String, dynamic>);
-      }
-    } catch (_) {}
+    if (!forceRecalculate) {
+      try {
+        final docSnapshot = await docRef.get();
+        if (docSnapshot.exists && docSnapshot.data() != null) {
+          final data = docSnapshot.data() as Map<String, dynamic>;
+          // Eski format kontrolü: personalityDimensions yoksa yeniden hesapla
+          if (data.containsKey('personalityDimensions') &&
+              (data['personalityDimensions'] as List?)?.isNotEmpty == true) {
+            return CharacterAnalysisModel.fromMap(data);
+          }
+        }
+      } catch (_) {}
+    } else {
+      // Eski dokümanı sil, taze üret
+      try { await docRef.delete(); } catch (_) {}
+    }
 
-    final planetListStr = natalChart.planetPositions.entries.map((e) => "${e.key}: ${e.value}").join(', ');
+    final planetListStr = natalChart.planetPositions.entries
+        .map((e) => "${e.key}: ${e.value}")
+        .join('\n');
+
+    final houseListStr = natalChart.houseDetails != null
+        ? natalChart.houseDetails!.entries
+            .map((e) => "${e.key}: ${e.value}")
+            .join('\n')
+        : '';
+
+    final aspectsStr = natalChart.aspects != null
+        ? natalChart.aspects!.entries
+            .map((e) => "${e.key}: ${e.value}")
+            .join('\n')
+        : '';
 
     final prompt = """
 Sen derinlikli psikolojik astroloji analizleri yapan uzman bir astrologsun.
 Kullanıcı Adı: $name
-Doğum Haritası Konumları: $planetListStr
 Güneş Burcu: ${natalChart.sunSign}
 Ay Burcu: ${natalChart.moonSign}
 Yükselen Burç: ${natalChart.risingSign}
 
+Gezegen Konumları (Burç + Ev):
+$planetListStr
+${houseListStr.isNotEmpty ? '\nEv Konumları:\n$houseListStr' : ''}
+${aspectsStr.isNotEmpty ? '\nGezegensel Açılar (Aspektler):\n$aspectsStr' : ''}
 Karakteristik Kurallar (Çok Önemli):
 - Sıradan, yapay zeka tarafından yazıldığı belli olan diplomatik ve politik dilden kesinlikle kaçın.
-- "Unutma ki astroloji sadece bir yol göstericidir", "kararlar senin", "hayatının kontrolü sende", "bu tavsiye niteliğindedir", "sabırlı olmalısın" gibi sorumluluk reddi (disclaimer) veya klişe yapay zeka uyarılarını asla kullanma. Gerçek, bilge ve iddialı bir astrolog gibi konuş.
-- Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun. Güçlü içgörüler ve net uyarılar vermekten çekinme.
-- Soyut tasvirler yerine kullanıcının hayatında uygulayabileceği somut adımlar ("actionable/concrete guidance") ver.
+- Sorumluluk reddi (disclaimer) veya klişe yapay zeka uyarılarını asla kullanma. Gerçek, bilge ve iddialı bir astrolog gibi konuş.
+- Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun.
+- Edebi ve Yorucu Cümlelerden Kaçın: Kısa, son derece net, doğrudan ve anlaşılır cümleler kur.
+- secretSelf ve spiritualJourney için minimum 5 cümle yaz. Kullanıcının kendini GERÇEKTEN tanıdığını hissetmesini sağla. Somut ve kişisel ol.
 
 Görev:
-1. Bu doğum haritasına göre kullanıcının kişiliğini detaylıca, son derece gerçekçi ve net bir dille analiz et.
+1. Bu doğum haritasına göre kullanıcının kişiliğini detaylıca analiz et.
 2. Aşağıdaki alanları belirle:
-   - "intuitiveScore", "passionateScore", "analyticalScore" (0-100 arası tamsayılar).
-   - "strengths" (Güçlü yönler, hem Türkçe hem İngilizce ayrı listelerde, her dil için 4 adet kısa madde).
-   - "weaknesses" (Gelişim alanları, hem Türkçe hem İngilizce ayrı listelerde, her dil için 4 adet kısa madde).
-   - "loveLanguages": 5 sevgi dilinin (words_of_affirmation, quality_time, receiving_gifts, acts_of_service, physical_touch) toplamı 100 edecek şekilde yüzde dağılımı.
-   - "careers" (Kariyer eğilimleri/uygun meslekler, hem Türkçe hem İngilizce ayrı listelerde, her dil için 4-5 meslek adı).
-   - "secretSelf" (İçsel dünya/Ay burcu analizi, 2-3 cümlelik mistik bir paragraf, TR ve EN ayrı).
-   - "spiritualJourney" (Yaşam dersi/Yükselen burç analizi, 2-3 cümlelik rehber niteliğinde paragraf, TR ve EN ayrı).
-3. Sonucu aşağıdaki JSON formatında ver. JSON dışında hiçbir açıklama veya markdown bloğu yazma.
+   - "personalityDimensions": Tam 12 adet zıt kişilik boyutu. Her boyut için leftPercent değeri 0-100 arasında bir tamsayı olmalı. Bu değer sol kutbun ne kadar baskın olduğunu gösterir (sağ = 100 - leftPercent). Gerçekçi ve harita bazlı değerler ver. 50-50 verme, gerçek bir kutba yaklaştır.
+   - "strengths" (5 adet kısa madde, TR ve EN ayrı).
+   - "weaknesses" (5 adet kısa madde, TR ve EN ayrı).
+   - "careers" (6 meslek adı, TR ve EN ayrı).
+   - "secretSelf" (Ay burcu temelli içsel dünya analizi. Minimum 5 cümle. Net, somut, kişisel. TR ve EN ayrı).
+   - "spiritualJourney" (Yükselen burç temelli yaşam dersi analizi. Minimum 5 cümle. Net, somut, rehber niteliğinde. TR ve EN ayrı).
+3. Sonucu aşağıdaki JSON formatında ver. JSON dışında hiçbir açıklama yazma.
 
 JSON formatı:
 {
-  "intuitiveScore": [Puan],
-  "passionateScore": [Puan],
-  "analyticalScore": [Puan],
-  "strengths_tr": ["madde 1", "madde 2", "madde 3", "madde 4"],
-  "strengths_en": ["item 1", "item 2", "item 3", "item 4"],
-  "weaknesses_tr": ["madde 1", "madde 2", "madde 3", "madde 4"],
-  "weaknesses_en": ["item 1", "item 2", "item 3", "item 4"],
-  "loveLanguages": {
-    "words_of_affirmation": [yüzde],
-    "quality_time": [yüzde],
-    "receiving_gifts": [yüzde],
-    "acts_of_service": [yüzde],
-    "physical_touch": [yüzde]
-  },
-  "careers_tr": ["meslek 1", "meslek 2", "meslek 3", "meslek 4"],
-  "careers_en": ["career 1", "career 2", "career 3", "career 4"],
-  "secretSelf_tr": "[Ay burcuna göre Türkçe açıklama]",
-  "secretSelf_en": "[Ay burcuna göre İngilizce açıklama]",
-  "spiritualJourney_tr": "[Yükselen burca göre Türkçe açıklama]",
-  "spiritualJourney_en": "[Yükselen burca göre İngilizce açıklama]"
+  "personalityDimensions": [
+    {"leftLabelTr": "Sezgisel", "rightLabelTr": "Analitik", "leftLabelEn": "Intuitive", "rightLabelEn": "Analytical", "leftPercent": [0-100]},
+    {"leftLabelTr": "İçe Dönük", "rightLabelTr": "Dışa Dönük", "leftLabelEn": "Introverted", "rightLabelEn": "Extroverted", "leftPercent": [0-100]},
+    {"leftLabelTr": "Duygusal", "rightLabelTr": "Mantıksal", "leftLabelEn": "Emotional", "rightLabelEn": "Rational", "leftPercent": [0-100]},
+    {"leftLabelTr": "Spontane", "rightLabelTr": "Planlı", "leftLabelEn": "Spontaneous", "rightLabelEn": "Structured", "leftPercent": [0-100]},
+    {"leftLabelTr": "İdealist", "rightLabelTr": "Realist", "leftLabelEn": "Idealistic", "rightLabelEn": "Realistic", "leftPercent": [0-100]},
+    {"leftLabelTr": "Bağımsız", "rightLabelTr": "Uyumlu", "leftLabelEn": "Independent", "rightLabelEn": "Cooperative", "leftPercent": [0-100]},
+    {"leftLabelTr": "Risk Seven", "rightLabelTr": "Güvene Önem Veren", "leftLabelEn": "Risk-Taking", "rightLabelEn": "Security-Seeking", "leftPercent": [0-100]},
+    {"leftLabelTr": "Sabırsız", "rightLabelTr": "Sabırlı", "leftLabelEn": "Impulsive", "rightLabelEn": "Patient", "leftPercent": [0-100]},
+    {"leftLabelTr": "Yaratıcı", "rightLabelTr": "Pratik", "leftLabelEn": "Creative", "rightLabelEn": "Practical", "leftPercent": [0-100]},
+    {"leftLabelTr": "Kararlı", "rightLabelTr": "Esnek", "leftLabelEn": "Decisive", "rightLabelEn": "Adaptable", "leftPercent": [0-100]},
+    {"leftLabelTr": "İçgüdüsel", "rightLabelTr": "Düşünceli", "leftLabelEn": "Instinctive", "rightLabelEn": "Deliberate", "leftPercent": [0-100]},
+    {"leftLabelTr": "Tutkulu", "rightLabelTr": "Sakin", "leftLabelEn": "Passionate", "rightLabelEn": "Calm", "leftPercent": [0-100]}
+  ],
+  "strengths_tr": ["madde 1", "madde 2", "madde 3", "madde 4", "madde 5"],
+  "strengths_en": ["item 1", "item 2", "item 3", "item 4", "item 5"],
+  "weaknesses_tr": ["madde 1", "madde 2", "madde 3", "madde 4", "madde 5"],
+  "weaknesses_en": ["item 1", "item 2", "item 3", "item 4", "item 5"],
+  "careers_tr": ["meslek 1", "meslek 2", "meslek 3", "meslek 4", "meslek 5", "meslek 6"],
+  "careers_en": ["career 1", "career 2", "career 3", "career 4", "career 5", "career 6"],
+  "secretSelf_tr": "[Minimum 5 cümle - Ay burcuna göre Türkçe içsel dünya analizi]",
+  "secretSelf_en": "[Minimum 5 sentences - Moon sign based inner world analysis in English]",
+  "spiritualJourney_tr": "[Minimum 5 cümle - Yükselen burç ve yaşam amacı Türkçe]",
+  "spiritualJourney_en": "[Minimum 5 sentences - Rising sign and life purpose in English]"
 }
 """;
+
 
     try {
       final response = await _callGemini(prompt);
       if (response == null) return null;
 
       final Map<String, dynamic> data = jsonDecode(response);
+
+      final dims = (data['personalityDimensions'] as List? ?? []).map((d) {
+        return PersonalityDimension(
+          leftLabelTr: d['leftLabelTr'] ?? '',
+          rightLabelTr: d['rightLabelTr'] ?? '',
+          leftLabelEn: d['leftLabelEn'] ?? '',
+          rightLabelEn: d['rightLabelEn'] ?? '',
+          leftPercent: (d['leftPercent'] as num?)?.toInt() ?? 50,
+        );
+      }).toList();
+
       final analysis = CharacterAnalysisModel(
-        intuitiveScore: data['intuitiveScore'] ?? 50,
-        passionateScore: data['passionateScore'] ?? 50,
-        analyticalScore: data['analyticalScore'] ?? 50,
+        personalityDimensions: dims,
         strengthsTr: List<String>.from(data['strengths_tr'] ?? []),
         strengthsEn: List<String>.from(data['strengths_en'] ?? []),
         weaknessesTr: List<String>.from(data['weaknesses_tr'] ?? []),
         weaknessesEn: List<String>.from(data['weaknesses_en'] ?? []),
-        loveLanguages: Map<String, int>.from(data['loveLanguages']?.map(
-              (k, v) => MapEntry(k.toString(), (v as num).toInt()),
-            ) ?? {}),
         careersTr: List<String>.from(data['careers_tr'] ?? []),
         careersEn: List<String>.from(data['careers_en'] ?? []),
         secretSelfTr: data['secretSelf_tr'] ?? '',
@@ -583,21 +651,30 @@ JSON formatı:
     }
   }
 
-  /// Doğum Haritasına göre en uyumlu romantik ve arkadaş burçlarını hesaplar ve Firestore'a kaydeder.
+  /// Doğum Haritasına göre tüm 12 burcun uyumunu hesaplar ve Firestore'a kaydeder.
   Future<BestMatchesModel?> generateBestMatches({
     required String userId,
     required String sunSign,
     required String moonSign,
     required String risingSign,
+    bool forceRecalculate = false,
   }) async {
     final docRef = _firestore.doc('users/$userId/best_matches/data');
 
-    try {
-      final docSnapshot = await docRef.get();
-      if (docSnapshot.exists && docSnapshot.data() != null) {
-        return BestMatchesModel.fromMap(docSnapshot.data() as Map<String, dynamic>);
-      }
-    } catch (_) {}
+    if (!forceRecalculate) {
+      try {
+        final docSnapshot = await docRef.get();
+        if (docSnapshot.exists && docSnapshot.data() != null) {
+          final model = BestMatchesModel.fromMap(docSnapshot.data() as Map<String, dynamic>);
+          // Eski 3-burçlu veri kontrolü: 10'dan az ise yeniden hesapla
+          if (model.romanticMatches.length >= 10) {
+            return model;
+          }
+        }
+      } catch (_) {}
+    } else {
+      try { await docRef.delete(); } catch (_) {}
+    }
 
     final prompt = """
 Sen astrolojik eşleşme ve sinastri uzmanı bir astrologsun.
@@ -608,12 +685,12 @@ Yükselen Burç: $risingSign
 
 Karakteristik Kurallar (Çok Önemli):
 - Sıradan, yapay zeka tarafından yazıldığı belli olan diplomatik ve politik dilden kesinlikle kaçın.
-- "Unutma ki astroloji sadece bir yol göstericidir", "kararlar senin", "hayatının kontrolü sende", "bu tavsiye niteliğindedir", "sabırlı olmalısın" gibi sorumluluk reddi (disclaimer) veya klişe yapay zeka uyarılarını asla kullanma. Gerçek, bilge ve iddialı bir astrolog gibi konuş.
-- Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun. Güçlü içgörüler ve net uyarılar vermekten çekinme.
-- Soyut tasvirler yerine kullanıcının hayatında uygulayabileceği somut adımlar ("actionable/concrete guidance") ver.
+- Sorumluluk reddi veya klişe yapay zeka uyarılarını asla kullanma. Gerçek, bilge ve iddialı bir astrolog gibi konuş.
+- Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun.
+- Edebi ve Yorucu Cümlelerden Kaçın: Kısa, son derece net, doğrudan ve anlaşılır cümleler kur.
 
 Görev:
-1. Bu kullanıcının harita dinamiklerine (Sun/Moon/Rising uyumu) göre en uyumlu 3 Romantik Burç Eşleşmesini ve 3 Arkadaşlık Burç Eşleşmesini belirle.
+1. Bu kullanıcının harita dinamiklerine (Sun/Moon/Rising uyumu) göre TÜM 12 burcun nasıl eşleştiğini belirle. En uyumludan en az uyumluya sırala.
 2. Her eşleşen burç için kısa, vurucu, net ve son derece samimi bir gerekçe (1-2 cümle) yaz. Bu gerekçeyi hem Türkçe hem İngilizce dillerinde ayrı ayrı ver.
 3. Sonucu aşağıdaki JSON formatında ver. JSON dışında hiçbir açıklama veya markdown bloğu yazma.
 
@@ -622,20 +699,12 @@ Zodiac listesi: aries, taurus, gemini, cancer, leo, virgo, libra, scorpio, sagit
 JSON formatı:
 {
   "romanticMatches": [
-    {
-      "zodiacSign": "[burç adı]",
-      "reasonTr": "[Türkçe gerekçe]",
-      "reasonEn": "[İngilizce gerekçe]"
-    },
-    ... (tam 3 adet)
+    {"zodiacSign": "[burç adı]", "reasonTr": "[Türkçe gerekçe]", "reasonEn": "[İngilizce gerekçe]"},
+    ... (tam 12 burç, uyum sırasına göre - en uyumludan en az uyumluya)
   ],
   "friendMatches": [
-    {
-      "zodiacSign": "[burç adı]",
-      "reasonTr": "[Türkçe gerekçe]",
-      "reasonEn": "[İngilizce gerekçe]"
-    },
-    ... (tam 3 adet)
+    {"zodiacSign": "[burç adı]", "reasonTr": "[Türkçe gerekçe]", "reasonEn": "[İngilizce gerekçe]"},
+    ... (tam 12 burç, uyum sırasına göre - en uyumludan en az uyumluya)
   ]
 }
 """;
@@ -667,6 +736,7 @@ JSON formatı:
   }
 
   /// Get saved numerology result from Firestore.
+
   Future<NumerologyModel?> getSavedNumerology({
     required String userId,
     required String name,
@@ -795,6 +865,7 @@ Karakteristik Kurallar (Çok Önemli):
 - "Kaderin senin elinde", "seçim senin", "bu bir tavsiyedir" gibi sorumluluk reddi (disclaimer) veya klişe yapay zeka uyarılarını asla kullanma. Gerçek, bilge ve iddialı bir mistik numerolog gibi konuş.
 - Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun. Güçlü içgörüler ve net uyarılar vermekten çekinme.
 - Soyut tasvirler yerine kullanıcının hayatında uygulayabileceği somut adımlar ("actionable/concrete guidance") ver.
+- Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur. Derin sanatsal betimlemeler yapmak yerine kullanıcının hızlıca okuyup somut bir sonuç çıkarabileceği doğrudan ve sade bir dil kullan.
 
 Görev:
 1. Bu doğum tarihi sayılarına göre derin, mistik, net ve gerçekçi bir numeroloji analizi yap.
@@ -904,6 +975,7 @@ Karakteristik Kurallar (Çok Önemli):
 - "Unutma ki astroloji sadece bir yol göstericidir", "seçim senin", "geleceği kimse bilemez", "karar senin", "bu bir tavsiyedir", "sabırlı olmalısın" gibi sorumluluk reddi (disclaimer) veya klişe yapay zeka uyarılarını asla kullanma. Gerçek, bilge, her şeyi gören ve iddialı bir Kozmik Kâhin gibi konuş.
 - Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve son derece keskin/net olsun. Güçlü içgörüler, net uyarılar ve kesin tahminler vermekten çekinme.
 - Soyut tasvirler veya kaçamak cevaplar yerine, kullanıcının sorusu hakkında hayatında uygulayabileceği çok somut tavsiyeler ve net adımlar ("actionable/concrete guidance and direct answers") ver. Kullanıcı bu cevaptan somut bir öngörü elde etmelidir.
+- Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur. Derin sanatsal betimlemeler yapmak yerine kullanıcının hızlıca okuyup somut bir sonuç çıkarabileceği doğrudan ve sade bir dil kullan.
 
 Görev:
 1. Bu soruyu kullanıcının astrolojik potansiyeliyle (doğum haritası, yükselen burcu, gezegen konumları vb.) ilişkilendirerek bilgece, kesin ve rehberlik edici bir biçimde doğrudan yanıtla.
@@ -942,11 +1014,155 @@ JSON formatı:
     }
   }
 
+  /// Generate a detailed planetary interpretation on demand.
+  Future<String?> generatePlanetInterpretation({
+    required String planet,
+    required String sign,
+    required String house,
+    required String languageCode,
+  }) async {
+    final isTr = languageCode == 'tr';
+    
+    final prompt = """
+Sen usta bir astrologsun. Kullanıcının doğum haritasında $planet gezegeni $sign burcunda ve $house. evde bulunuyor.
+
+Karakteristik Kurallar (Çok Önemli):
+- Sıradan, yapay zeka tarafından yazıldığı belli olan diplomatik ve politik dilden kesinlikle kaçın.
+- "Unutma ki astroloji sadece bir yol göstericidir" gibi sorumluluk reddi (disclaimer) veya klişe uyarıları asla kullanma. Gerçek, bilge ve iddialı bir astrolog gibi konuş.
+- Yorum doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun. Güçlü içgörüler ve net uyarılar ver.
+- Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur. Derin sanatsal betimlemeler yapmak yerine kullanıcının hızlıca okuyup somut bir sonuç çıkarabileceği doğrudan ve sade bir dil kullan.
+
+Görev:
+1. Bu yerleşimin (gezegenin bu burçta ve bu evde olmasının) kişinin psikolojisine, yaşam hedeflerine ve günlük hayatına etkisini derinlemesine analiz et.
+2. ${isTr ? 'Sadece Türkçe dilinde' : 'Sadece İngilizce dilinde'} 2 paragraf uzunluğunda (yaklaşık 100-150 kelime) çok etkileyici ve akıcı bir yorum yaz.
+3. Çıktıyı düz metin olarak ver. JSON formatı KULLANMA. Sadece doğrudan yorumu yaz.
+""";
+
+    try {
+      final response = await _callGemini(prompt, isJson: false);
+      return response;
+    } catch (e) {
+      debugPrint('⚠️ Planet Interpretation Hatası: $e');
+      return null;
+    }
+  }
+
+  Future<String?> generateRisingSignInterpretation({
+    required String risingSign,
+    required String languageCode,
+  }) async {
+    final isTr = languageCode == 'tr';
+
+    final prompt = isTr
+        ? """
+Sen usta bir astrologsun. Kullanıcının yükselen burcu (ASC) $risingSign'dır.
+
+Kurallar:
+- Sorumluluk reddi, klişe uyarılar, "astroloji sadece yol göstericidir" gibi ifadelerden kaçın.
+- Kısa, net, doğrudan cümleler kur. Edebi betimlemelerden uzak dur.
+- İnsan eliyle yazılmış, gerçek bir astrolog gibi yaz.
+
+Yükselen burcun kişinin dış görünüşüne, ilk izlenimine, hayata bakış açısına ve fiziksel enerjisine nasıl yansıdığını 2 paragrafta (yaklaşık 100-150 kelime) Türkçe olarak yaz. Sadece düz metin ver, JSON kullanma.
+"""
+        : """
+You are a skilled astrologer. The user's rising sign (ASC) is $risingSign.
+
+Rules:
+- Avoid disclaimers, clichés, or "astrology is just a guide" type phrases.
+- Write short, direct, clear sentences. Avoid literary flourishes.
+- Write as a real astrologer would, humanized.
+
+Explain how this rising sign reflects in the person's outer appearance, first impression, outlook on life, and physical energy in 2 paragraphs (approx. 100-150 words) in English. Output plain text only, no JSON.
+""";
+
+    try {
+      final response = await _callGemini(prompt, isJson: false);
+      return response;
+    } catch (e) {
+      debugPrint('⚠️ Rising Sign Interpretation Hatası: $e');
+      return null;
+    }
+  }
+
+  Future<String?> generateHouseInterpretation({
+    required String houseNumber,
+    required String sign,
+    required String languageCode,
+  }) async {
+    final isTr = languageCode == 'tr';
+
+    final houseMeaningsTr = {
+      '1': 'Kimlik, beden ve ilk izlenim',
+      '2': 'Para, değerler ve sahiplik',
+      '3': 'İletişim, kardeşler ve kısa yolculuklar',
+      '4': 'Ev, aile ve kökenler',
+      '5': 'Yaratıcılık, aşk ve eğlence',
+      '6': 'Sağlık, iş düzeni ve günlük rutinler',
+      '7': 'Ortaklıklar, evlilik ve ilişkiler',
+      '8': 'Dönüşüm, miras ve derin bağlar',
+      '9': 'Felsefe, yüksek eğitim ve uzun yolculuklar',
+      '10': 'Kariyer, itibar ve hedefler',
+      '11': 'Arkadaşlar, topluluk ve idealizmler',
+      '12': 'Bilinçdışı, gizli düşmanlar ve spiritüellik',
+    };
+
+    final houseMeaningsEn = {
+      '1': 'Identity, body and first impressions',
+      '2': 'Money, values and possessions',
+      '3': 'Communication, siblings and short trips',
+      '4': 'Home, family and roots',
+      '5': 'Creativity, romance and pleasure',
+      '6': 'Health, work routine and daily habits',
+      '7': 'Partnerships, marriage and relationships',
+      '8': 'Transformation, inheritance and deep bonds',
+      '9': 'Philosophy, higher education and long journeys',
+      '10': 'Career, reputation and ambitions',
+      '11': 'Friends, community and ideals',
+      '12': 'Subconscious, hidden enemies and spirituality',
+    };
+
+    final meaning = isTr
+        ? (houseMeaningsTr[houseNumber] ?? '$houseNumber. Ev')
+        : (houseMeaningsEn[houseNumber] ?? 'House $houseNumber');
+
+    final prompt = isTr
+        ? """
+Sen usta bir astrologsun. Kullanıcının $houseNumber. evinde $sign burcu bulunuyor.
+Bu evin anlamı: $meaning.
+
+Kurallar:
+- Sorumluluk reddi, klişe uyarılar veya edebi betimlemelerden kaçın.
+- Kısa, net, doğrudan cümleler kur.
+- İnsan eliyle yazılmış, gerçek bir astrolog gibi yaz.
+
+Bu ev-burç kombinasyonunun kişinin hayatına pratik etkisini 2 paragrafta (yaklaşık 80-120 kelime) Türkçe olarak yaz. Sadece düz metin ver, JSON kullanma.
+"""
+        : """
+You are a skilled astrologer. The user's $houseNumber. house has $sign as its sign.
+This house governs: $meaning.
+
+Rules:
+- Avoid disclaimers, clichés, or literary descriptions.
+- Write short, direct, clear sentences.
+- Write as a real astrologer would, humanized.
+
+Explain the practical impact of this house-sign combination on the person's life in 2 paragraphs (approx. 80-120 words) in English. Output plain text only, no JSON.
+""";
+
+    try {
+      final response = await _callGemini(prompt, isJson: false);
+      return response;
+    } catch (e) {
+      debugPrint('⚠️ House Interpretation Hatası: $e');
+      return null;
+    }
+  }
+
   /// Genel amaçlı Gemini API çağrısı
-  Future<String?> callGemini(String prompt) => _callGemini(prompt);
+  Future<String?> callGemini(String prompt, {bool isJson = true}) => _callGemini(prompt, isJson: isJson);
 
   // Gemini 1.5 Flash Model API Çağrısı
-  Future<String?> _callGemini(String prompt) async {
+  Future<String?> _callGemini(String prompt, {bool isJson = true}) async {
     // 1. Son 60 saniyeden eski istek zaman damgalarını temizle
     final now = DateTime.now();
     _requestTimestamps.removeWhere((t) => now.difference(t).inSeconds > 60);
@@ -961,7 +1177,7 @@ JSON formatı:
         await Future.delayed(waitDuration);
       }
       // Bekleme sonrasında kontrolü tekrarlamak için rekürsif çağrı
-      return _callGemini(prompt);
+      return _callGemini(prompt, isJson: isJson);
     }
 
     // 3. Mevcut istek zaman damgasını ekle
@@ -971,23 +1187,27 @@ JSON formatı:
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=$_apiKey",
     );
 
+    final Map<String, dynamic> requestBody = {
+      "contents": [
+        {
+          "parts": [
+            {"text": prompt}
+          ]
+        }
+      ]
+    };
+    if (isJson) {
+      requestBody["generationConfig"] = {
+        "responseMimeType": "application/json"
+      };
+    }
+
     try {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "contents": [
-            {
-              "parts": [
-                {"text": prompt}
-              ]
-            }
-          ],
-          "generationConfig": {
-            "responseMimeType": "application/json"
-          }
-        }),
-      );
+        body: jsonEncode(requestBody),
+      ).timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> resBody = jsonDecode(response.body);
@@ -1023,21 +1243,33 @@ JSON formatı:
   }
 
   Future<DailyCommentModel?> _loadDailyCommentFromDemo(String zodiac, String gender) async {
+    debugPrint('🔮 Fallback Başladı - zodiac: $zodiac, gender: $gender');
     try {
       final String mappedZodiac = _mapToEnglishZodiac(zodiac);
+      debugPrint('🔮 Mapped zodiac: $mappedZodiac');
       final jsonStr = await rootBundle.loadString('assets/data/demo_comments.json');
       final Map<String, dynamic> data = jsonDecode(jsonStr);
       final zodiacData = data[mappedZodiac.toLowerCase()];
+      debugPrint('🔮 Zodiac data found: ${zodiacData != null}');
       if (zodiacData != null) {
         final genderData = zodiacData[gender.toLowerCase()] as List<dynamic>?;
+        debugPrint('🔮 Gender data found for ${gender.toLowerCase()}: ${genderData != null}');
         if (genderData != null && genderData.isNotEmpty) {
           final day = DateTime.now().day;
           final index = day % genderData.length;
+          debugPrint('🔮 Day: $day, Index: $index');
           final item = genderData[index] as Map<String, dynamic>;
+          debugPrint('🔮 Loaded item: $item');
           
+          final originalTr = item['comment_tr'] ?? '';
+          final originalEn = item['comment_en'] ?? '';
+          
+          final extendedTr = _extendCommentTo10Lines(originalTr, mappedZodiac, gender, 'tr');
+          final extendedEn = _extendCommentTo10Lines(originalEn, mappedZodiac, gender, 'en');
+
           return DailyCommentModel(
-            commentTr: item['comment_tr'] ?? '',
-            commentEn: item['comment_en'] ?? '',
+            commentTr: extendedTr,
+            commentEn: extendedEn,
             love: item['love'] ?? 70,
             money: item['money'] ?? 70,
             career: item['career'] ?? 70,
@@ -1275,5 +1507,48 @@ JSON formatı:
       'rewardedCalculationsAllowed': allowedExtra + 1,
       'lastRewardedAt': Timestamp.now(),
     }, SetOptions(merge: true));
+  }
+
+  String _extendCommentTo10Lines(String original, String zodiac, String gender, String lang) {
+    final isTr = lang == 'tr';
+    final zodiacName = isTr ? _mapToTurkishZodiacName(zodiac) : zodiac;
+
+    if (isTr) {
+      return "$original\n\n"
+          "Gökyüzündeki mevcut gezegen konumları ve özellikle yönetici yıldızınızın açıları, $zodiacName burcu olarak bugün içsel dengenizi kurmanız adına sizi destekliyor. "
+          "Zihinsel enerjiniz oldukça yüksek görünmekle birlikte, karar alırken acele etmemeniz ve detayları gözden kaçırmamanız kritik önem taşıyor. "
+          "Aşk ve ilişkiler hanenizde parlayan kozmik etkiler, sevdiklerinizle olan bağlarınızı güçlendirmek ve varsa aradaki pürüzleri gidermek için mükemmel fırsatlar sunuyor. "
+          "İş ve kariyer hayatınızda ise sabırlı, planlı ve kararlı adımlar atarak uzun vadeli hedeflerinize odaklanmalısınız. "
+          "Finansal konularda ise gereksiz harcamalardan uzak durarak güvenli limanlarda kalmaya özen göstermeniz yararınıza olacaktır. "
+          "Unutmayın ki yıldızlar sadece yolları aydınlatır, adımı atacak olan sizsiniz. "
+          "Günün kozmik mottosu: Kendine güven, akışın bilgeliğine inan ve evrenin sunduğu fırsatları sevgiyle kucakla.";
+    } else {
+      return "$original\n\n"
+          "The current planetary positions in the sky, especially the aspects of your ruling planet, support you as a $zodiacName today to establish your inner balance. "
+          "Although your mental energy seems quite high, it is critical not to rush when making decisions and not to lose sight of details. "
+          "Cosmic influences shining in your love and relationship sectors offer excellent opportunities to strengthen ties and smooth over any friction. "
+          "In your career and professional life, you should focus on long-term goals by taking patient, planned, and determined steps. "
+          "Regarding financial matters, it will be to your benefit to avoid unnecessary expenses and stay in safe harbors. "
+          "Remember that the stars only light the way; you are the one who takes the step. "
+          "Today's cosmic motto: Trust yourself, believe in the wisdom of the flow, and embrace the opportunities with love.";
+    }
+  }
+
+  String _mapToTurkishZodiacName(String zodiac) {
+    final Map<String, String> enToTr = {
+      'aries': 'Koç',
+      'taurus': 'Boğa',
+      'gemini': 'İkizler',
+      'cancer': 'Yengeç',
+      'leo': 'Aslan',
+      'virgo': 'Başak',
+      'libra': 'Terazi',
+      'scorpio': 'Akrep',
+      'sagittarius': 'Yay',
+      'capricorn': 'Oğlak',
+      'aquarius': 'Kova',
+      'pisces': 'Balık',
+    };
+    return enToTr[zodiac.toLowerCase().trim()] ?? zodiac;
   }
 }

@@ -322,6 +322,12 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
                   : _buildFormView(isTr, user?.name ?? (isTr ? 'Sen' : 'You'), user?.zodiacSign ?? 'aries'),
         ),
       ),
+      bottomNavigationBar: SafeArea(
+        child: AdService.instance.getBannerAdWidget(
+          'love_compatibility_banner',
+          isPremium: user?.isPremium ?? false,
+        ),
+      ),
     );
   }
 
@@ -332,7 +338,7 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
         : DateFormat('dd.MM.yyyy').format(_selectedDate!);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 24.0, bottom: 80.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -547,6 +553,28 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
           ),
           const SizedBox(height: 16),
 
+          // Cinsiyet Başlığı
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                isTr ? 'Cinsiyet' : 'Gender',
+                style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
+              ),
+              Row(
+                children: [
+                  const Text('🏳️‍🌈', style: TextStyle(fontSize: 12)),
+                  const SizedBox(width: 4),
+                  Text(
+                    isTr ? 'LGBTQ+ Dostu' : 'LGBTQ+ Friendly',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 10),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
           // Cinsiyet Toggle
           Row(
             children: [
@@ -687,8 +715,6 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
               ),
             ),
           ],
-          const SizedBox(height: 24),
-          AdService.instance.getBannerAdWidget('love_compatibility_banner', isPremium: ref.watch(userProvider)?.isPremium ?? false),
         ],
       ),
     ).animate().fade(duration: 400.ms);
@@ -745,7 +771,7 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
     final userSign = user?.zodiacSign ?? 'aries';
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 40.0),
+      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 80.0),
       child: Column(
         children: [
           // 1. Üst Başlık & Eşleşen İsimler
@@ -908,8 +934,6 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
               });
             },
           ),
-          const SizedBox(height: 24),
-          AdService.instance.getBannerAdWidget('love_compatibility_banner', isPremium: ref.watch(userProvider)?.isPremium ?? false),
         ],
       ),
     ).animate().fade(duration: 400.ms);

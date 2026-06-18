@@ -349,7 +349,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 20),
 
           // Cinsiyet
-          Text(isTurkish ? 'Cinsiyet' : 'Gender', style: AppTextStyles.label),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(isTurkish ? 'Cinsiyet' : 'Gender', style: AppTextStyles.label),
+              Row(
+                children: [
+                  const Text('🏳️‍🌈', style: TextStyle(fontSize: 12)),
+                  const SizedBox(width: 4),
+                  Text(
+                    isTurkish ? 'LGBTQ+ Dostu' : 'LGBTQ+ Friendly',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 10),
+                  ),
+                ],
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           Row(
             children: [

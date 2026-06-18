@@ -337,7 +337,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         backgroundColor: Colors.transparent,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 90.0), // bottom nav boşluğu
+        padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 160.0), // bottom nav boşluğu
         child: Column(
           children: [
             // 1. Profil Yönetim Kartı
@@ -473,6 +473,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ],
           ),
           const SizedBox(height: 12),
+          // Cinsiyet Başlığı
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                isTr ? 'Cinsiyet' : 'Gender',
+                style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
+              ),
+              Row(
+                children: [
+                  const Text('🏳️‍🌈', style: TextStyle(fontSize: 12)),
+                  const SizedBox(width: 4),
+                  Text(
+                    isTr ? 'LGBTQ+ Dostu' : 'LGBTQ+ Friendly',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 10),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
 
           // Cinsiyet Toggle
           Row(
@@ -772,4 +793,5 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     ).animate().fade(delay: 240.ms, duration: 350.ms);
   }
+
 }
