@@ -11,7 +11,10 @@ import 'package:horoscope/core/models/character_analysis_model.dart';
 import 'package:horoscope/core/models/best_matches_model.dart';
 import 'package:horoscope/core/models/numerology_model.dart';
 import 'package:horoscope/core/models/user_model.dart';
+import 'package:horoscope/core/models/tarot_reading_model.dart';
 import 'package:horoscope/core/utils/astrology_utils.dart';
+import 'package:horoscope/core/utils/birth_place_coords.dart';
+import 'package:sweph/sweph.dart';
 
 class AiService {
   // Gemini API Key loaded from environment variables
@@ -80,7 +83,7 @@ JSON formatı:
         throw Exception('Gemini response is null');
       }
 
-      final Map<String, dynamic> data = jsonDecode(response);
+      final Map<String, dynamic> data = jsonDecode(_sanitizeJson(response));
       final dailyComment = DailyCommentModel(
         commentTr: data['comment_tr'] ?? '',
         commentEn: data['comment_en'] ?? '',
@@ -160,7 +163,7 @@ JSON formatı:
         throw Exception('Gemini response is null');
       }
 
-      final Map<String, dynamic> data = jsonDecode(response);
+      final Map<String, dynamic> data = jsonDecode(_sanitizeJson(response));
       final monthlyData = {
         'comment_tr': data['comment_tr'] ?? '',
         'comment_en': data['comment_en'] ?? '',
@@ -184,7 +187,8 @@ JSON formatı:
     }
   }
 
-  /// Doğum Haritasını Gemini ve timezone altyapısıyla hesaplar ve Firestore'a kaydeder.
+  /// Doğum Haritasını Swiss Ephemeris ile yerel olarak hesaplar ve Firestore'a kaydeder.
+  /// Gemini AI artık hesaplama yapmaz; sadece yorumlama amacıyla kullanılır.
   Future<NatalChartModel?> calculateAndSaveNatalChart({
     required String userId,
     required String name,
@@ -192,6 +196,7 @@ JSON formatı:
     required String birthTime,
     required String birthPlace,
     String? customPath,
+    String? gender,
     bool forceRecalculate = false,
   }) async {
     final docRef = _firestore.doc(customPath ?? 'users/$userId/natal_chart/data');
@@ -205,180 +210,196 @@ JSON formatı:
       } catch (_) {}
     }
 
-    // Saat dilimini düzelt
-    final utcBirthDate = AstrologyUtils.getUtcBirthDate(birthDate, birthTime);
-    final timeParts = birthTime.split(':');
-    final hour = int.parse(timeParts[0]);
-    final minute = int.parse(timeParts[1]);
-    final localDateTime = DateTime(
-      birthDate.year,
-      birthDate.month,
-      birthDate.day,
-      hour,
-      minute,
-    );
-    final offset = AstrologyUtils.getTurkeyOffsetInHours(localDateTime);
-
-    final prompt = """
-Sen hassas hesaplama yapan profesyonel bir astroloji hesaplama motorusun.
-Ad: $name
-Yerel Doğum Tarihi: ${birthDate.day}.${birthDate.month}.${birthDate.year}
-Yerel Doğum Saati: $birthTime
-Saat Dilimi (GMT Offset): GMT+$offset (O tarihteki Türkiye resmi saat dilimi farkı)
-Doğum Zamanı (UTC): $utcBirthDate
-Doğum Yeri: $birthPlace
-
-ÖNEMLİ HESAPLAMA TALİMATLARI:
-- Gezegen konumlarını (Güneş, Ay, Merkür, Venüs, vb.) hesaplarken mutlak doğum zamanı olan UTC: $utcBirthDate değerini temel al.
-- Evlerin başlangıçlarını ve Yükselen Burcu (Ascendant) hesaplarken doğum yerindeki yerel saat olan $birthTime'i ve o tarihteki saat dilimi farkı olan GMT+$offset değerini dikkate al.
-- Türkiye'de kış saati/yaz saati geçişlerinden dolayı saat dilimi farkı o dönemde GMT+$offset idi (1 Aralık 2001 tarihinde kış saati geçerliydi ve GMT+2 idi). Lütfen bu farkı doğru uyguladığından emin ol.
-- Ay burcunu (moonSign) hesaplarken son derece titiz ol. Ay günde yaklaşık 13 derece yol alır ve burç geçişleri saatlik olarak değişir. Örneğin 1 Aralık 2001, 11:25 UTC (13:25 yerel) doğumlu birinin Ay burcu İkizler (Gemini) burcunun ilk derecelerindedir, kesinlikle Koç (Aries) veya Yay değildir. İçsel efemeris bilgilerini çapraz kontrol et ve hızlı hareket eden Ay burcunu tam saate göre doğru hesapladığından emin ol.
-- Yükselen burç (Ascendant) doğum yerine ve tam yerel saate göre hesaplanır. Lütfen sapmaları önlemek için doğum yerinin ($birthPlace) koordinatlarını ve yerel saati ($birthTime) tam olarak kullanarak Yükselen Burcu doğru hesapla.
-- Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur. Derin sanatsal betimlemeler yapmak yerine kullanıcının hızlıca okuyup somut bir sonuç çıkarabileceği doğrudan ve sade bir dil kullan.
-
-GÖRKEMLİ KALİBRASYON VERİ SETİ (Astro-seek Kalibrasyonu):
-Eğer doğum bilgileri 1 Aralık 2001, saat 13:25 (GMT+2) veya yakınları ve doğum yeri İstanbul ise, aşağıdaki verileri birebir ve eksiksiz kullan:
-- planetDetails:
-  - "Güneş": {"sign": "Yay", "degree": "9°19'", "house": 9, "direction": "Direct"}
-  - "Ay": {"sign": "İkizler", "degree": "16°52'", "house": 3, "direction": "Direct"}
-  - "Merkür": {"sign": "Yay", "degree": "7°25'", "house": 9, "direction": "Direct"}
-  - "Venüs": {"sign": "Akrep", "degree": "28°45'", "house": 8, "direction": "Direct"}
-  - "Mars": {"sign": "Kova", "degree": "24°35'", "house": 12, "direction": "Direct"}
-  - "Jüpiter": {"sign": "Yengeç", "degree": "14°20'", "house": 4, "direction": "Retro"}
-  - "Satürn": {"sign": "İkizler", "degree": "11°39'", "house": 3, "direction": "Retro"}
-  - "Uranüs": {"sign": "Kova", "degree": "21°19'", "house": 12, "direction": "Direct"}
-  - "Neptün": {"sign": "Kova", "degree": "6°32'", "house": 11, "direction": "Direct"}
-  - "Plüton": {"sign": "Yay", "degree": "14°53'", "house": 9, "direction": "Direct"}
-  - "Kuzey Düğümü": {"sign": "İkizler", "degree": "27°58'", "house": 3, "direction": "Retro"}
-  - "Lilith": {"sign": "Balık", "degree": "11°15'", "house": 12, "direction": "Direct"}
-  - "Chiron": {"sign": "Yay", "degree": "28°53'", "house": 10, "direction": "Direct"}
-- houseDetails:
-  - "1": {"sign": "Balık", "degree": "27°07'", "annotation": "ASC"}
-  - "2": {"sign": "Boğa", "degree": "8°25'", "annotation": ""}
-  - "3": {"sign": "İkizler", "degree": "6°09'", "annotation": ""}
-  - "4": {"sign": "İkizler", "degree": "28°24'", "annotation": "IC"}
-  - "5": {"sign": "Yengeç", "degree": "20°24'", "annotation": ""}
-  - "6": {"sign": "Aslan", "degree": "17°15'", "annotation": ""}
-  - "7": {"sign": "Başak", "degree": "27°07'", "annotation": "DESC"}
-  - "8": {"sign": "Akrep", "degree": "8°25'", "annotation": ""}
-  - "9": {"sign": "Yay", "degree": "6°09'", "annotation": ""}
-  - "10": {"sign": "Yay", "degree": "28°24'", "annotation": "MC"}
-  - "11": {"sign": "Oğlak", "degree": "20°24'", "annotation": ""}
-  - "12": {"sign": "Kova", "degree": "17°15'", "annotation": ""}
-
-Diğer tüm doğum verileri için de yukarıdaki veriyi referans alarak göreceli hesaplama yap.
-
-Görev:
-1. Bu doğum zamanı ve yerine göre Güneş, Ay ve Yükselen (Ascendant) burçlarını hesapla.
-2. Güneş, Ay, Yükselen, Merkür, Venüs, Mars, Jüpiter, Satürn, Uranüs, Neptün ve Plüton konumlarını derece (boylam) ve ev olarak hesapla.
-   - Burç başlangıçları: Koç=0, Boğa=30, İkizler=60, Yengeç=90, Aslan=120, Başak=150, Terazi=180, Akrep=210, Yay=240, Oğlak=270, Kova=300, Balık=330.
-   - Örnek: Güneş 15.5 derece Koç'ta ise planetAngles kısmında "Güneş": 15.5 olmalı.
-   - Örnek: Ay 10 derece Akrep'te ise planetAngles kısmında "Ay": 220.0 olmalı (210 + 10).
-3. Hem "planetDetails" hem de "houseDetails" içeren genişletilmiş detayları üret.
-   - "planetDetails" içinde şu 13 gezegensel öğe bulunmalıdır: "Güneş", "Ay", "Merkür", "Venüs", "Mars", "Jüpiter", "Satürn", "Uranüs", "Neptün", "Plüton", "Kuzey Düğümü", "Lilith", "Chiron".
-   - "houseDetails" içinde 1'den 12'ye kadar tüm evlerin burç, derece ve varsa annotation (ASC, IC, DESC, MC) bilgileri bulunmalıdır.
-4. Sonucu aşağıdaki JSON formatında ver. JSON dışında hiçbir açıklama veya markdown bloğu yazma.
-
-JSON formatı:
-{
-  "sunSign": "[Güneş burcu, örn: sagittarius]",
-  "moonSign": "[Ay burcu, örn: gemini]",
-  "risingSign": "[Yükselen burcu, örn: pisces]",
-  "planetPositions": {
-    "Güneş": "Yay Burcu, 9. Ev",
-    "Ay": "İkizler Burcu, 3. Ev",
-    "Yükselen": "Balık Burcu, 1. Ev",
-    "Merkür": "Yay Burcu, 9. Ev",
-    "Venüs": "Akrep Burcu, 8. Ev",
-    "Mars": "Kova Burcu, 12. Ev",
-    "Jüpiter": "Yengeç Burcu, 4. Ev",
-    "Satürn": "İkizler Burcu, 3. Ev",
-    "Uranüs": "Kova Burcu, 12. Ev",
-    "Neptün": "Kova Burcu, 11. Ev",
-    "Plüton": "Yay Burcu, 9. Ev"
-  },
-  "planetAngles": {
-    "Güneş": 249.3,
-    "Ay": 76.8,
-    "Yükselen": 357.1,
-    "Merkür": 247.4,
-    "Venüs": 238.75,
-    "Mars": 324.5,
-    "Jüpiter": 104.3,
-    "Satürn": 71.6,
-    "Uranüs": 321.3,
-    "Neptün": 306.5,
-    "Plüton": 254.9
-  },
-  "planetDetails": {
-    "Güneş": {
-      "sign": "Yay",
-      "degree": "9°19'",
-      "house": 9,
-      "direction": "Direct"
-    },
-    ... (tüm 13 gezegensel nesne)
-  },
-  "houseDetails": {
-    "1": {
-      "sign": "Balık",
-      "degree": "27°07'",
-      "annotation": "ASC"
-    },
-    ... (1'den 12'ye kadar tüm evler)
-  }
-}
-""";
-
     try {
-      final response = await _callGemini(prompt);
-      if (response == null) return null;
+      // ── 1. UTC doğum zamanını hesapla ─────────────────────────────────────
+      final timeParts = birthTime.split(':');
+      final localHour = int.parse(timeParts[0]);
+      final localMinute = int.parse(timeParts[1]);
+      final localDateTime = DateTime(birthDate.year, birthDate.month, birthDate.day, localHour, localMinute);
+      final offset = AstrologyUtils.getTurkeyOffsetInHours(localDateTime);
+      final utcDateTime = localDateTime.subtract(Duration(hours: offset));
 
-      final Map<String, dynamic> data = jsonDecode(response);
-      final planetDetails = data['planetDetails'] != null ? Map<String, dynamic>.from(data['planetDetails']) : null;
-      final houseDetails = data['houseDetails'] != null ? Map<String, dynamic>.from(data['houseDetails']) : null;
-      final planetAnglesMap = Map<String, double>.from((data['planetAngles'] as Map<dynamic, dynamic>?)?.map(
-        (key, value) => MapEntry(key.toString(), (value as num).toDouble()),
-      ) ?? {});
+      // ── 2. Julian Day (UT) hesapla ─────────────────────────────────────────
+      final double utHour = utcDateTime.hour + utcDateTime.minute / 60.0;
+      final double julDay = Sweph.swe_julday(
+        utcDateTime.year,
+        utcDateTime.month,
+        utcDateTime.day,
+        utHour,
+        CalendarType.SE_GREG_CAL,
+      );
 
-      Map<String, dynamic>? aspects;
-      Map<String, int>? elements;
-      Map<String, int>? modalities;
+      // ── 3. Koordinatları bul ───────────────────────────────────────────────
+      final coords = BirthPlaceCoords.getCoords(birthPlace);
+      final double lat = coords[0];
+      final double lon = coords[1];
 
-      if (planetDetails != null) {
-        final elMod = AstrologyUtils.calculateElementsAndModalities(planetDetails);
-        elements = elMod['elements'];
-        modalities = elMod['modalities'];
+      // ── 4. Ev hesabı (Placidus) ────────────────────────────────────────────
+      final HouseCuspData houseData = Sweph.swe_houses(
+        julDay,
+        lat,
+        lon,
+        Hsys.P,
+      );
+
+      // cusps[0] = house 1, cusps[11] = house 12
+      final List<double> cusps = houseData.cusps.sublist(1, 13); // index 1..12
+      final double ascLon = houseData.ascmc[0]; // index 0 is Ascendant
+
+      // ── 5. Gezegen bilgilerini hesapla ─────────────────────────────────────
+      // SwephFlag: SEFLG_SPEED to detect retrograde from speedInLongitude
+      final SwephFlag flags = SwephFlag.SEFLG_SPEED;
+
+      // (body id, Turkish name, English)
+      final List<List<dynamic>> bodies = [
+        [HeavenlyBody.SE_SUN,       'Güneş',        'sun'],
+        [HeavenlyBody.SE_MOON,      'Ay',            'moon'],
+        [HeavenlyBody.SE_MERCURY,   'Merkür',        'mercury'],
+        [HeavenlyBody.SE_VENUS,     'Venüs',         'venus'],
+        [HeavenlyBody.SE_MARS,      'Mars',          'mars'],
+        [HeavenlyBody.SE_JUPITER,   'Jüpiter',       'jupiter'],
+        [HeavenlyBody.SE_SATURN,    'Satürn',        'saturn'],
+        [HeavenlyBody.SE_URANUS,    'Uranüs',        'uranus'],
+        [HeavenlyBody.SE_NEPTUNE,   'Neptün',        'neptune'],
+        [HeavenlyBody.SE_PLUTO,     'Plüton',        'pluto'],
+        [HeavenlyBody.SE_TRUE_NODE, 'Kuzey Düğümü', 'true_node'],
+        [HeavenlyBody.SE_MEAN_APOG, 'Lilith',        'lilith'],
+        [HeavenlyBody.SE_CHIRON,    'Chiron',        'chiron'],
+      ];
+
+      // Burç isimleri (Türkçe)
+      final List<String> signNamesTr = [
+        'Koç', 'Boğa', 'İkizler', 'Yengeç', 'Aslan', 'Başak',
+        'Terazi', 'Akrep', 'Yay', 'Oğlak', 'Kova', 'Balık',
+      ];
+      // Burç isimleri (İngilizce, küçük harf — sunSign/moonSign/risingSign için)
+      final List<String> signNamesEn = [
+        'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo',
+        'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces',
+      ];
+
+      String lonToSignTr(double lon) {
+        final idx = (lon / 30.0).floor() % 12;
+        return signNamesTr[idx];
       }
 
-      if (planetAnglesMap.isNotEmpty) {
-        aspects = AstrologyUtils.calculateAspects(planetAnglesMap);
+      String lonToSignEn(double lon) {
+        final idx = (lon / 30.0).floor() % 12;
+        return signNamesEn[idx];
       }
 
+      String lonToDegStr(double lon) {
+        final degInSign = lon % 30.0;
+        final deg = degInSign.floor();
+        final min = ((degInSign - deg) * 60).round();
+        return "$deg°${min.toString().padLeft(2, '0')}'";
+      }
+
+      /// Returns the house number (1-12) for a given ecliptic longitude.
+      int findHouse(double lon, List<double> cusps) {
+        for (int i = 0; i < 12; i++) {
+          final start = cusps[i];
+          final end = cusps[(i + 1) % 12];
+          // Handle wraparound (e.g. cusp in Pisces, next in Aries)
+          if (end > start) {
+            if (lon >= start && lon < end) return i + 1;
+          } else {
+            if (lon >= start || lon < end) return i + 1;
+          }
+        }
+        return 1;
+      }
+
+      final Map<String, dynamic> planetDetails = {};
+      final Map<String, double>  planetAngles  = {};
+      final Map<String, String>  planetPositions = {};
+
+      for (final body in bodies) {
+        final HeavenlyBody bodyId = body[0] as HeavenlyBody;
+        final String nameTr  = body[1] as String;
+
+        try {
+          final CoordinatesWithSpeed pos = Sweph.swe_calc_ut(julDay, bodyId, flags);
+          final double lon2 = pos.longitude % 360.0;
+          final double speed = pos.speedInLongitude;
+          final bool retrograde = speed < 0;
+          final String signTr  = lonToSignTr(lon2);
+          final String degStr  = lonToDegStr(lon2);
+          final int houseNum   = findHouse(lon2, cusps);
+
+          planetDetails[nameTr] = {
+            'sign': signTr,
+            'degree': degStr,
+            'house': houseNum,
+            'direction': retrograde ? 'Retro' : 'Direct',
+          };
+          planetAngles[nameTr] = lon2;
+          planetPositions[nameTr] = '$signTr Burcu, $houseNum. Ev';
+        } catch (e) {
+          debugPrint('⚠️ $nameTr hesaplanamadı: $e');
+        }
+      }
+
+      // ── 6. Yükselen (ASC) ─────────────────────────────────────────────────
+      final String risingSignTr = lonToSignTr(ascLon);
+      final String risingSignEn = lonToSignEn(ascLon);
+      planetAngles['Yükselen'] = ascLon;
+      planetPositions['Yükselen'] = '$risingSignTr Burcu, 1. Ev';
+
+      // ── 7. Ev tablosunu oluştur ────────────────────────────────────────────
+      const List<String> houseAnnotations = ['ASC', '', '', 'IC', '', '', 'DESC', '', '', 'MC', '', ''];
+      final Map<String, dynamic> houseDetails = {};
+      for (int i = 0; i < 12; i++) {
+        final double cuspLon = cusps[i];
+        houseDetails['${i + 1}'] = {
+          'sign': lonToSignTr(cuspLon),
+          'degree': lonToDegStr(cuspLon),
+          'annotation': houseAnnotations[i],
+        };
+      }
+
+      // ── 8. Güneş / Ay burçları ─────────────────────────────────────────────
+      final double sunLon  = planetAngles['Güneş'] ?? 0.0;
+      final double moonLon = planetAngles['Ay'] ?? 0.0;
+      final String sunSignEn  = lonToSignEn(sunLon);
+      final String moonSignEn = lonToSignEn(moonLon);
+
+      // ── 9. Element, Modalite, Aspektler ───────────────────────────────────
+      final elMod     = AstrologyUtils.calculateElementsAndModalities(planetDetails);
+      final elements  = elMod['elements'];
+      final modalities = elMod['modalities'];
+      final aspects   = AstrologyUtils.calculateAspects(planetAngles);
+
+      // ── 10. Model oluştur ve Firestore'a kaydet ────────────────────────────
       final chart = NatalChartModel(
-        sunSign: data['sunSign'] ?? '',
-        moonSign: data['moonSign'] ?? '',
-        risingSign: data['risingSign'] ?? '',
-        planetPositions: Map<String, String>.from(data['planetPositions'] ?? {}),
-        planetAngles: planetAnglesMap,
+        sunSign: sunSignEn,
+        moonSign: moonSignEn,
+        risingSign: risingSignEn,
+        planetPositions: planetPositions,
+        planetAngles: planetAngles,
         planetDetails: planetDetails,
         houseDetails: houseDetails,
         aspects: aspects,
         elements: elements,
         modalities: modalities,
+        gender: gender,
         calculatedAt: DateTime.now(),
       );
 
       await docRef.set(chart.toMap()..['name'] = name, SetOptions(merge: true));
-      debugPrint('✅ Doğum haritası Firestore\'a kaydedildi.');
+      debugPrint('✅ Doğum haritası Swiss Ephemeris ile hesaplandı ve Firestore\'a kaydedildi.');
       return chart;
+
     } catch (e) {
-      debugPrint('⚠️ Doğum haritası üretim hatası: $e');
+      debugPrint('⚠️ Doğum haritası hesaplama hatası (sweph): $e');
       return null;
     }
   }
 
+
   /// İki kişi arasındaki aşk veya arkadaşlık uyumunu hesaplar ve Firestore'a kaydeder.
+  /// Artık her iki kişi için de tam natal chart hesaplanır, gerçek sinastri açıları bulunur
+  /// ve Gemini'ye derinlemesine analiz için tüm veriler iletilir.
   Future<CompatibilityModel?> generateCompatibility({
     required String userId,
     required UserModel user,
@@ -399,12 +420,14 @@ JSON formatı:
       if (docSnapshot.exists && docSnapshot.data() != null) {
         final cached = CompatibilityModel.fromMap(docSnapshot.data() as Map<String, dynamic>);
         // Giriş parametreleri birebir eşleşiyorsa önbellekten çek
+        // Sinastri verisi de varsa cache'i kullan
         if (cached.partnerBirthDate.year == partnerBirthDate.year &&
             cached.partnerBirthDate.month == partnerBirthDate.month &&
             cached.partnerBirthDate.day == partnerBirthDate.day &&
             cached.partnerBirthTime == partnerBirthTime &&
-            cached.partnerBirthPlace == partnerBirthPlace) {
-          debugPrint('ℹ️ Uyum analizi önbellekten alındı (Giriş verileri uyuşuyor).');
+            cached.partnerBirthPlace == partnerBirthPlace &&
+            cached.synastrAspects != null) {
+          debugPrint('ℹ️ Uyum analizi (sinastri dahil) önbellekten alındı.');
           return cached;
         }
       }
@@ -415,64 +438,175 @@ JSON formatı:
         ? '"loveScore" (Aşk Potansiyeli), "sexualityScore" (Cinsellik), "communicationScore" (İletişim), "longTermScore" (Uzun Vade)'
         : '"loyaltyScore" (Sadakat), "mutualInterestScore" (Ortak İlgi), "funScore" (Eğlence), "trustScore" (Güven)';
 
+    // ── 1. Partner natal chart'ı Swiss Ephemeris ile hesapla ──────────────
+    NatalChartModel? partnerNatalChart;
+    if (partnerBirthTime != null && partnerBirthTime != 'Bilinmiyor' && partnerBirthPlace != null) {
+      final normalizedName = partnerName.toLowerCase().replaceAll(' ', '_');
+      final partnerChartPath = 'users/$userId/compatibility_partner_charts/$normalizedName';
+      try {
+        partnerNatalChart = await calculateAndSaveNatalChart(
+          userId: userId,
+          name: partnerName,
+          birthDate: partnerBirthDate,
+          birthTime: partnerBirthTime,
+          birthPlace: partnerBirthPlace,
+          customPath: partnerChartPath,
+          gender: partnerGender,
+        );
+        debugPrint('✅ Partner natal chart hesaplandı: ${partnerNatalChart?.sunSign}');
+      } catch (e) {
+        debugPrint('⚠️ Partner natal chart hesaplama hatası: $e');
+      }
+    }
+
+    // ── 2. Sinastri açılarını hesapla ────────────────────────────────────
+    List<Map<String, dynamic>> synastrAspects = [];
+    if (userNatalChart != null && partnerNatalChart != null) {
+      synastrAspects = AstrologyUtils.calculateSynastriAspects(
+        userNatalChart.planetAngles,
+        partnerNatalChart.planetAngles,
+      );
+      debugPrint('✅ ${synastrAspects.length} sinastri açısı hesaplandı.');
+    }
+
+    // ── 3. Prompt için veri hazırla ───────────────────────────────────────
     final userBirthDateStr = user.birthDate != null
         ? "${user.birthDate!.day}.${user.birthDate!.month}.${user.birthDate!.year}"
         : "Bilinmiyor";
-    final userBirthTimeStr = user.birthTime ?? "Bilinmiyor";
-    final userBirthPlaceStr = user.birthPlace ?? "Bilinmiyor";
 
-    String userNatalChartInfo = "";
+    // Kişi 1 natal chart bilgisi
+    String userChartInfo = "";
     if (userNatalChart != null) {
-      userNatalChartInfo = """
+      final positions = userNatalChart.planetDetails?.entries
+          .map((e) {
+            final d = e.value as Map<String, dynamic>;
+            return "${e.key}: ${d['sign']} ${d['degree']} (${d['house']}. Ev)${d['direction'] == 'Retro' ? ' [R]' : ''}";
+          })
+          .join('\n') ?? userNatalChart.planetPositions.entries.map((e) => "${e.key}: ${e.value}").join('\n');
+
+      userChartInfo = """
 Güneş Burcu: ${userNatalChart.sunSign}
 Ay Burcu: ${userNatalChart.moonSign}
 Yükselen Burç: ${userNatalChart.risingSign}
-Gezegen Ev Konumları: ${userNatalChart.planetPositions.entries.map((e) => "${e.key}: ${e.value}").join(', ')}
+Tam Gezegen Konumları:
+$positions
+""";
+    } else {
+      userChartInfo = "Güneş Burcu: ${user.zodiacSign ?? 'Bilinmiyor'}";
+    }
+
+    // Kişi 2 natal chart bilgisi
+    String partnerChartInfo = "";
+    if (partnerNatalChart != null) {
+      final positions = partnerNatalChart.planetDetails?.entries
+          .map((e) {
+            final d = e.value as Map<String, dynamic>;
+            return "${e.key}: ${d['sign']} ${d['degree']} (${d['house']}. Ev)${d['direction'] == 'Retro' ? ' [R]' : ''}";
+          })
+          .join('\n') ?? partnerNatalChart.planetPositions.entries.map((e) => "${e.key}: ${e.value}").join('\n');
+
+      partnerChartInfo = """
+Güneş Burcu: ${partnerNatalChart.sunSign}
+Ay Burcu: ${partnerNatalChart.moonSign}
+Yükselen Burç: ${partnerNatalChart.risingSign}
+Tam Gezegen Konumları:
+$positions
+""";
+    } else {
+      partnerChartInfo = "Güneş Burcu: $partnerZodiacSign";
+    }
+
+    // Sinastri açıları özeti
+    String synastriInfo = "";
+    if (synastrAspects.isNotEmpty) {
+      final aspectLines = synastrAspects.take(12).map((a) {
+        final hard = (a['isHard'] as bool?) == true ? '⚡ SERT' : '✨ YUMUŞAK';
+        return "${a['planet1']} (K1) — ${a['planet2']} (K2): ${a['aspect']} [$hard, orb: ${(a['orb'] as double).toStringAsFixed(1)}°]";
+      }).join('\n');
+      synastriInfo = """
+Hesaplanan Sinastri Açıları (K1: ${user.name ?? 'Kişi 1'} / K2: $partnerName):
+$aspectLines
 """;
     }
 
+    // ── 4. Gemini Prompt ───────────────────────────────────────────────────
     final prompt = """
-Sen profesyonel bir astroloji ve uyum analizi uzmanısın (Sinastri ve Harita Uyum Uzmanı).
-Uyum Türü: ${isLove ? 'Aşk Uyumu' : 'Arkadaşlık Uyumu'}
+Sen dünyanın en iyi sinastri ve uyum analizi uzmanı astrologusun. 
+İki kişinin doğum haritaları arasındaki gerçek sinastri açıları (interaspects) hesaplanmış ve sana verilmiştir.
+Uyum Türü: ${isLove ? 'Aşk Uyumu (Romantik İlişki)' : 'Arkadaşlık Uyumu'}
 
-Kişi 1 (Kullanıcı):
-Adı: ${user.name ?? 'Kullanıcı'}
+══════════════════════════════════════
+KİŞİ 1 (${user.name ?? 'Kullanıcı'}):
 Cinsiyet: ${user.gender ?? 'Bilinmiyor'}
 Doğum Tarihi: $userBirthDateStr
-Doğum Saati: $userBirthTimeStr
-Doğum Yeri: $userBirthPlaceStr
-Burç: ${user.zodiacSign ?? 'Bilinmiyor'}
-$userNatalChartInfo
-
-Kişi 2 (Partner/Arkadaş):
-Adı: $partnerName
+Doğum Saati: ${user.birthTime ?? 'Bilinmiyor'}
+Doğum Yeri: ${user.birthPlace ?? 'Bilinmiyor'}
+$userChartInfo
+══════════════════════════════════════
+KİŞİ 2 ($partnerName):
 Cinsiyet: $partnerGender
-Doğum Tarihi: ${partnerBirthDate.day}.${partnerBirthDate.month}.${partnerBirthDate.year}
-Doğum Saati: ${partnerBirthTime ?? "Bilinmiyor"}
-Doğum Yeri: ${partnerBirthPlace ?? "Bilinmiyor"}
-Burç: $partnerZodiacSign
+Doğti: ${partnerBirthDate.day}.${partnerBirthDate.month}.${partnerBirthDate.year}
+Doğum Saati: ${partnerBirthTime ?? 'Bilinmiyor'}
+Doğum Yeri: ${partnerBirthPlace ?? 'Bilinmiyor'}
+$partnerChartInfo
+${synastriInfo.isNotEmpty ? '══════════════════════════════════════\nSİNASTRİ AÇILARI:\n$synastriInfo' : ''}
+══════════════════════════════════════
 
 Karakteristik Kurallar (Çok Önemli):
 - Sıradan, yapay zeka tarafından yazıldığı belli olan diplomatik ve politik dilden kesinlikle kaçın.
 - "Unutma ki astroloji sadece bir yol göstericidir", "kararlar senin", "hayatının kontrolü sende", "bu tavsiye niteliğindedir", "sabırlı olmalısın" gibi sorumluluk reddi (disclaimer) veya klişe yapay zeka uyarılarını asla kullanma. Gerçek, bilge ve iddialı bir astrolog gibi konuş.
 - Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun. Güçlü içgörüler ve net uyarılar vermekten çekinme.
 - Soyut tasvirler yerine kullanıcının hayatında uygulayabileceği somut adımlar ("actionable/concrete guidance") ver.
-- Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur. Derin sanatsal betimlemeler yapmak yerine kullanıcının hızlıca okuyup somut bir sonuç çıkarabileceği doğrudan ve sade bir dil kullan.
-- Uyum Puanlamaları (overallScore ve alt skorlar): Skorlar son derece keskin ve gerçekçi olmalıdır. Ancak, iki kişi arasındaki uyum çok kötü veya vahim olsa bile en düşük puanı 60'ın altına indirme (en kötü durumda bile 60-65 bandında puanlar vererek moral bozucu olmaktan kaçın). 60'lı puanlar en zorlu/uyumsuz ilişkileri temsil etsin.
-- Keskin ve Net Analiz Yorumları: Politik ve yuvarlak astrolog cümleleri kurma. İnsanlar doğrudan net sonuçlar çıkaracağı yorumlar görsün. Özellikle olumsuz/zorlu açılarda ve alanlarda tam olarak nereden sorun yaşanacağını (örneğin: "Güneş-Mars sert açınız nedeniyle öfke patlamaları kaçınılmaz, partnerinin fevri çıkışları seni bunaltacak" veya "İletişimde Merkür-Satürn karesi nedeniyle birbirinizi susturmaya çalışıyorsunuz, bu da soğuk savaşa yol açıyor") son derece net, keskin ve ilişki yorumlayıcı cümlelerle açıkla.
+- Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Kısa, son derece net, doğrudan ve anlaşılır cümleler kur.
+- Uyum Puanlamaları: Skorlar son derece keskin ve gerçekçi olmalıdır. En kötü uyumda bile 60'ın altına inme (60-65 bandı en kötüyü temsil etsin).
+- Keskin ve Net Analiz: Olumsuz/zorlu açılarda tam olarak nereden sorun yaşanacağını ("Güneş-Mars kare açınız nedeniyle öfke patlamaları kaçınılmaz", "Venüs-Satürn karesi duygusal mesafe yaratır" gibi) son derece net ve keskin cümlelerle açıkla.
+- Bütünsel Element ve Harita Sentezi (Astrolojik Ağırlık): Sadece elementlerin sayısal oranlarına bakarak mekanik yorumlar yapma. Bir kişinin haritasında hava/toprak çoğunlukta olsa bile, eğer Güneş (Sun), Ay (Moon), Venüs (Venus) veya Mars gibi kişisel gezegenleri Su gruplarında (Yengeç, Akrep, Balık) ise, bu kişi duygusal açıdan soğuk veya mesafeli değildir. Aksine derin duygulara, ilgi ve şefkat ihtiyacına sahiptir (örneğin Güneş ve Mars'ı Yengeç olan bir kadın son derece duygusal, korumacı ve ilgi isteyendir). Kişisel gezegenlerin (Güneş, Ay, Venüs, Mars) konumlarını, element genel dağılımının önüne koyarak duygusal yakınlık/mesafe sentezi yap.
+
+${isLove ? '''Aşk Sinastri Yorumu için Özel Kurallar:
+- Venüs-Mars aspektleri: Fiziksel çekim ve tutku açısından yorumla. Kadın haritasındaki Mars ve erkek haritasındaki Venüs birbirini nasıl etkiliyor?
+- Güneş-Ay aspektleri: Birinin ruhu diğerinin kimliğini "evde" hissettiriyor mu?
+- Satürn aspektleri: Uzun vadeli bağlılık sinyalleri mi, kısıtlama mı?
+''' : ''}
 
 Görev:
-1. Bu iki kişinin detaylı doğum bilgilerine, burçlarına ve (Kişi 1 için mevcutsa) gezegen ev konumlarına göre karşılıklı gezegen etkileşimlerini (örneğin Güneş-Ay uyumu, Venüs-Mars etkileri, yükselen burçların rezonansı vb.) içeren derinlemesine, son derece samimi ve gerçekçi bir sinastri ve uyum analizi yap.
+1. Bu iki kişinin TAM DOĞUM HARITASI verilerine ve sinastri açılarına dayanarak derinlemesine, gerçekçi ve samimi bir uyum analizi yap.
 2. Genel uyum yüzdesini (0 ile 100 arası tamsayı) belirle.
 3. Şu alt skorları (0 ile 100 arası tamsayı) belirle: $scoreDesc.
-4. Hem Türkçe hem İngilizce olarak 3-4 paragraflık samimi, mistik, net ve detaylı analiz yorumları yaz.
-5. Yanıtı aşağıdaki JSON formatında ver. JSON dışında hiçbir açıklama veya markdown bloğu yazma.
+4. En kritik ${synastrAspects.isNotEmpty ? 'sinastri açılarından' : 'gezegen etkileşimlerinden'} 3-5 tanesini seç ve her biri için kısa ama vurucu bir Türkçe ve İngilizce yorum yaz (synastriHighlights).
+5. Hem Türkçe hem İngilizce olarak 3-4 paragraflık samimi, mistik, net ve detaylı genel analiz yorumları yaz.
+6. Aşk veya Arkadaşlık fark etmeksizin Pro analiz bölümlerini şu kurallarla doldur:
+   - "karmicBonds": İki kişi arasındaki ruhsal, karmik ve derin bağları inceleyen (Türkçe ve İngilizce) detaylı bir paragraf.
+   - "conflictResolution": Haritalardaki zorlu açılara ve element uyumsuzluklarına göre, ilişkideki olası kavgaları/anlaşmazlıkları çözmek için çiftin uygulayabileceği son derece somut, yapıcı ve doğrudan tavsiyeler içeren (Türkçe ve İngilizce) detaylı bir paragraf.
+   - "growthTimeline": Gelecek 1 yıldaki potansiyel dönüm noktalarını, gelişim aşamalarını ve kritik göksel tarih etkilerini anlatan (Türkçe ve İngilizce) detaylı bir paragraf.
+7. Yanıtı aşağıdaki JSON formatında ver. JSON dışında hiçbir açıklama veya markdown bloğu yazma.
 
 JSON formatı:
 {
   "overallScore": [Genel uyum puanı],
   "scores": {
-    ${isLove ? '"loveScore": [Puan], "sexualityScore": [Puan], "communicationScore": [Puan], "longTermScore": [Puan]' : '"loyaltyScore": [Puan], "mutualInterestScore": [Puan], "funScore": [Puan], "trustScore": [Puan]' }
+    ${isLove ? '"loveScore": [Puan], "sexualityScore": [Puan], "communicationScore": [Puan], "longTermScore": [Puan]' : '"loyaltyScore": [Puan], "mutualInterestScore": [Puan], "funScore": [Puan], "trustScore": [Puan]'}
+  },
+  "synastriHighlights": [
+    {
+      "planet1": "[Kişi 1 gezegeni]",
+      "planet2": "[Kişi 2 gezegeni]",
+      "aspect": "[Açı türü]",
+      "isHard": [true/false],
+      "interpretationTr": "[Bu açının tek cümlelik net Türkçe yorumu]",
+      "interpretationEn": "[This aspect's concise English interpretation]"
+    }
+  ],
+  "karmicBonds": {
+    "tr": "[Ruhsal ve karmik bağlar Türkçe analizi]",
+    "en": "[Deep spiritual and karmic bonds English analysis]"
+  },
+  "conflictResolution": {
+    "tr": "[Çatışma çözümü ve somut iletişim tavsiyeleri Türkçe]",
+    "en": "[Conflict resolution and actionable communication advice English]"
+  },
+  "growthTimeline": {
+    "tr": "[Gelecek 1 yıl gelişim zaman tüneli ve kritik tarihler Türkçe]",
+    "en": "[Next 1 year growth timeline and critical dates English]"
   },
   "comment_tr": "[Türkçe analiz yorumu (paragrafları \\n ile ayır)]",
   "comment_en": "[İngilizce analiz yorumu (paragrafları \\n ile ayır)]"
@@ -483,7 +617,20 @@ JSON formatı:
       final response = await _callGemini(prompt);
       if (response == null) return null;
 
-      final Map<String, dynamic> data = jsonDecode(response);
+      final Map<String, dynamic> data = jsonDecode(_sanitizeJson(response));
+
+      // synastriHighlights parse et
+      List<Map<String, dynamic>>? highlights;
+      if (data['synastriHighlights'] != null) {
+        highlights = List<Map<String, dynamic>>.from(
+          (data['synastriHighlights'] as List).map((e) => Map<String, dynamic>.from(e)),
+        );
+      }
+
+      final karmicBonds = data['karmicBonds'] as Map<String, dynamic>?;
+      final conflictResolution = data['conflictResolution'] as Map<String, dynamic>?;
+      final growthTimeline = data['growthTimeline'] as Map<String, dynamic>?;
+
       final compatibility = CompatibilityModel(
         partnerName: partnerName,
         partnerBirthDate: partnerBirthDate,
@@ -499,10 +646,20 @@ JSON formatı:
         commentTr: data['comment_tr'] ?? '',
         commentEn: data['comment_en'] ?? '',
         generatedAt: DateTime.now(),
+        synastrAspects: synastrAspects.isNotEmpty ? synastrAspects : null,
+        userPlanetPositions: userNatalChart?.planetPositions.cast<String, dynamic>(),
+        partnerPlanetPositions: partnerNatalChart?.planetPositions.cast<String, dynamic>(),
+        synastriHighlights: highlights,
+        karmicBondsTr: karmicBonds?['tr'] ?? '',
+        karmicBondsEn: karmicBonds?['en'] ?? '',
+        conflictResolutionTr: conflictResolution?['tr'] ?? '',
+        conflictResolutionEn: conflictResolution?['en'] ?? '',
+        growthTimelineTr: growthTimeline?['tr'] ?? '',
+        growthTimelineEn: growthTimeline?['en'] ?? '',
       );
 
       await docRef.set(compatibility.toMap(), SetOptions(merge: true));
-      debugPrint('✅ Yeni uyum analizi üretildi ve Firestore\'a kaydedildi: $docPath');
+      debugPrint('✅ Yeni sinastri tabanlı uyum analizi üretildi ve kaydedildi: $docPath');
       return compatibility;
     } catch (e) {
       debugPrint('⚠️ Uyum analizi üretim hatası: $e');
@@ -615,7 +772,7 @@ JSON formatı:
       final response = await _callGemini(prompt);
       if (response == null) return null;
 
-      final Map<String, dynamic> data = jsonDecode(response);
+      final Map<String, dynamic> data = jsonDecode(_sanitizeJson(response));
 
       final dims = (data['personalityDimensions'] as List? ?? []).map((d) {
         return PersonalityDimension(
@@ -647,6 +804,123 @@ JSON formatı:
       return analysis;
     } catch (e) {
       debugPrint('⚠️ Karakter analizi üretim hatası: $e');
+      return null;
+    }
+  }
+
+  /// Tarot açılımı yorumu üretir ve Firestore'a kaydeder.
+  Future<TarotReadingModel?> generateTarotReading({
+    required String userId,
+    required String category,
+    required List<TarotCardDraw> draws,
+    required UserModel user,
+    required NatalChartModel? userNatalChart,
+  }) async {
+    final readingId = FirebaseFirestore.instance.collection('users/$userId/tarot_readings').doc().id;
+    final docPath = 'users/$userId/tarot_readings/$readingId';
+    final docRef = _firestore.doc(docPath);
+
+    // Kategori isimlerini Türkçe ve İngilizceye çevirmek için
+    final Map<String, String> categoryNameTr = {
+      'love': 'Aşk ve İlişkiler',
+      'career': 'Kariyer ve Finans',
+      'health': 'Sağlık ve Enerji',
+      'decision': 'Karar Verme / Yol Ayrımı',
+      'general': 'Günlük Kozmik Tavsiye',
+    };
+
+    final Map<String, String> categoryNameEn = {
+      'love': 'Love & Relationships',
+      'career': 'Career & Finance',
+      'health': 'Health & Energy',
+      'decision': 'Decision Making',
+      'general': 'Daily Cosmic Guidance',
+    };
+
+    final userBirthDateStr = user.birthDate != null
+        ? "${user.birthDate!.day}.${user.birthDate!.month}.${user.birthDate!.year}"
+        : "Bilinmiyor";
+
+    String userChartInfo = "";
+    if (userNatalChart != null) {
+      userChartInfo = """
+Güneş Burcu: ${userNatalChart.sunSign}
+Ay Burcu: ${userNatalChart.moonSign}
+Yükselen Burç: ${userNatalChart.risingSign}
+Gezegen Konumları: ${userNatalChart.planetPositions.entries.map((e) => "${e.key}: ${e.value}").join(', ')}
+""";
+    }
+
+    final String cardsDescription = draws.map((d) {
+      final direction = d.isUpright ? 'DÜZ' : 'TERS';
+      final positionLabel = d.position == 'past'
+          ? 'Mevcut Durum / Yakın Geçmiş'
+          : (d.position == 'present' ? 'Karşılaşılan Engel / Şimdi' : 'Kozmik Tavsiye / Gelecek');
+      return """
+Pozisyon: $positionLabel
+Kart Adı: ${d.cardNameTr} (İngilizce: ${d.cardNameEn})
+Simge: ${d.symbol}
+Yön: $direction (Kart ${d.isUpright ? 'düz' : 'ters'} çekilmiştir)
+""";
+    }).join('\n---\n');
+
+    final prompt = """
+Sen dünyanın en bilge tarot ve astroloji uzmanı ve yorumcususun. 
+Kullanıcı senin karşına gelip hayatının bir alanı hakkında 3 kartlık bir açılım yaptı ve senden bu kartları kendi astrolojik haritasıyla ilişkilendirerek derinlemesine yorumlamanı istiyor.
+
+Kullanıcı Bilgileri:
+Adı: ${user.name ?? 'Kullanıcı'}
+Cinsiyet: ${user.gender ?? 'Bilinmiyor'}
+Doğum Tarihi: $userBirthDateStr
+Doğum Saati: ${user.birthTime ?? 'Bilinmiyor'}
+Doğum Yeri: ${user.birthPlace ?? 'Bilinmiyor'}
+$userChartInfo
+
+Açılım Kategorisi: ${categoryNameTr[category] ?? category} (İngilizce: ${categoryNameEn[category] ?? category})
+
+Çekilen Kartlar:
+$cardsDescription
+
+Karakteristik Kurallar (Çok Önemli):
+- Sıradan, yapay zeka tarafından yazıldığı belli olan diplomatik ve politik dilden kesinlikle kaçın.
+- "Unutma ki tarot sadece bir yol göstericidir", "kararlar senin", "hayatının kontrolü sende", "bu tavsiye niteliğindedir", "sabırlı olmalısın" gibi sorumluluk reddi (disclaimer) veya klişe yapay zeka uyarılarını asla kullanma. Gerçek, bilge ve iddialı bir astrolog-tarot yorumcusu gibi konuş.
+- Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun. Güçlü içgörüler ve net uyarılar vermekten çekinme.
+- Soyut tasvirler yerine kullanıcının hayatında uygulayabileceği somut adımlar ("actionable/concrete guidance") ver.
+- Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur.
+- Astro-Tarot Bağlantısı: Çekilen kartların astrolojik simgelerini ve burç/gezegen eşleşmelerini, kullanıcının doğum haritasındaki konumlarla (özellikle Güneş, Ay ve Yükselen burcuyla) ilişkilendir. Aralarındaki kozmik uyumu veya çekişmeyi mutlaka vurgula.
+
+Görev:
+1. Çekilen 3 kartı pozisyonlarına (Geçmiş/Durum, Engel/Şimdi, Gelecek/Tavsiye) ve Düz/Ters yönlerine göre seçilen kategori bağlamında analiz et.
+2. Kartlar ile kullanıcının doğum haritası arasında kozmik bağlantılar kur.
+3. Hem Türkçe hem İngilizce olarak 3-4 paragraflık samimi, mistik, son derece net ve detaylı bir yorum yaz.
+4. Yanıtı aşağıdaki JSON formatında ver. JSON dışında hiçbir açıklama veya markdown bloğu yazma.
+
+JSON formatı:
+{
+  "comment_tr": "[Türkçe tarot analizi yorumu (paragrafları \\n ile ayır)]",
+  "comment_en": "[İngilizce tarot analizi yorumu (paragrafları \\n ile ayır)]"
+}
+""";
+
+    try {
+      final response = await _callGemini(prompt);
+      if (response == null) return null;
+
+      final Map<String, dynamic> data = jsonDecode(_sanitizeJson(response));
+      final reading = TarotReadingModel(
+        id: readingId,
+        category: category,
+        draws: draws,
+        commentTr: data['comment_tr'] ?? '',
+        commentEn: data['comment_en'] ?? '',
+        date: DateTime.now(),
+      );
+
+      await docRef.set(reading.toMap(), SetOptions(merge: true));
+      debugPrint('✅ Yeni tarot açılımı üretildi ve kaydedildi: $docPath');
+      return reading;
+    } catch (e) {
+      debugPrint('⚠️ Tarot açılımı üretim hatası: $e');
       return null;
     }
   }
@@ -713,7 +987,7 @@ JSON formatı:
       final response = await _callGemini(prompt);
       if (response == null) return null;
 
-      final Map<String, dynamic> data = jsonDecode(response);
+      final Map<String, dynamic> data = jsonDecode(_sanitizeJson(response));
       final bestMatches = BestMatchesModel(
         romanticMatches: (data['romanticMatches'] as List?)
                 ?.map((m) => MatchDetail.fromMap(Map<String, dynamic>.from(m)))
@@ -800,7 +1074,7 @@ JSON formatı:
       final response = await _callGemini(prompt);
       if (response == null) return null;
 
-      final Map<String, dynamic> data = jsonDecode(response);
+      final Map<String, dynamic> data = jsonDecode(_sanitizeJson(response));
       final numerology = NumerologyModel(
         name: name,
         lifePathNumber: lifePath,
@@ -884,7 +1158,7 @@ JSON formatı:
       final response = await _callGemini(prompt);
       if (response == null) return null;
 
-      final Map<String, dynamic> data = jsonDecode(response);
+      final Map<String, dynamic> data = jsonDecode(_sanitizeJson(response));
       final numerology = NumerologyModel(
         name: name,
         lifePathNumber: lifePath,
@@ -993,7 +1267,7 @@ JSON formatı:
       final response = await _callGemini(prompt);
       if (response == null) return null;
 
-      final Map<String, dynamic> data = jsonDecode(response);
+      final Map<String, dynamic> data = jsonDecode(_sanitizeJson(response));
       final newEntry = {
         'question': question,
         'answerTr': data['answer_tr'] ?? '',
@@ -1020,17 +1294,29 @@ JSON formatı:
     required String sign,
     required String house,
     required String languageCode,
+    String? gender,
   }) async {
     final isTr = languageCode == 'tr';
     
+    final String genderInfo;
+    if (gender == 'male') {
+      genderInfo = isTr ? 'Erkek' : 'Male';
+    } else if (gender == 'female') {
+      genderInfo = isTr ? 'Kadın' : 'Female';
+    } else {
+      genderInfo = isTr ? 'Belirtilmemiş' : 'Not specified';
+    }
+
     final prompt = """
 Sen usta bir astrologsun. Kullanıcının doğum haritasında $planet gezegeni $sign burcunda ve $house. evde bulunuyor.
+Kullanıcı Cinsiyeti: $genderInfo
 
 Karakteristik Kurallar (Çok Önemli):
 - Sıradan, yapay zeka tarafından yazıldığı belli olan diplomatik ve politik dilden kesinlikle kaçın.
 - "Unutma ki astroloji sadece bir yol göstericidir" gibi sorumluluk reddi (disclaimer) veya klişe uyarıları asla kullanma. Gerçek, bilge ve iddialı bir astrolog gibi konuş.
 - Yorum doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun. Güçlü içgörüler ve net uyarılar ver.
 - Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur. Derin sanatsal betimlemeler yapmak yerine kullanıcının hızlıca okuyup somut bir sonuç çıkarabileceği doğrudan ve sade bir dil kullan.
+- Cinsiyet Nüansı: Yorumu hazırlarken kullanıcının cinsiyetini ($genderInfo) göz önünde bulundur. Özellikle Mars (mücadele tarzı, dürtüler, erkek haritasında kendi eril enerjisini kullanma şekli, kadın haritasında çekim duyduğu eril arketip) ve Venüs (ilişki beklentileri, sevgi dili, kadın haritasında kendi dişil kimliği, erkek haritasında çekim duyduğu dişil arketip) yerleşimlerini yorumlarken bu cinsiyete özel nüansları yansıt. Diğer gezegenlerde de eğer cinsiyetin etkisi varsa bunu yansıt.
 
 Görev:
 1. Bu yerleşimin (gezegenin bu burçta ve bu evde olmasının) kişinin psikolojisine, yaşam hedeflerine ve günlük hayatına etkisini derinlemesine analiz et.
@@ -1207,7 +1493,7 @@ Explain the practical impact of this house-sign combination on the person's life
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 8));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> resBody = jsonDecode(response.body);
@@ -1221,6 +1507,32 @@ Explain the practical impact of this house-sign combination on the person's life
       debugPrint('⚠️ Gemini Bağlantı Hatası: $e');
       return null;
     }
+  }
+
+  // JSON Çıktısını Temizleme ve Arındırma (LLM Format Hatalarını Engellemek İçin)
+  String _sanitizeJson(String rawJson) {
+    var cleaned = rawJson.trim();
+    
+    // Markdown kod bloğu temizliği (e.g. ```json ... ```)
+    if (cleaned.startsWith('```')) {
+      final lines = cleaned.split('\n');
+      if (lines.first.startsWith('```')) {
+        lines.removeAt(0);
+      }
+      if (lines.isNotEmpty && lines.last.startsWith('```')) {
+        lines.removeLast();
+      }
+      cleaned = lines.join('\n').trim();
+    }
+    
+    // JSON başlangıç ve bitişini tespit et ({ ... })
+    final firstBrace = cleaned.indexOf('{');
+    final lastBrace = cleaned.lastIndexOf('}');
+    if (firstBrace != -1 && lastBrace != -1 && lastBrace > firstBrace) {
+      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    }
+    
+    return cleaned;
   }
 
   String _mapToEnglishZodiac(String zodiac) {

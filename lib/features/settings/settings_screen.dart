@@ -19,6 +19,7 @@ import 'package:horoscope/shared/widgets/glass_card.dart';
 import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/shared/widgets/birth_place_search_sheet.dart';
+import 'package:horoscope/shared/widgets/premium_dialog_helper.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -344,6 +345,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildProfileSection(isTr),
             const SizedBox(height: 20),
 
+            // Premium Banner
+            _buildPremiumBanner(isTr),
+            const SizedBox(height: 20),
+
             // 2. Dil Ayarları Kartı
             _buildLanguageSection(isTr, locale.languageCode),
             const SizedBox(height: 20),
@@ -362,6 +367,173 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  // Premium Banner
+  Widget _buildPremiumBanner(bool isTr) {
+    final user = ref.watch(userProvider);
+    final isPremium = user?.isPremium ?? false;
+
+    if (isPremium) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primaryGold, width: 1.5),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.primaryGold.withValues(alpha: 0.15),
+              AppColors.warmAmber.withValues(alpha: 0.05),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.workspace_premium_rounded, color: AppColors.primaryGold, size: 36)
+                .animate(onPlay: (controller) => controller.repeat())
+                .shimmer(delay: 2000.ms, duration: 1500.ms),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isTr ? "Horoscope Pro Üyesiniz" : "You are a Horoscope Pro Member",
+                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isTr ? "Tüm kozmik kapılar ve yapay zeka sınırları kalktı. ✨" : "All cosmic gates and AI limits are removed. ✨",
+                    style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ).animate().fade(duration: 350.ms);
+    }
+
+    // Pro'ya geç bannerı (Göz alıcı, altın ve mor parıltılı)
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.6), width: 1),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF1D1635),
+            AppColors.cardSurface,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGold.withValues(alpha: 0.1),
+            blurRadius: 10,
+            spreadRadius: 2,
+          )
+        ]
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            // Yıldız tozu arka plan efekti
+            Positioned(
+              right: -20,
+              top: -20,
+              child: Opacity(
+                opacity: 0.3,
+                child: Icon(Icons.auto_awesome_outlined, size: 100, color: AppColors.primaryGold.withValues(alpha: 0.5)),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(18.0),
+              child: Row(
+                children: [
+                  // Sol ikon
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.primaryGold.withValues(alpha: 0.15),
+                    ),
+                    child: const Icon(Icons.workspace_premium_rounded, color: AppColors.primaryGold, size: 28)
+                        .animate(onPlay: (controller) => controller.repeat())
+                        .shake(hz: 2, curve: Curves.easeInOut, duration: 1500.ms),
+                  ),
+                  const SizedBox(width: 16),
+                  // Metin ve Buton
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isTr ? "Horoscope Pro'ya Yükseltin" : "Upgrade to Horoscope Pro",
+                          style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          isTr 
+                              ? "Yapay zeka analizlerine sınırsız erişin ve reklamları kaldırın." 
+                              : "Access AI readings without limits and remove ads.",
+                          style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 11),
+                        ),
+                        const SizedBox(height: 12),
+                        // Şık, ışıltılı Pro Butonu
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            PremiumDialogHelper.show(context, ref);
+                          },
+                          child: Container(
+                            height: 38,
+                            decoration: BoxDecoration(
+                              gradient: AppColors.goldGradient,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primaryGold.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                )
+                              ]
+                            ),
+                            child: Center(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.auto_awesome, color: AppColors.textDark, size: 16),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    isTr ? "PRO'ya Geç" : "Go PRO",
+                                    style: TextStyle(
+                                      color: AppColors.textDark,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ).animate(onPlay: (controller) => controller.repeat())
+                           .shimmer(delay: 3000.ms, duration: 1800.ms),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fade(delay: 50.ms, duration: 350.ms);
   }
 
   // 1. Profil Yönetimi

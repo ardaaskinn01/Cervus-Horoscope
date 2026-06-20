@@ -14,6 +14,20 @@ class CompatibilityModel {
   final String commentEn;
   final DateTime generatedAt;
 
+  // Sinastri (Synastry) alanları — opsiyonel, geriye dönük uyumlu
+  final List<Map<String, dynamic>>? synastrAspects; // Hesaplanan sinastri açıları
+  final Map<String, dynamic>? userPlanetPositions;    // Kişi 1 gezegen konumları
+  final Map<String, dynamic>? partnerPlanetPositions; // Kişi 2 gezegen konumları
+  final List<Map<String, dynamic>>? synastriHighlights; // Gemini yorumlanan öne çıkan açılar
+
+  // Gelişmiş Sinastri / Detaylı analiz alanları
+  final String? karmicBondsTr;
+  final String? karmicBondsEn;
+  final String? conflictResolutionTr;
+  final String? conflictResolutionEn;
+  final String? growthTimelineTr;
+  final String? growthTimelineEn;
+
   CompatibilityModel({
     required this.partnerName,
     required this.partnerBirthDate,
@@ -27,6 +41,16 @@ class CompatibilityModel {
     required this.commentTr,
     required this.commentEn,
     required this.generatedAt,
+    this.synastrAspects,
+    this.userPlanetPositions,
+    this.partnerPlanetPositions,
+    this.synastriHighlights,
+    this.karmicBondsTr,
+    this.karmicBondsEn,
+    this.conflictResolutionTr,
+    this.conflictResolutionEn,
+    this.growthTimelineTr,
+    this.growthTimelineEn,
   });
 
   Map<String, dynamic> toMap() {
@@ -43,10 +67,34 @@ class CompatibilityModel {
       'comment_tr': commentTr,
       'comment_en': commentEn,
       'generatedAt': Timestamp.fromDate(generatedAt),
+      if (synastrAspects != null) 'synastrAspects': synastrAspects,
+      if (userPlanetPositions != null) 'userPlanetPositions': userPlanetPositions,
+      if (partnerPlanetPositions != null) 'partnerPlanetPositions': partnerPlanetPositions,
+      if (synastriHighlights != null) 'synastriHighlights': synastriHighlights,
+      if (karmicBondsTr != null) 'karmicBondsTr': karmicBondsTr,
+      if (karmicBondsEn != null) 'karmicBondsEn': karmicBondsEn,
+      if (conflictResolutionTr != null) 'conflictResolutionTr': conflictResolutionTr,
+      if (conflictResolutionEn != null) 'conflictResolutionEn': conflictResolutionEn,
+      if (growthTimelineTr != null) 'growthTimelineTr': growthTimelineTr,
+      if (growthTimelineEn != null) 'growthTimelineEn': growthTimelineEn,
     };
   }
 
   factory CompatibilityModel.fromMap(Map<String, dynamic> map) {
+    List<Map<String, dynamic>>? parsedSynastrAspects;
+    if (map['synastrAspects'] != null) {
+      parsedSynastrAspects = List<Map<String, dynamic>>.from(
+        (map['synastrAspects'] as List).map((e) => Map<String, dynamic>.from(e)),
+      );
+    }
+
+    List<Map<String, dynamic>>? parsedHighlights;
+    if (map['synastriHighlights'] != null) {
+      parsedHighlights = List<Map<String, dynamic>>.from(
+        (map['synastriHighlights'] as List).map((e) => Map<String, dynamic>.from(e)),
+      );
+    }
+
     return CompatibilityModel(
       partnerName: map['partnerName'] ?? '',
       partnerBirthDate: map['partnerBirthDate'] != null
@@ -66,6 +114,20 @@ class CompatibilityModel {
       generatedAt: map['generatedAt'] != null
           ? (map['generatedAt'] as Timestamp).toDate()
           : DateTime.now(),
+      synastrAspects: parsedSynastrAspects,
+      userPlanetPositions: map['userPlanetPositions'] != null
+          ? Map<String, dynamic>.from(map['userPlanetPositions'])
+          : null,
+      partnerPlanetPositions: map['partnerPlanetPositions'] != null
+          ? Map<String, dynamic>.from(map['partnerPlanetPositions'])
+          : null,
+      synastriHighlights: parsedHighlights,
+      karmicBondsTr: map['karmicBondsTr'] as String?,
+      karmicBondsEn: map['karmicBondsEn'] as String?,
+      conflictResolutionTr: map['conflictResolutionTr'] as String?,
+      conflictResolutionEn: map['conflictResolutionEn'] as String?,
+      growthTimelineTr: map['growthTimelineTr'] as String?,
+      growthTimelineEn: map['growthTimelineEn'] as String?,
     );
   }
 }

@@ -58,6 +58,7 @@ class _BestMatchesScreenState extends ConsumerState<BestMatchesScreen> with Sing
         birthDate: user.birthDate!,
         birthTime: user.birthTime!,
         birthPlace: user.birthPlace!,
+        gender: user.gender,
       );
 
       if (chart != null) {

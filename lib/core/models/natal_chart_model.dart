@@ -12,6 +12,7 @@ class NatalChartModel {
   final Map<String, int>? elements; // Fire, Earth, Air, Water counts
   final Map<String, int>? modalities; // Cardinal, Fixed, Mutable counts
   final Map<String, dynamic> interpretations; // AI generated interpretations per planet
+  final String? gender; // 'male' or 'female'
   final DateTime calculatedAt;
 
   NatalChartModel({
@@ -26,6 +27,7 @@ class NatalChartModel {
     this.elements,
     this.modalities,
     Map<String, dynamic>? interpretations,
+    this.gender,
     required this.calculatedAt,
   })  : interpretations = interpretations ?? <String, dynamic>{},
         super();
@@ -43,6 +45,7 @@ class NatalChartModel {
       if (elements != null) 'elements': elements,
       if (modalities != null) 'modalities': modalities,
       'interpretations': interpretations,
+      if (gender != null) 'gender': gender,
       'calculatedAt': Timestamp.fromDate(calculatedAt),
     };
   }
@@ -75,6 +78,7 @@ class NatalChartModel {
       elements: map['elements'] != null ? Map<String, int>.from(map['elements']) : null,
       modalities: map['modalities'] != null ? Map<String, int>.from(map['modalities']) : null,
       interpretations: map['interpretations'] != null ? Map<String, dynamic>.from(map['interpretations']) : <String, dynamic>{},
+      gender: map['gender'],
       calculatedAt: map['calculatedAt'] != null
           ? (map['calculatedAt'] as Timestamp).toDate()
           : DateTime.now(),

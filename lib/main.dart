@@ -11,17 +11,31 @@ import 'core/services/notification_service.dart';
 import 'shared/router/app_router.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:sweph/sweph.dart';
 import 'core/services/ad_service.dart';
+import 'package:horoscope/core/services/revenuecat_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Initialize Swiss Ephemeris for local natal chart calculations
+  try {
+    await Sweph.init(
+      epheAssets: Sweph.bundledEpheAssets,
+    );
+  } catch (e) {
+    debugPrint('⚠️ Sweph başlatma hatası: $e');
+  }
+
   // Load environment variables
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
     debugPrint('⚠️ .env dosyası yüklenemedi: $e');
   }
+  
+  // RevenueCat'i başlat
+  await RevenueCatService.init();
   
   // AdMob reklam motorunu başlat
   await AdService.instance.initialize();

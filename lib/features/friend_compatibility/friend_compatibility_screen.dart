@@ -253,6 +253,7 @@ class _FriendCompatibilityScreenState extends ConsumerState<FriendCompatibilityS
         birthDate: user.birthDate ?? DateTime(2000, 1, 1),
         birthTime: user.birthTime ?? '12:00',
         birthPlace: user.birthPlace ?? 'İstanbul',
+        gender: user.gender,
       );
 
       final partnerBirthTimeStr = _knowsPartnerBirthTime && _partnerBirthTime != null

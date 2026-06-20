@@ -170,6 +170,7 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
         birthDate: user.birthDate!,
         birthTime: user.birthTime!,
         birthPlace: user.birthPlace!,
+        gender: user.gender,
       );
 
       if (chart != null) {

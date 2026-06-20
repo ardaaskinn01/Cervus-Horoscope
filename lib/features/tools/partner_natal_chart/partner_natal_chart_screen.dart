@@ -30,6 +30,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   String? _selectedPlace;
+  String? _selectedGender;
   bool _isLoading = false;
   NatalChartModel? _result;
   String? _currentResultName;
@@ -228,6 +229,15 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
       return;
     }
 
+    if (_selectedGender == null) {
+      CustomToast.show(
+        context,
+        isTr ? 'Lütfen cinsiyet seçin!' : 'Please select gender!',
+        isError: true,
+      );
+      return;
+    }
+
     if (_selectedDate == null) {
       CustomToast.show(
         context,
@@ -262,15 +272,15 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
     final limitInfo = await AiService().checkAiToolsDailyLimit(user.uid);
     if (limitInfo['allowed'] == false) {
       _showAiToolsLimitDialog(isTr, user.uid, () {
-        _executeCalculation(user.uid, name, timeStr, partnerPath);
+        _executeCalculation(user.uid, name, timeStr, partnerPath, _selectedGender!);
       });
       return;
     }
 
-    _executeCalculation(user.uid, name, timeStr, partnerPath);
+    _executeCalculation(user.uid, name, timeStr, partnerPath, _selectedGender!);
   }
 
-  Future<void> _executeCalculation(String userId, String name, String timeStr, String partnerPath) async {
+  Future<void> _executeCalculation(String userId, String name, String timeStr, String partnerPath, String gender) async {
     setState(() {
       _isLoading = true;
     });
@@ -283,6 +293,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
         birthTime: timeStr,
         birthPlace: _selectedPlace!,
         customPath: partnerPath,
+        gender: gender,
         forceRecalculate: true,
       );
 
@@ -379,7 +390,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isTr ? 'Arkadaşınızın Bilgileri' : 'Friend\'s Information',
+            isTr ? 'Kişinin Bilgileri' : 'Person\'s Information',
             style: AppTextStyles.h3,
           ),
           const SizedBox(height: 12),
@@ -395,6 +406,23 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
                     hintText: isTr ? 'Kişinin Adı / Takma Adı' : 'Person\'s Name / Nickname',
                     hintStyle: const TextStyle(color: Colors.white38),
                   ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      isTr ? 'Cinsiyet' : 'Gender',
+                      style: AppTextStyles.label.copyWith(color: AppColors.primaryGold),
+                    ),
+                    Row(
+                      children: [
+                        _buildGenderButton('female', isTr ? 'Kadın' : 'Female'),
+                        const SizedBox(width: 8),
+                        _buildGenderButton('male', isTr ? 'Erkek' : 'Male'),
+                      ],
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 GestureDetector(
@@ -498,6 +526,32 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
     );
   }
 
+  Widget _buildGenderButton(String gender, String label) {
+    final isSelected = _selectedGender == gender;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedGender = gender;
+        });
+      },
+      child: GlassCard(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        border: Border.all(
+          color: isSelected ? AppColors.primaryGold : AppColors.borderLight,
+          width: isSelected ? 1.5 : 1.0,
+        ),
+        color: isSelected ? AppColors.primaryGold.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.03),
+        child: Text(
+          label,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: isSelected ? AppColors.primaryGold : AppColors.textPrimary,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildResultView(bool isTr) {
     final chart = _result!;
     final List<MapEntry<String, String>> positions = chart.planetPositions.entries.toList();
@@ -521,42 +575,10 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              _buildSignSummaryCard(isTr ? 'Yükselen Burç' : 'Rising Sign (ASC)', '🌅', _getZodiacTrName(chart.risingSign, isTr)),
-            ],
-          ),
+          _buildRisingSignCard(chart.risingSign, isTr),
           const SizedBox(height: 24),
 
-          // 3. Elements and Modalities
-          if (chart.elements != null && chart.modalities != null) ...[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                isTr ? 'Element & Nitelik Dağılımı' : 'Elements & Modalities',
-                style: AppTextStyles.h3,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildElementsAndModalitiesCard(chart.elements!, chart.modalities!, isTr),
-            const SizedBox(height: 24),
-          ],
-
-          // 4. Aspects
-          if (chart.aspects != null && chart.aspects!['list'] != null && (chart.aspects!['list'] as List).isNotEmpty) ...[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                isTr ? 'Açılar (Aspects)' : 'Aspects',
-                style: AppTextStyles.h3,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildAspectsTable(chart.aspects!['list'] as List<dynamic>, isTr),
-            const SizedBox(height: 24),
-          ],
-
-          // 5. Gezegenler ve Evler (Planets & Houses Table)
+          // 3. Gezegenler ve Evler (Planets Table)
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
@@ -571,6 +593,36 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
             _buildLegacyPlanetPositions(positions),
 
           const SizedBox(height: 24),
+
+          // 4. Elements and Modalities
+          if (chart.elements != null && chart.modalities != null) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                isTr ? 'Element & Nitelik Dağılımı' : 'Elements & Modalities',
+                style: AppTextStyles.h3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildElementsAndModalitiesCard(chart.elements!, chart.modalities!, isTr),
+            const SizedBox(height: 24),
+          ],
+
+          // 5. Aspects
+          if (chart.aspects != null && chart.aspects!['list'] != null && (chart.aspects!['list'] as List).isNotEmpty) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                isTr ? 'Açılar (Aspects)' : 'Aspects',
+                style: AppTextStyles.h3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildAspectsTable(chart.aspects!['list'] as List<dynamic>, isTr),
+            const SizedBox(height: 24),
+          ],
+
+          // 6. Evler (Houses Table)
           if (chart.houseDetails != null && chart.houseDetails!.isNotEmpty) ...[
             Align(
               alignment: Alignment.centerLeft,
@@ -788,8 +840,107 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
           isTr: isTr,
           docPath: docPath,
           initialInterpretations: _result?.interpretations,
+          gender: _result?.gender,
         );
       },
+    );
+  }
+
+  void _showRisingSignInterpretationSheet(String risingSign, bool isTr) {
+    final user = ref.read(userProvider);
+    if (user == null) return;
+    final docName = _currentResultName!.toLowerCase().replaceAll(' ', '_');
+    final docPath = 'users/${user.uid}/partner_natal_charts/$docName';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return RisingSignInterpretationSheet(
+          risingSign: risingSign,
+          isTr: isTr,
+          docPath: docPath,
+          initialInterpretations: _result?.interpretations,
+        );
+      },
+    );
+  }
+
+  void _showHouseInterpretationBottomSheet(String houseNumber, String localizedSign, String rawSign, bool isTr) {
+    final user = ref.read(userProvider);
+    if (user == null) return;
+    final docName = _currentResultName!.toLowerCase().replaceAll(' ', '_');
+    final docPath = 'users/${user.uid}/partner_natal_charts/$docName';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return HouseInterpretationSheet(
+          houseNumber: houseNumber,
+          localizedSign: localizedSign,
+          rawSign: rawSign,
+          isTr: isTr,
+          docPath: docPath,
+          initialInterpretations: _result?.interpretations,
+        );
+      },
+    );
+  }
+
+  Widget _buildRisingSignCard(String risingSign, bool isTr) {
+    return GlassCard(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      child: Row(
+        children: [
+          const Text('🌅', style: TextStyle(fontSize: 26)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isTr ? 'Yükselen Burç (ASC)' : 'Rising Sign (ASC)',
+                  style: AppTextStyles.caption,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _getZodiacTrName(risingSign, isTr),
+                  style: AppTextStyles.label.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _showRisingSignInterpretationSheet(risingSign, isTr);
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.35)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.auto_awesome, size: 13, color: AppColors.primaryGold),
+                  const SizedBox(width: 5),
+                  Text(
+                    isTr ? 'Yorum' : 'Read',
+                    style: const TextStyle(fontSize: 11, color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -969,18 +1120,11 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
   Widget _buildHousesTable(Map<String, dynamic> houseDetails, bool isTr) {
     return GlassCard(
       padding: const EdgeInsets.all(12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: _buildHousesSubTable(1, 6, houseDetails, isTr)),
-          const SizedBox(width: 16),
-          Expanded(child: _buildHousesSubTable(7, 12, houseDetails, isTr)),
-        ],
-      ),
+      child: _buildHousesFullTable(houseDetails, isTr),
     );
   }
 
-  Widget _buildHousesSubTable(int start, int end, Map<String, dynamic> houseDetails, bool isTr) {
+  Widget _buildHousesFullTable(Map<String, dynamic> houseDetails, bool isTr) {
     final Map<String, String> signNameEn = {
       'Koç': 'Aries',
       'Boğa': 'Taurus',
@@ -1007,12 +1151,13 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
         children: [
           _buildHeaderCell(isTr ? 'Ev' : 'House'),
           _buildHeaderCell(isTr ? 'Burç' : 'Sign'),
-          _buildHeaderCell(isTr ? 'Derece' : 'Degree'),
+          _buildHeaderCell(isTr ? 'Derece' : 'Deg.'),
+          _buildHeaderCell(isTr ? 'Yorum' : 'Info', alignment: Alignment.center),
         ],
       ),
     );
 
-    for (int i = start; i <= end; i++) {
+    for (int i = 1; i <= 12; i++) {
       final data = houseDetails[i.toString()];
       if (data == null) continue;
 
@@ -1024,7 +1169,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
 
       String houseLabel = i.toString();
       if (annotation.toString().isNotEmpty) {
-        houseLabel += ' ($annotation)';
+        houseLabel += '\n($annotation)';
       }
 
       tableRows.add(
@@ -1034,9 +1179,40 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
           ),
           children: [
             _buildCell(houseLabel, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
-            // Burç Name
             _buildCell(localizedSignName),
             _buildCell(degree),
+            _buildWidgetCell(
+              InkWell(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _showHouseInterpretationBottomSheet(i.toString(), localizedSignName, sign, isTr);
+                },
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGold.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome, size: 12, color: AppColors.primaryGold),
+                        const SizedBox(width: 4),
+                        Text(
+                          isTr ? 'Yorum' : 'Read',
+                          style: const TextStyle(fontSize: 10, color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              alignment: Alignment.center,
+            ),
           ],
         ),
       );
@@ -1044,9 +1220,10 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
 
     return Table(
       columnWidths: const {
-        0: FlexColumnWidth(1.6),
-        1: FlexColumnWidth(2.0),
-        2: FlexColumnWidth(1.6),
+        0: FlexColumnWidth(1.4),
+        1: FlexColumnWidth(1.8),
+        2: FlexColumnWidth(1.4),
+        3: FlexColumnWidth(1.8),
       },
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
       children: tableRows,

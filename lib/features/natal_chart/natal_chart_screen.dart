@@ -47,6 +47,7 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
         birthDate: user.birthDate ?? DateTime(2000, 1, 1),
         birthTime: user.birthTime ?? '12:00',
         birthPlace: user.birthPlace ?? 'İstanbul',
+        gender: user.gender,
         forceRecalculate: forceRecalculate,
       );
       if (mounted) {
@@ -830,6 +831,7 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
           isTr: isTr,
           docPath: docPath,
           initialInterpretations: _natalChart?.interpretations,
+          gender: _natalChart?.gender ?? user.gender,
         );
       },
     );
@@ -1398,6 +1400,7 @@ class PlanetInterpretationSheet extends StatefulWidget {
   final bool isTr;
   final String docPath;
   final Map<String, dynamic>? initialInterpretations;
+  final String? gender;
 
   const PlanetInterpretationSheet({
     super.key,
@@ -1407,6 +1410,7 @@ class PlanetInterpretationSheet extends StatefulWidget {
     required this.isTr,
     required this.docPath,
     this.initialInterpretations,
+    this.gender,
   });
 
   @override
@@ -1444,6 +1448,7 @@ class PlanetInterpretationSheetState extends State<PlanetInterpretationSheet> {
       sign: widget.sign,
       house: widget.house,
       languageCode: langCode,
+      gender: widget.gender,
     );
 
     if (result != null && result.isNotEmpty) {

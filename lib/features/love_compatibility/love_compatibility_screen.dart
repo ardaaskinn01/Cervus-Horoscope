@@ -18,6 +18,7 @@ import 'package:horoscope/shared/widgets/star_background.dart';
 import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/shared/widgets/birth_place_search_sheet.dart';
 import 'package:horoscope/core/services/ad_service.dart';
+import 'package:horoscope/shared/widgets/premium_dialog_helper.dart';
 
 class LoveCompatibilityScreen extends ConsumerStatefulWidget {
   const LoveCompatibilityScreen({super.key});
@@ -253,6 +254,7 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
         birthDate: user.birthDate ?? DateTime(2000, 1, 1),
         birthTime: user.birthTime ?? '12:00',
         birthPlace: user.birthPlace ?? 'İstanbul',
+        gender: user.gender,
       );
 
       final partnerBirthTimeStr = _knowsPartnerBirthTime && _partnerBirthTime != null
@@ -764,113 +766,309 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
     );
   }
 
-  // Sonuç Ekranı
+  // Sonuç Ekranı — Sinastri Tabanlı Gelişmiş Görünüm
   Widget _buildResultView(bool isTr) {
     final res = _result!;
-    final user = ref.read(userProvider);
-    final userSign = user?.zodiacSign ?? 'aries';
+    final user = ref.watch(userProvider)!;
+    final userSign = user.zodiacSign ?? 'aries';
+    final showPremiumContent = true;
+
+    // Açı ikonları
+    Widget aspectBadge(String aspect, bool isHard) {
+      final color = isHard ? Colors.redAccent : Colors.lightBlueAccent;
+      final emoji = isHard ? '⚡' : '✨';
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.5)),
+        ),
+        child: Text(
+          '$emoji ${aspect.split('(').first.trim()}',
+          style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+        ),
+      );
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 80.0),
       child: Column(
         children: [
-          // 1. Üst Başlık & Eşleşen İsimler
+
+          // ── 1. Çift Harita Özet Kartı ─────────────────────────────────
           GlassCard(
             padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Column(
-                  children: [
-                    _getZodiacEmoji(userSign),
-                    const SizedBox(height: 4),
-                    Text(
-                      user?.name ?? (isTr ? 'Sen' : 'You'),
-                      style: AppTextStyles.label.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      _getZodiacName(userSign, isTr),
-                      style: AppTextStyles.caption.copyWith(color: AppColors.primaryGold),
-                    ),
-                  ],
-                ),
-                const Text('💘', style: TextStyle(fontSize: 32))
-                    .animate(onPlay: (controller) => controller.repeat(reverse: true))
-                    .scale(begin: const Offset(1, 1), end: const Offset(1.15, 1.15), duration: 800.ms),
-                Column(
-                  children: [
-                    _getZodiacEmoji(res.partnerZodiacSign),
-                    const SizedBox(height: 4),
-                    Text(
-                      res.partnerName,
-                      style: AppTextStyles.label.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      _getZodiacName(res.partnerZodiacSign, isTr),
-                      style: AppTextStyles.caption.copyWith(color: AppColors.primaryGold),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // 2. Büyük Uyum Yüzdesi
-          GlassCard(
-            padding: const EdgeInsets.symmetric(vertical: 24),
             child: Column(
               children: [
                 Text(
-                  isTr ? 'Genel Aşk Uyumu' : 'Overall Love Match',
-                  style: AppTextStyles.caption,
+                  isTr ? 'Kozmik Sinastri Analizi' : 'Cosmic Synastry Analysis',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.primaryGold, letterSpacing: 1.5),
                 ),
-                const SizedBox(height: 12),
-                Stack(
-                  alignment: Alignment.center,
+                const SizedBox(height: 16),
+                Row(
                   children: [
-                    SizedBox(
-                      width: 140,
-                      height: 140,
-                      child: Animate().custom(
-                        duration: 1500.ms,
-                        curve: Curves.easeOutCubic,
-                        builder: (context, value, child) => CircularProgressIndicator(
-                          value: value * (res.overallScore / 100.0),
-                          strokeWidth: 10,
-                          backgroundColor: Colors.white10,
-                          color: AppColors.primaryGold,
-                        ),
+                    // Kişi 1 (Kullanıcı)
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _getZodiacEmoji(userSign, fontSize: 36),
+                          const SizedBox(height: 6),
+                          Text(
+                            user.name ?? (isTr ? 'Sen' : 'You'),
+                            style: AppTextStyles.label.copyWith(fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildMiniSignRow('☀️', _getZodiacName(userSign, isTr)),
+                          if (res.userPlanetPositions != null) ...[
+                            _buildMiniSignRow('🌙', _getPlanetSignFromPositions(res.userPlanetPositions!, 'Ay', isTr)),
+                            _buildMiniSignRow('🌅', _getPlanetSignFromPositions(res.userPlanetPositions!, 'Yükselen', isTr)),
+                          ],
+                        ],
                       ),
                     ),
+                    // Merkez — Uyum yüzdesi
                     Column(
                       children: [
-                        Text(
-                          '%${res.overallScore}',
-                          style: AppTextStyles.h1.copyWith(
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryGold,
-                          ),
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox(
+                              width: 90,
+                              height: 90,
+                              child: Animate().custom(
+                                duration: 1500.ms,
+                                curve: Curves.easeOutCubic,
+                                builder: (ctx, val, _) => CircularProgressIndicator(
+                                  value: val * (res.overallScore / 100.0),
+                                  strokeWidth: 7,
+                                  backgroundColor: Colors.white10,
+                                  color: AppColors.primaryGold,
+                                ),
+                              ),
+                            ),
+                            Column(
+                              children: [
+                                Text(
+                                  '${res.overallScore}%',
+                                  style: AppTextStyles.h3.copyWith(
+                                    color: AppColors.primaryGold,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  '💘',
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
+                        const SizedBox(height: 6),
                         Text(
                           _getMatchLabel(res.overallScore, isTr),
-                          style: AppTextStyles.caption.copyWith(fontSize: 10),
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.primaryGold,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ],
+                    ),
+                    // Kişi 2 (Partner)
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _getZodiacEmoji(res.partnerZodiacSign, fontSize: 36),
+                          const SizedBox(height: 6),
+                          Text(
+                            res.partnerName,
+                            style: AppTextStyles.label.copyWith(fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          _buildMiniSignRow('☀️', _getZodiacName(res.partnerZodiacSign, isTr)),
+                          if (res.partnerPlanetPositions != null) ...[
+                            _buildMiniSignRow('🌙', _getPlanetSignFromPositions(res.partnerPlanetPositions!, 'Ay', isTr)),
+                            _buildMiniSignRow('🌅', _getPlanetSignFromPositions(res.partnerPlanetPositions!, 'Yükselen', isTr)),
+                          ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ],
             ),
-          ),
+          ).animate().fade(duration: 400.ms).slideY(begin: 0.1),
           const SizedBox(height: 20),
 
-          // 3. Alt Başlık Skorları
+          // ── 2. Sinastri Açıları Tablosu ──────────────────────────────
+          if (res.synastrAspects != null && res.synastrAspects!.isNotEmpty) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                isTr ? '🔭 Sinastri Açıları' : '🔭 Synastry Aspects',
+                style: AppTextStyles.h3,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              isTr
+                  ? '${user.name ?? "Sen"} ve ${res.partnerName} arasındaki gezegen açıları'
+                  : 'Planetary angles between ${user.name ?? "You"} and ${res.partnerName}',
+              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 10),
+            GlassCard(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: res.synastrAspects!.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final aspect = entry.value;
+                  final isHard = (aspect['isHard'] as bool?) == true;
+                  return Column(
+                    children: [
+                      if (i > 0) const Divider(height: 12, color: Colors.white12),
+                      Row(
+                        children: [
+                          Text(
+                            '${aspect['planet1']}',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryGold,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(Icons.swap_horiz_rounded, size: 14, color: Colors.white38),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${aspect['planet2']}',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryGold,
+                            ),
+                          ),
+                          const Spacer(),
+                          aspectBadge(aspect['aspect'] as String, isHard),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${(aspect['orb'] as double).toStringAsFixed(1)}°',
+                            style: AppTextStyles.caption.copyWith(color: Colors.white38, fontSize: 9),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ).animate().fade(duration: 500.ms, delay: 100.ms),
+            const SizedBox(height: 24),
+          ],
+
+          // ── 3. Sinastri Spotlight'ları (Gemini Yorumları) ─────────────
+          if (res.synastriHighlights != null && res.synastriHighlights!.isNotEmpty) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                isTr ? '✨ Kozmik Bağlantı Noktaları' : '✨ Cosmic Connection Points',
+                style: AppTextStyles.h3,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              isTr ? 'En güçlü sinastri etkileşimleri' : 'Most powerful synastry interactions',
+              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 10),
+            ...res.synastriHighlights!.asMap().entries.map((entry) {
+              final i = entry.key;
+              final h = entry.value;
+              final isHard = h['isHard'] == true;
+              final accentColor = isHard ? Colors.redAccent : AppColors.primaryGold;
+              final interpretation = isTr
+                  ? (h['interpretationTr'] ?? '')
+                  : (h['interpretationEn'] ?? '');
+
+              return GlassCard(
+                padding: const EdgeInsets.all(14),
+                border: Border.all(
+                  color: accentColor.withValues(alpha: 0.35),
+                  width: 1.0,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accentColor.withValues(alpha: 0.15),
+                      ),
+                      child: Center(
+                        child: Text(
+                          isHard ? '⚡' : '✨',
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                '${h['planet1'] ?? ''} — ${h['planet2'] ?? ''}',
+                                style: AppTextStyles.label.copyWith(
+                                  color: accentColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: accentColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  (h['aspect'] as String? ?? '').split('(').first.trim(),
+                                  style: TextStyle(
+                                    color: accentColor,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            interpretation,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              height: 1.5,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ).animate().fade(duration: 400.ms, delay: Duration(milliseconds: 150 + i * 80));
+            }),
+            const SizedBox(height: 24),
+          ],
+
+          // ── 4. Aşk Boyutları Skor Barları ────────────────────────────
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              isTr ? 'Aşk Boyutları' : 'Love Dimensions',
+              isTr ? '📊 Aşk Boyutları' : '📊 Love Dimensions',
               style: AppTextStyles.h3,
             ),
           ),
@@ -900,14 +1098,14 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
                 ),
               ],
             ),
-          ),
+          ).animate().fade(duration: 500.ms, delay: 200.ms),
           const SizedBox(height: 24),
 
-          // 4. Mistik AI Analizi Yorumu
+          // ── 5. Kozmik Genel Yorum ─────────────────────────────────────
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              isTr ? 'Kozmik Yorum Analizi' : 'Cosmic Commentary Analysis',
+              isTr ? '🔮 Kozmik Yorum' : '🔮 Cosmic Commentary',
               style: AppTextStyles.h3,
             ),
           ),
@@ -915,10 +1113,134 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
           GlassCard(
             child: Text(
               isTr ? res.commentTr : res.commentEn,
-              style: AppTextStyles.bodyMedium.copyWith(height: 1.6),
+              style: AppTextStyles.bodyMedium.copyWith(height: 1.65),
             ),
-          ),
-          const SizedBox(height: 32),
+          ).animate().fade(duration: 500.ms, delay: 250.ms),
+          const SizedBox(height: 24),
+
+          // ignore: dead_code
+          if (!showPremiumContent) ...[
+            GestureDetector(
+              onTap: () => PremiumDialogHelper.show(context, ref),
+              child: GlassCard(
+                border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.4), width: 1.5),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.lock_outline_rounded, color: AppColors.primaryGold, size: 24)
+                            .animate(onPlay: (controller) => controller.repeat(reverse: true))
+                            .shake(hz: 2, curve: Curves.easeInOut, duration: 2.seconds),
+                        const SizedBox(width: 8),
+                        Text(
+                          isTr ? 'Derin Sinastri Analizi (PRO)' : 'Deep Synastry Analysis (PRO)',
+                          style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      isTr
+                          ? 'İlişkinizin gizli kodlarını ve kozmik bağlarını keşfetmek için premium özellikleri açın:'
+                          : 'Unlock premium features to discover the hidden codes and cosmic bonds of your relationship:',
+                      style: AppTextStyles.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTeaserFeatureRow(Icons.psychology_outlined, isTr ? '🔮 Ruh Eşi & Karmik Bağlar' : '🔮 Soul Connection & Karmic Bonds', isTr ? 'Geçmiş yaşam karması ve ruhsal çekim dereceniz' : 'Past life karma and level of spiritual attraction'),
+                    _buildTeaserFeatureRow(Icons.gavel_outlined, isTr ? '🛡️ İletişim & Çatışma Çözümü' : '🛡️ Communication & Conflict Resolution', isTr ? 'Zor açılara karşı usta astrolog tavsiyeleri' : 'Master astrolog advice against hard aspects'),
+                    _buildTeaserFeatureRow(Icons.timeline_outlined, isTr ? '⏳ Gelecek Kozmik Zaman Tüneli' : '⏳ Future Cosmic Timeline', isTr ? 'Gelecek 1 yıldaki ilişki dönüm noktaları' : 'Relationship milestones in the next 1 year'),
+                    const SizedBox(height: 20),
+                    Container(
+                      width: double.infinity,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.goldGradient,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryGold.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          isTr ? 'Horoscope Pro ile Şimdi Keşfet ✨' : 'Discover Now with Horoscope Pro ✨',
+                          style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textDark, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+                     .shimmer(duration: 2.seconds, color: Colors.white54),
+                  ],
+                ),
+              ).animate().fade(duration: 500.ms, delay: 300.ms),
+            ),
+            const SizedBox(height: 32),
+          ] else ...[
+            // ── Pro 1. Ruh Eşi ve Karmik Bağlar ─────────────────────────────
+            if (isTr ? (res.karmicBondsTr?.isNotEmpty ?? false) : (res.karmicBondsEn?.isNotEmpty ?? false)) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  isTr ? '🔮 Ruh Eşi & Karmik Bağlar' : '🔮 Soul Connection & Karmic Bonds',
+                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold),
+                ),
+              ),
+              const SizedBox(height: 10),
+              GlassCard(
+                border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.35), width: 1),
+                child: Text(
+                  isTr ? res.karmicBondsTr! : res.karmicBondsEn!,
+                  style: AppTextStyles.bodyMedium.copyWith(height: 1.65),
+                ),
+              ).animate().fade(duration: 500.ms, delay: 300.ms),
+              const SizedBox(height: 24),
+            ],
+
+            // ── Pro 2. Çatışma Çözüm Rehberi ──────────────────────────────
+            if (isTr ? (res.conflictResolutionTr?.isNotEmpty ?? false) : (res.conflictResolutionEn?.isNotEmpty ?? false)) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  isTr ? '🛡️ İletişim & Çatışma Çözümü' : '🛡️ Communication & Conflict Resolution',
+                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold),
+                ),
+              ),
+              const SizedBox(height: 10),
+              GlassCard(
+                border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.35), width: 1),
+                child: Text(
+                  isTr ? res.conflictResolutionTr! : res.conflictResolutionEn!,
+                  style: AppTextStyles.bodyMedium.copyWith(height: 1.65),
+                ),
+              ).animate().fade(duration: 500.ms, delay: 350.ms),
+              const SizedBox(height: 24),
+            ],
+
+            // ── Pro 3. Gelecek Kozmik Zaman Tüneli ─────────────────────────
+            if (isTr ? (res.growthTimelineTr?.isNotEmpty ?? false) : (res.growthTimelineEn?.isNotEmpty ?? false)) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  isTr ? '⏳ Gelecek Kozmik Zaman Tüneli' : '⏳ Future Cosmic Timeline',
+                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold),
+                ),
+              ),
+              const SizedBox(height: 10),
+              GlassCard(
+                border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.35), width: 1),
+                child: Text(
+                  isTr ? res.growthTimelineTr! : res.growthTimelineEn!,
+                  style: AppTextStyles.bodyMedium.copyWith(height: 1.65),
+                ),
+              ).animate().fade(duration: 500.ms, delay: 400.ms),
+              const SizedBox(height: 32),
+            ],
+          ],
 
           // Tekrar Dene Butonu
           GradientButton(
@@ -939,7 +1261,66 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
     ).animate().fade(duration: 400.ms);
   }
 
+  Widget _buildTeaserFeatureRow(IconData icon, String title, String subtitle) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.primaryGold.withValues(alpha: 0.8), size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                ),
+                Text(
+                  subtitle,
+                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  // Mini burç satırı (Çift Harita Kartı için)
+  Widget _buildMiniSignRow(String emoji, String signName) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 11)),
+          const SizedBox(width: 4),
+          Text(
+            signName,
+            style: AppTextStyles.caption.copyWith(fontSize: 10, color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Gezegen konumlarından burç ismini çıkar (örn. "Akrep Burcu, 3. Ev" → "Akrep")
+  String _getPlanetSignFromPositions(Map<String, dynamic> positions, String planet, bool isTr) {
+    final raw = positions[planet]?.toString() ?? '';
+    if (raw.isEmpty) return '—';
+    // Format: "Akrep Burcu, 3. Ev" veya "Koç Burcu, 1. Ev"
+    final parts = raw.split(' Burcu');
+    if (parts.isNotEmpty) return parts[0].trim();
+    return raw;
+  }
+
   // Yardımcı Metotlar
+
   String _getZodiacName(String? key, bool isTr) {
     if (key == null) return '';
     if (!isTr) return key[0].toUpperCase() + key.substring(1);

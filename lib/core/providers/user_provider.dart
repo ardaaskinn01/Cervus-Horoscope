@@ -11,6 +11,7 @@ import 'package:horoscope/core/providers/language_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:horoscope/core/utils/astrology_utils.dart';
+import 'package:horoscope/core/services/revenuecat_service.dart';
 
 class UserNotifier extends Notifier<UserModel?> {
   final FirebaseService _firebaseService = FirebaseService();
@@ -95,6 +96,15 @@ class UserNotifier extends Notifier<UserModel?> {
             await _firebaseService.saveUserProfile(profile);
           } catch (_) {}
         }
+      }
+
+      // RevenueCat premium durumunu kontrol et
+      final isRcPremium = await RevenueCatService.checkPremiumStatus();
+      if (profile.isPremium != isRcPremium) {
+        profile = profile.copyWith(isPremium: isRcPremium);
+        try {
+          await _firebaseService.saveUserProfile(profile);
+        } catch (_) {}
       }
 
       state = profile;
@@ -258,6 +268,27 @@ class UserNotifier extends Notifier<UserModel?> {
       }
     } catch (e) {
       debugPrint('⚠️ Profil güncelleme hatası: $e');
+    }
+  }
+
+  // Premium durumunu güncelle
+  Future<void> updatePremiumStatus(bool isPremium) async {
+    final currentProfile = state;
+    if (currentProfile == null) return;
+    
+    final updated = currentProfile.copyWith(isPremium: isPremium);
+    state = updated;
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('cached_user_profile', jsonEncode(updated.toJson()));
+      
+      if (updated.uid != 'offline_anonymous') {
+        await _firebaseService.saveUserProfile(updated);
+      }
+      debugPrint('ℹ️ Premium durumu güncellendi: $isPremium');
+    } catch (e) {
+      debugPrint('⚠️ Premium durumu güncellenirken hata: $e');
     }
   }
 }

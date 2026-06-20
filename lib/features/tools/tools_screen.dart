@@ -98,6 +98,14 @@ class ToolsScreen extends ConsumerWidget {
         'descTr': 'Yapay zeka tabanlı astroloji kâhinine günde 1 soru sorun.',
         'descEn': 'Ask the AI-powered astrology oracle 1 question per day.',
         'route': '/cosmic-oracle'
+      },
+      {
+        'icon': '🃏',
+        'titleTr': 'Kozmik Tarot',
+        'titleEn': 'Cosmic Tarot',
+        'descTr': 'Doğum haritanızla entegre 3 kartlık açılım ile kaderinizi yorumlayın.',
+        'descEn': 'Interpret your fate with a 3-card spread integrated with your natal chart.',
+        'route': '/tarot'
       }
     ];
 

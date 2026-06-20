@@ -270,4 +270,101 @@ class AstrologyUtils {
 
     return {'list': aspectList};
   }
+
+  /// İki natal chart arasındaki sinastri (interaspect) açılarını hesaplar.
+  /// [chart1Angles]: Kişi 1'in gezegen açıları (Swiss Ephemeris'ten gelen 0–360° boylam değerleri)
+  /// [chart2Angles]: Kişi 2'nin gezegen açıları
+  /// Sadece astrolojik olarak anlamlı gezegen çiftleri karşılaştırılır.
+  static List<Map<String, dynamic>> calculateSynastriAspects(
+    Map<String, double> chart1Angles,
+    Map<String, double> chart2Angles,
+  ) {
+    final List<Map<String, dynamic>> aspectList = [];
+
+    // Sinastride en anlamlı aspekt açıları ve tolerans (orb) değerleri
+    final Map<int, String> aspectNames = {
+      0: 'Kavuşum (Conjunction)',
+      60: 'Sekstil (Sextile)',
+      90: 'Kare (Square)',
+      120: 'Üçgen (Trine)',
+      180: 'Karşıt (Opposition)',
+    };
+
+    final Map<int, double> aspectOrbs = {
+      0: 8.0,
+      60: 4.0,
+      90: 8.0,
+      120: 8.0,
+      180: 8.0,
+    };
+
+    final Map<int, bool> aspectHardness = {
+      0: false,
+      60: false,
+      90: true,
+      120: false,
+      180: true,
+    };
+
+    // Sinastride önemli olan gezegen çiftleri (kişi1 gezegeni → kişi2 gezegeni)
+    // Bu liste aşk uyumunda en kritik karşılaştırmaları kapsar.
+    final List<List<String>> importantPairs = [
+      ['Venüs', 'Mars'],
+      ['Mars', 'Venüs'],
+      ['Güneş', 'Ay'],
+      ['Ay', 'Güneş'],
+      ['Ay', 'Ay'],
+      ['Güneş', 'Güneş'],
+      ['Venüs', 'Venüs'],
+      ['Mars', 'Mars'],
+      ['Merkür', 'Merkür'],
+      ['Güneş', 'Venüs'],
+      ['Venüs', 'Güneş'],
+      ['Ay', 'Venüs'],
+      ['Venüs', 'Ay'],
+      ['Güneş', 'Mars'],
+      ['Mars', 'Güneş'],
+      ['Jüpiter', 'Venüs'],
+      ['Jüpiter', 'Güneş'],
+      ['Satürn', 'Güneş'],
+      ['Satürn', 'Ay'],
+      ['Yükselen', 'Güneş'],
+      ['Yükselen', 'Ay'],
+      ['Yükselen', 'Venüs'],
+    ];
+
+    for (final pair in importantPairs) {
+      final p1 = pair[0]; // Kişi 1'in gezegeni
+      final p2 = pair[1]; // Kişi 2'nin gezegeni
+
+      final angle1 = chart1Angles[p1];
+      final angle2 = chart2Angles[p2];
+
+      if (angle1 == null || angle2 == null) continue;
+
+      double diff = (angle1 - angle2).abs();
+      if (diff > 180) diff = 360 - diff;
+
+      for (final aspectDeg in aspectNames.keys) {
+        final orb = aspectOrbs[aspectDeg]!;
+        final actualDiff = (diff - aspectDeg).abs();
+        if (actualDiff <= orb) {
+          aspectList.add({
+            'planet1': p1,        // Kişi 1'in gezegeni
+            'planet2': p2,        // Kişi 2'nin gezegeni
+            'aspect': aspectNames[aspectDeg],
+            'angle': aspectDeg,
+            'orb': actualDiff,
+            'isHard': aspectHardness[aspectDeg],
+          });
+          break; // Bir gezegen çifti için sadece en yakın aspekti al
+        }
+      }
+    }
+
+    // Orb'a göre sırala (en sıkı açı önce)
+    aspectList.sort((a, b) => (a['orb'] as double).compareTo(b['orb'] as double));
+
+    return aspectList;
+  }
 }
