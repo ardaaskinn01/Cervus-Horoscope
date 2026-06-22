@@ -14,6 +14,7 @@ import 'package:horoscope/shared/widgets/star_background.dart';
 import 'package:horoscope/shared/widgets/zodiac_icon.dart';
 import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/birth_place_search_sheet.dart';
+import 'package:horoscope/core/utils/date_formatter.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -24,6 +25,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
+  final TextEditingController _dateController = TextEditingController();
   int _currentPage = 0;
 
   // Form Verileri
@@ -37,6 +39,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
@@ -348,23 +351,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Cinsiyet
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(isTurkish ? 'Cinsiyet' : 'Gender', style: AppTextStyles.label),
-              Row(
-                children: [
-                  const Text('🏳️‍🌈', style: TextStyle(fontSize: 12)),
-                  const SizedBox(width: 4),
-                  Text(
-                    isTurkish ? 'LGBTQ+ Dostu' : 'LGBTQ+ Friendly',
-                    style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 10),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          Text(isTurkish ? 'Cinsiyet' : 'Gender', style: AppTextStyles.label),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -424,46 +411,63 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           // Doğum Tarihi
           Text(isTurkish ? 'Doğum Tarihi' : 'Birth Date', style: AppTextStyles.label),
           const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () async {
-              final date = await showDatePicker(
-                context: context,
-                initialDate: DateTime(2000, 1, 1),
-                firstDate: DateTime(1900),
-                lastDate: DateTime.now(),
-                builder: (context, child) {
-                  return Theme(
-                    data: Theme.of(context).copyWith(
-                      colorScheme: ColorScheme.dark(
-                        primary: AppColors.primaryGold,
-                        onPrimary: AppColors.textDark,
-                        surface: AppColors.cardSurface,
-                        onSurface: AppColors.textPrimary,
-                      ),
-                    ),
-                    child: child!,
-                  );
-                },
-              );
-              if (date != null) {
-                setState(() {
-                  _birthDate = date;
-                });
-              }
-            },
-            child: GlassCard(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _birthDate == null
-                        ? (isTurkish ? 'Tarih seçin...' : 'Select date...')
-                        : '${_birthDate!.day.toString().padLeft(2, '0')}.${_birthDate!.month.toString().padLeft(2, '0')}.${_birthDate!.year}',
-                    style: AppTextStyles.bodyLarge,
-                  ),
-                  const Icon(Icons.calendar_today_rounded, color: AppColors.primaryGold),
-                ],
+          GlassCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+            child: TextField(
+              controller: _dateController,
+              keyboardType: TextInputType.datetime,
+              inputFormatters: [
+                DateTextInputFormatter(),
+                LengthLimitingTextInputFormatter(10),
+              ],
+              style: AppTextStyles.bodyLarge,
+              onChanged: (val) {
+                final date = parseFormattedDate(val);
+                if (date != null) {
+                  setState(() {
+                    _birthDate = date;
+                  });
+                } else {
+                  setState(() {
+                    _birthDate = null;
+                  });
+                }
+              },
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: isTurkish ? 'GG.AA.YYYY' : 'DD.MM.YYYY',
+                hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.5)),
+                icon: const Icon(Icons.calendar_today_rounded, color: AppColors.primaryGold, size: 20),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryGold),
+                  onPressed: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: _birthDate ?? DateTime(2000, 1, 1),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: ColorScheme.dark(
+                              primary: AppColors.primaryGold,
+                              onPrimary: AppColors.textDark,
+                              surface: AppColors.cardSurface,
+                              onSurface: AppColors.textPrimary,
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    if (date != null) {
+                      setState(() {
+                        _birthDate = date;
+                        _dateController.text = "${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}";
+                      });
+                    }
+                  },
+                ),
               ),
             ),
           ),

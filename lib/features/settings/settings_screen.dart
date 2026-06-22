@@ -20,6 +20,7 @@ import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/shared/widgets/birth_place_search_sheet.dart';
 import 'package:horoscope/shared/widgets/premium_dialog_helper.dart';
+import 'package:horoscope/core/utils/date_formatter.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -32,6 +33,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // Profil Alanları
   final _nameController = TextEditingController();
   final _birthPlaceController = TextEditingController();
+  final _dateController = TextEditingController();
+  final _timeController = TextEditingController();
   DateTime? _birthDate;
   String? _birthTime;
   String? _gender;
@@ -58,6 +61,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void dispose() {
     _nameController.dispose();
     _birthPlaceController.dispose();
+    _dateController.dispose();
+    _timeController.dispose();
     super.dispose();
   }
 
@@ -68,7 +73,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       _nameController.text = user.name ?? '';
       _birthPlaceController.text = user.birthPlace ?? '';
       _birthDate = user.birthDate;
+      if (user.birthDate != null) {
+        _dateController.text = "${user.birthDate!.day.toString().padLeft(2, '0')}.${user.birthDate!.month.toString().padLeft(2, '0')}.${user.birthDate!.year}";
+      } else {
+        _dateController.text = '';
+      }
       _birthTime = user.birthTime;
+      _timeController.text = user.birthTime ?? '';
       _gender = user.gender;
     }
   }
@@ -170,6 +181,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (picked != null) {
       setState(() {
         _birthDate = picked;
+        _dateController.text = "${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}";
       });
     }
   }
@@ -208,6 +220,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final String formattedTime = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
       setState(() {
         _birthTime = formattedTime;
+        _timeController.text = formattedTime;
       });
     }
   }
@@ -580,11 +593,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
 
     // Edit Modu
-    final dateDisplay = _birthDate == null
-        ? (isTr ? 'Tarih Seç' : 'Select Date')
-        : DateFormat('dd.MM.yyyy').format(_birthDate!);
-    final timeDisplay = _birthTime ?? (isTr ? 'Saat Seç' : 'Select Time');
-
     return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -628,42 +636,63 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _selectBirthDate(context),
-                  icon: const Icon(Icons.calendar_month_rounded, color: AppColors.primaryGold),
-                  label: Text(dateDisplay, style: TextStyle(color: AppColors.textPrimary)),
+                child: TextField(
+                  controller: _dateController,
+                  keyboardType: TextInputType.datetime,
+                  inputFormatters: [
+                    DateTextInputFormatter(),
+                    LengthLimitingTextInputFormatter(10),
+                  ],
+                  style: TextStyle(color: AppColors.textPrimary),
+                  onChanged: (val) {
+                    final date = parseFormattedDate(val);
+                    if (date != null) {
+                      setState(() {
+                        _birthDate = date;
+                      });
+                    } else {
+                      setState(() {
+                        _birthDate = null;
+                      });
+                    }
+                  },
+                  decoration: InputDecoration(
+                    labelText: isTr ? 'Doğum Tarihi' : 'Birth Date',
+                    labelStyle: TextStyle(color: AppColors.textSecondary),
+                    hintText: isTr ? 'GG.AA.YYYY' : 'DD.MM.YYYY',
+                    hintStyle: const TextStyle(color: Colors.white30),
+                    prefixIcon: const Icon(Icons.calendar_month_rounded, color: AppColors.primaryGold),
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryGold),
+                      onPressed: () => _selectBirthDate(context),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _selectBirthTime(context),
-                  icon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGold),
-                  label: Text(timeDisplay, style: TextStyle(color: AppColors.textPrimary)),
+                child: TextField(
+                  controller: _timeController,
+                  readOnly: true,
+                  onTap: () => _selectBirthTime(context),
+                  style: TextStyle(color: AppColors.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: isTr ? 'Doğum Saati' : 'Birth Time',
+                    labelStyle: TextStyle(color: AppColors.textSecondary),
+                    hintText: isTr ? 'Saat Seç' : 'Select Time',
+                    hintStyle: const TextStyle(color: Colors.white30),
+                    prefixIcon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGold),
+                    border: const OutlineInputBorder(),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          // Cinsiyet Başlığı
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                isTr ? 'Cinsiyet' : 'Gender',
-                style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
-              ),
-              Row(
-                children: [
-                  const Text('🏳️‍🌈', style: TextStyle(fontSize: 12)),
-                  const SizedBox(width: 4),
-                  Text(
-                    isTr ? 'LGBTQ+ Dostu' : 'LGBTQ+ Friendly',
-                    style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 10),
-                  ),
-                ],
-              ),
-            ],
+          Text(
+            isTr ? 'Cinsiyet' : 'Gender',
+            style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),
 
@@ -699,7 +728,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               TextButton(
                 onPressed: () {
-                  setState(() { _isProfileEditing = false; });
+                  setState(() {
+                    _isProfileEditing = false;
+                    _loadProfileData();
+                  });
                 },
                 child: Text(isTr ? 'İptal' : 'Cancel', style: TextStyle(color: AppColors.textSecondary)),
               ),

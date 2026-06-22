@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:intl/intl.dart';
 import 'package:horoscope/core/constants/app_colors.dart';
 import 'package:horoscope/core/constants/app_text_styles.dart';
 import 'package:horoscope/core/models/compatibility_model.dart';
@@ -21,6 +20,8 @@ import 'package:horoscope/core/services/ad_service.dart';
 import 'package:horoscope/core/utils/firestore_extension.dart';
 import 'package:horoscope/shared/widgets/premium_dialog_helper.dart';
 
+import 'package:horoscope/core/utils/date_formatter.dart';
+
 class LoveCompatibilityScreen extends ConsumerStatefulWidget {
   const LoveCompatibilityScreen({super.key});
 
@@ -30,6 +31,7 @@ class LoveCompatibilityScreen extends ConsumerStatefulWidget {
 
 class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScreen> {
   final _nameController = TextEditingController();
+  final _dateController = TextEditingController();
   DateTime? _selectedDate;
   TimeOfDay? _partnerBirthTime;
   bool _knowsPartnerBirthTime = true;
@@ -81,6 +83,7 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
   @override
   void dispose() {
     _nameController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
@@ -88,7 +91,7 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(2000, 1, 1),
+      initialDate: _selectedDate ?? DateTime(2000, 1, 1),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       builder: (context, child) {
@@ -108,6 +111,7 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
+        _dateController.text = "${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}";
       });
     }
   }
@@ -351,10 +355,6 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
 
   // Form Ekranı
   Widget _buildFormView(bool isTr, String userName, String userSign) {
-    final dateStr = _selectedDate == null
-        ? (isTr ? 'Tarih Seç' : 'Select Date')
-        : DateFormat('dd.MM.yyyy').format(_selectedDate!);
-
     return SingleChildScrollView(
       padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 24.0, bottom: 80.0),
       child: Column(
@@ -434,24 +434,37 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
           const SizedBox(height: 16),
 
           // Doğum Tarihi
-          GestureDetector(
-            onTap: () => _selectDate(context),
-            child: GlassCard(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_month_rounded, color: AppColors.primaryGold),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      dateStr,
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        color: _selectedDate == null ? Colors.white38 : AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                  const Icon(Icons.arrow_drop_down, color: AppColors.primaryGold),
-                ],
+          GlassCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: TextField(
+              controller: _dateController,
+              keyboardType: TextInputType.datetime,
+              inputFormatters: [
+                DateTextInputFormatter(),
+                LengthLimitingTextInputFormatter(10),
+              ],
+              style: TextStyle(color: AppColors.textPrimary),
+              onChanged: (val) {
+                final date = parseFormattedDate(val);
+                if (date != null) {
+                  setState(() {
+                    _selectedDate = date;
+                  });
+                } else {
+                  setState(() {
+                    _selectedDate = null;
+                  });
+                }
+              },
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: isTr ? 'Doğum Tarihi (GG.AA.YYYY)' : 'Birth Date (DD.MM.YYYY)',
+                hintStyle: const TextStyle(color: Colors.white38),
+                icon: const Icon(Icons.calendar_month_rounded, color: AppColors.primaryGold),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryGold),
+                  onPressed: () => _selectDate(context),
+                ),
               ),
             ),
           ),
@@ -572,24 +585,9 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
           const SizedBox(height: 16),
 
           // Cinsiyet Başlığı
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                isTr ? 'Cinsiyet' : 'Gender',
-                style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
-              ),
-              Row(
-                children: [
-                  const Text('🏳️‍🌈', style: TextStyle(fontSize: 12)),
-                  const SizedBox(width: 4),
-                  Text(
-                    isTr ? 'LGBTQ+ Dostu' : 'LGBTQ+ Friendly',
-                    style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 10),
-                  ),
-                ],
-              ),
-            ],
+          Text(
+            isTr ? 'Cinsiyet' : 'Gender',
+            style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),
 

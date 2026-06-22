@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:horoscope/core/constants/app_colors.dart';
 import 'package:horoscope/core/constants/app_text_styles.dart';
@@ -19,6 +18,8 @@ import 'package:horoscope/features/natal_chart/natal_chart_screen.dart'; // To r
 import 'package:horoscope/core/services/ad_service.dart';
 import 'package:horoscope/core/utils/firestore_extension.dart';
 
+import 'package:horoscope/core/utils/date_formatter.dart';
+
 class PartnerNatalChartScreen extends ConsumerStatefulWidget {
   const PartnerNatalChartScreen({super.key});
 
@@ -28,6 +29,7 @@ class PartnerNatalChartScreen extends ConsumerStatefulWidget {
 
 class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScreen> {
   final _nameController = TextEditingController();
+  final _dateController = TextEditingController();
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   String? _selectedPlace;
@@ -49,6 +51,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
   @override
   void dispose() {
     _nameController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
@@ -89,7 +92,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(2000, 1, 1),
+      initialDate: _selectedDate ?? DateTime(2000, 1, 1),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       builder: (context, child) {
@@ -109,6 +112,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
+        _dateController.text = "${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}";
       });
     }
   }
@@ -394,10 +398,6 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
   }
 
   Widget _buildFormView(bool isTr) {
-    final dateStr = _selectedDate == null
-        ? (isTr ? 'Doğum Tarihi Seç' : 'Select Birth Date')
-        : DateFormat('dd.MM.yyyy').format(_selectedDate!);
-
     final timeStr = _selectedTime == null
         ? (isTr ? 'Doğum Saati Seç' : 'Select Birth Time')
         : '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}';
@@ -445,25 +445,38 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
                   ],
                 ),
                 const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () => _selectDate(context),
-                  child: GlassCard(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                    color: Colors.white.withValues(alpha: 0.03),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_today_rounded, color: AppColors.primaryGold, size: 20),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            dateStr,
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: _selectedDate == null ? Colors.white38 : AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        const Icon(Icons.arrow_drop_down, color: AppColors.primaryGold),
-                      ],
+                GlassCard(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                  color: Colors.white.withValues(alpha: 0.03),
+                  child: TextField(
+                    controller: _dateController,
+                    keyboardType: TextInputType.datetime,
+                    inputFormatters: [
+                      DateTextInputFormatter(),
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    style: TextStyle(color: AppColors.textPrimary),
+                    onChanged: (val) {
+                      final date = parseFormattedDate(val);
+                      if (date != null) {
+                        setState(() {
+                          _selectedDate = date;
+                        });
+                      } else {
+                        setState(() {
+                          _selectedDate = null;
+                        });
+                      }
+                    },
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      hintText: isTr ? 'Doğum Tarihi (GG.AA.YYYY)' : 'Birth Date (DD.MM.YYYY)',
+                      hintStyle: const TextStyle(color: Colors.white38),
+                      icon: const Icon(Icons.calendar_today_rounded, color: AppColors.primaryGold, size: 20),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryGold),
+                        onPressed: () => _selectDate(context),
+                      ),
                     ),
                   ),
                 ),
