@@ -57,9 +57,14 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
           .where('type', isEqualTo: 'love')
           .safeGet();
 
-      final items = querySnapshot.docs
-          .map((doc) => CompatibilityModel.fromMap(doc.data()))
-          .toList();
+      final items = querySnapshot.docs.map((doc) {
+        try {
+          return CompatibilityModel.fromMap(doc.data());
+        } catch (e) {
+          debugPrint('⚠️ Error parsing compatibility doc ${doc.id}: $e');
+          return null;
+        }
+      }).whereType<CompatibilityModel>().toList();
 
       items.sort((a, b) => b.generatedAt.compareTo(a.generatedAt));
 

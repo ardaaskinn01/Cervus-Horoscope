@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -1448,8 +1449,13 @@ Explain the practical impact of this house-sign combination on the person's life
   /// Genel amaçlı Gemini API çağrısı
   Future<String?> callGemini(String prompt, {bool isJson = true}) => _callGemini(prompt, isJson: isJson);
 
-  // Gemini 1.5 Flash Model API Çağrısı
+  // Gemini Model API Çağrısı
   Future<String?> _callGemini(String prompt, {bool isJson = true}) async {
+    if (_apiKey.isEmpty) {
+      debugPrint('❌ Gemini API Anahtarı bulunamadı (.env dosyası veya çevre değişkenleri eksik).');
+      return null;
+    }
+
     // 1. Son 60 saniyeden eski istek zaman damgalarını temizle
     final now = DateTime.now();
     _requestTimestamps.removeWhere((t) => now.difference(t).inSeconds > 60);
@@ -1496,11 +1502,38 @@ Explain the practical impact of this house-sign combination on the person's life
           url,
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode(requestBody),
-        ).timeout(const Duration(seconds: 10));
+        ).timeout(const Duration(seconds: 60)); // 60 saniyelik geniş zaman aşımı
 
         if (response.statusCode == 200) {
           final Map<String, dynamic> resBody = jsonDecode(response.body);
-          final String text = resBody['candidates'][0]['content']['parts'][0]['text'];
+          
+          // Güvenlik ve boş yanıt kontrolü
+          final candidates = resBody['candidates'] as List?;
+          if (candidates == null || candidates.isEmpty) {
+            debugPrint('⚠️ Gemini API: Aday listesi boş.');
+            if (prompt.contains('Kozmik Kâhin') || prompt.contains('Kozmik Kahin')) {
+              return '{"answer_tr": "Kozmik Kâhin bu soruyu yanıtlamaktan çekiniyor. Lütfen göksel rehberliğe uygun, yapıcı başka bir soru sorun.", "answer_en": "The Cosmic Oracle is hesitant to answer this question. Please ask another constructive question suitable for celestial guidance."}';
+            }
+            return null; // Güvenlik veya boş yanıtta yeniden deneme yapma
+          }
+
+          final candidate = candidates[0] as Map<String, dynamic>;
+          final finishReason = candidate['finishReason'];
+          if (finishReason != null && finishReason != 'STOP') {
+            debugPrint('⚠️ Gemini API: İşlem durduruldu (Gerekçe: $finishReason).');
+            if (prompt.contains('Kozmik Kâhin') || prompt.contains('Kozmik Kahin')) {
+              return '{"answer_tr": "Kozmik Kâhin bu soruyu yanıtlamaktan çekiniyor. Lütfen göksel rehberliğe uygun, yapıcı başka bir soru sorun.", "answer_en": "The Cosmic Oracle is hesitant to answer this question. Please ask another constructive question suitable for celestial guidance."}';
+            }
+            return null; // Güvenlik engelinde yeniden deneme yapma
+          }
+
+          final content = candidate['content'] as Map<String, dynamic>?;
+          final parts = content?['parts'] as List?;
+          if (parts == null || parts.isEmpty) {
+            return null;
+          }
+
+          final String text = parts[0]['text'] ?? '';
           return text.trim();
         } else {
           debugPrint('⚠️ Gemini API HTTP Hatası (Deneme ${retryCount + 1}): ${response.statusCode} - ${response.body}');
@@ -1514,6 +1547,10 @@ Explain the practical impact of this house-sign combination on the person's life
           return null;
         }
       } catch (e) {
+        if (e is TimeoutException) {
+          debugPrint('⚠️ Gemini API Zaman Aşımı: $e');
+          return null; // Zaman aşımında yeniden deneme yapma, 60 saniye yeterlidir
+        }
         debugPrint('⚠️ Gemini Bağlantı Hatası (Deneme ${retryCount + 1}): $e');
         retryCount++;
         if (retryCount < 3) {

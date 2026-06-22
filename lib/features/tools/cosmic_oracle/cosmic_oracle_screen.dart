@@ -257,7 +257,11 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
       final natalChartDoc = await FirebaseFirestore.instance.doc('users/${user.uid}/natal_chart/data').safeGet();
       NatalChartModel? natalChart;
       if (natalChartDoc.exists && natalChartDoc.data() != null) {
-        natalChart = NatalChartModel.fromMap(natalChartDoc.data()!);
+        try {
+          natalChart = NatalChartModel.fromMap(natalChartDoc.data()!);
+        } catch (e) {
+          debugPrint('⚠️ Cosmic Oracle: Error parsing user natal chart: $e');
+        }
       }
 
       final result = await AiService().generateCosmicOracleResponse(

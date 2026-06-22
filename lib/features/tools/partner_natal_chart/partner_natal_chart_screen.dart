@@ -62,11 +62,16 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
           .safeGet();
 
       final items = querySnapshot.docs.map((doc) {
-        final data = doc.data();
-        final chart = NatalChartModel.fromMap(data);
-        final name = data['name'] ?? doc.id;
-        return _PartnerNatalChartHistoryItem(name: name, chart: chart);
-      }).toList();
+        try {
+          final data = doc.data();
+          final chart = NatalChartModel.fromMap(data);
+          final name = data['name'] ?? doc.id;
+          return _PartnerNatalChartHistoryItem(name: name, chart: chart);
+        } catch (e) {
+          debugPrint('⚠️ Error parsing partner chart document ${doc.id}: $e');
+          return null;
+        }
+      }).whereType<_PartnerNatalChartHistoryItem>().toList();
 
       items.sort((a, b) => b.chart.calculatedAt.compareTo(a.chart.calculatedAt));
 

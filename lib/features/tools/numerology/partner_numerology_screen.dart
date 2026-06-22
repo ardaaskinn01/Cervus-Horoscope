@@ -62,9 +62,14 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
           .collection('users/${user.uid}/partner_numerology')
           .safeGet();
 
-      final items = querySnapshot.docs
-          .map((doc) => NumerologyModel.fromMap(doc.data()))
-          .toList();
+      final items = querySnapshot.docs.map((doc) {
+        try {
+          return NumerologyModel.fromMap(doc.data());
+        } catch (e) {
+          debugPrint('⚠️ Error parsing partner numerology doc ${doc.id}: $e');
+          return null;
+        }
+      }).whereType<NumerologyModel>().toList();
 
       items.sort((a, b) => b.generatedAt.compareTo(a.generatedAt));
 
