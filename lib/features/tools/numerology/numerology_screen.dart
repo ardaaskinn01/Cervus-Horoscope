@@ -265,15 +265,19 @@ class _NumerologyScreenState extends ConsumerState<NumerologyScreen> {
     final isTr = ref.read(languageProvider).languageCode == 'tr';
     final String fullName = user.name ?? '';
 
-    final limitInfo = await AiService().checkAiToolsDailyLimit(user.uid);
-    if (limitInfo['allowed'] == false) {
-      _showAiToolsLimitDialog(isTr, user.uid, () {
-        _executeCalculation(user.uid, fullName);
-      });
-      return;
+    try {
+      final limitInfo = await AiService().checkAiToolsDailyLimit(user.uid);
+      if (limitInfo['allowed'] == false) {
+        _showAiToolsLimitDialog(isTr, user.uid, () {
+          _executeCalculation(user.uid, fullName);
+        });
+        return;
+      }
+      _executeCalculation(user.uid, fullName);
+    } catch (e) {
+      debugPrint('⚠️ Limit check error: $e');
+      _executeCalculation(user.uid, fullName);
     }
-
-    _executeCalculation(user.uid, fullName);
   }
 
   Future<void> _executeCalculation(String userId, String fullName) async {

@@ -225,15 +225,19 @@ class _FriendCompatibilityScreenState extends ConsumerState<FriendCompatibilityS
       return;
     }
 
-    final limitInfo = await AiService().checkAiToolsDailyLimit(user.uid);
-    if (limitInfo['allowed'] == false) {
-      _showAiToolsLimitDialog(isTr, user.uid, () {
-        _executeCalculation(user.uid);
-      });
-      return;
+    try {
+      final limitInfo = await AiService().checkAiToolsDailyLimit(user.uid);
+      if (limitInfo['allowed'] == false) {
+        _showAiToolsLimitDialog(isTr, user.uid, () {
+          _executeCalculation(user.uid);
+        });
+        return;
+      }
+      _executeCalculation(user.uid);
+    } catch (e) {
+      debugPrint('⚠️ Limit check error: $e');
+      _executeCalculation(user.uid);
     }
-
-    _executeCalculation(user.uid);
   }
 
   Future<void> _executeCalculation(String userId) async {

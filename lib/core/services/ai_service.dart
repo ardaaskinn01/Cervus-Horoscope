@@ -1489,25 +1489,41 @@ Explain the practical impact of this house-sign combination on the person's life
       };
     }
 
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 30));
+    int retryCount = 0;
+    while (retryCount < 3) {
+      try {
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(requestBody),
+        ).timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> resBody = jsonDecode(response.body);
-        final String text = resBody['candidates'][0]['content']['parts'][0]['text'];
-        return text.trim();
-      } else {
-        debugPrint('⚠️ Gemini API HTTP Hatası: ${response.statusCode} - ${response.body}');
-        return null;
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> resBody = jsonDecode(response.body);
+          final String text = resBody['candidates'][0]['content']['parts'][0]['text'];
+          return text.trim();
+        } else {
+          debugPrint('⚠️ Gemini API HTTP Hatası (Deneme ${retryCount + 1}): ${response.statusCode} - ${response.body}');
+          if (response.statusCode == 429 || response.statusCode >= 500) {
+            retryCount++;
+            if (retryCount < 3) {
+              await Future.delayed(const Duration(milliseconds: 1500));
+              continue;
+            }
+          }
+          return null;
+        }
+      } catch (e) {
+        debugPrint('⚠️ Gemini Bağlantı Hatası (Deneme ${retryCount + 1}): $e');
+        retryCount++;
+        if (retryCount < 3) {
+          await Future.delayed(const Duration(milliseconds: 1500));
+        } else {
+          return null;
+        }
       }
-    } catch (e) {
-      debugPrint('⚠️ Gemini Bağlantı Hatası: $e');
-      return null;
     }
+    return null;
   }
 
   // JSON Çıktısını Temizleme ve Arındırma (LLM Format Hatalarını Engellemek İçin)
@@ -1625,72 +1641,82 @@ Explain the practical impact of this house-sign combination on the person's life
 
   // Kozmik Kahin için limit kontrolü
   Future<Map<String, dynamic>> checkCosmicOracleLimit(String userId) async {
-    final isPremiumUser = await isUserPremium(userId);
-    if (isPremiumUser) {
+    try {
+      final isPremiumUser = await isUserPremium(userId);
+      if (isPremiumUser) {
+        return {
+          'allowed': true,
+          'questionsAsked': 0,
+          'rewardedWatched': true,
+          'needAd': false,
+        };
+      }
+
+      final docRef = _firestore.doc('users/$userId/cosmic_oracle/data');
+      final doc = await docRef.safeGet();
+      
+      int questionsAskedToday = 0;
+      bool rewardedWatchedToday = false;
+
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final limitBoundary = _getMostRecentFourAM();
+        
+        // Bugün 04:00'dan sonra sorulan soruları say
+        if (data['history'] != null) {
+          final historyList = List<dynamic>.from(data['history']);
+          for (final item in historyList) {
+            final dynamic askedAtVal = item['askedAt'];
+            DateTime askedAt;
+            if (askedAtVal is Timestamp) {
+              askedAt = askedAtVal.toDate();
+            } else if (askedAtVal is DateTime) {
+              askedAt = askedAtVal;
+            } else {
+              continue;
+            }
+            if (askedAt.isAfter(limitBoundary)) {
+              questionsAskedToday++;
+            }
+          }
+        }
+
+        // Bugün ödüllü reklam izlenip izlenmediğini kontrol et
+        final dynamic adWatchedAtVal = data['rewardedAdWatchedAt'];
+        if (adWatchedAtVal != null) {
+          DateTime adWatchedAt;
+          if (adWatchedAtVal is Timestamp) {
+            adWatchedAt = adWatchedAtVal.toDate();
+          } else if (adWatchedAtVal is DateTime) {
+            adWatchedAt = adWatchedAtVal;
+          } else {
+            adWatchedAt = DateTime.fromMillisecondsSinceEpoch(0);
+          }
+          if (adWatchedAt.isAfter(limitBoundary)) {
+            rewardedWatchedToday = true;
+          }
+        }
+      }
+
+      // Günde 1 ücretsiz soru. Ödüllü reklamla +1 ek soru hakkı (toplam 2 soru)
+      final bool allowed = questionsAskedToday == 0 || (questionsAskedToday == 1 && rewardedWatchedToday);
+      final bool needAd = questionsAskedToday == 1 && !rewardedWatchedToday;
+
       return {
-        'allowed': true,
+        'allowed': allowed,
+        'questionsAsked': questionsAskedToday,
+        'rewardedWatched': rewardedWatchedToday,
+        'needAd': needAd,
+      };
+    } catch (e) {
+      debugPrint('⚠️ checkCosmicOracleLimit hatası: $e');
+      return {
+        'allowed': true, // Ağ hatasında bloklamamak için varsayılan olarak izin ver
         'questionsAsked': 0,
-        'rewardedWatched': true,
+        'rewardedWatched': false,
         'needAd': false,
       };
     }
-
-    final docRef = _firestore.doc('users/$userId/cosmic_oracle/data');
-    final doc = await docRef.safeGet();
-    
-    int questionsAskedToday = 0;
-    bool rewardedWatchedToday = false;
-
-    if (doc.exists && doc.data() != null) {
-      final data = doc.data()!;
-      final limitBoundary = _getMostRecentFourAM();
-      
-      // Bugün 04:00'dan sonra sorulan soruları say
-      if (data['history'] != null) {
-        final historyList = List<dynamic>.from(data['history']);
-        for (final item in historyList) {
-          final dynamic askedAtVal = item['askedAt'];
-          DateTime askedAt;
-          if (askedAtVal is Timestamp) {
-            askedAt = askedAtVal.toDate();
-          } else if (askedAtVal is DateTime) {
-            askedAt = askedAtVal;
-          } else {
-            continue;
-          }
-          if (askedAt.isAfter(limitBoundary)) {
-            questionsAskedToday++;
-          }
-        }
-      }
-
-      // Bugün ödüllü reklam izlenip izlenmediğini kontrol et
-      final dynamic adWatchedAtVal = data['rewardedAdWatchedAt'];
-      if (adWatchedAtVal != null) {
-        DateTime adWatchedAt;
-        if (adWatchedAtVal is Timestamp) {
-          adWatchedAt = adWatchedAtVal.toDate();
-        } else if (adWatchedAtVal is DateTime) {
-          adWatchedAt = adWatchedAtVal;
-        } else {
-          adWatchedAt = DateTime.fromMillisecondsSinceEpoch(0);
-        }
-        if (adWatchedAt.isAfter(limitBoundary)) {
-          rewardedWatchedToday = true;
-        }
-      }
-    }
-
-    // Günde 1 ücretsiz soru. Ödüllü reklamla +1 ek soru hakkı (toplam 2 soru)
-    final bool allowed = questionsAskedToday == 0 || (questionsAskedToday == 1 && rewardedWatchedToday);
-    final bool needAd = questionsAskedToday == 1 && !rewardedWatchedToday;
-
-    return {
-      'allowed': allowed,
-      'questionsAsked': questionsAskedToday,
-      'rewardedWatched': rewardedWatchedToday,
-      'needAd': needAd,
-    };
   }
 
   // Kozmik Kahin için ödüllü reklam izleme kaydı
@@ -1703,55 +1729,65 @@ Explain the practical impact of this house-sign combination on the person's life
 
   // Yapay Zeka Hesaplama Araçları (Love, Friend, Partner Natal, Partner Numerology, Ben Kimim) limit kontrolü
   Future<Map<String, dynamic>> checkAiToolsDailyLimit(String userId) async {
-    final isPremiumUser = await isUserPremium(userId);
-    if (isPremiumUser) {
+    try {
+      final isPremiumUser = await isUserPremium(userId);
+      if (isPremiumUser) {
+        return {
+          'allowed': true,
+          'count': 0,
+          'allowedExtra': 0,
+          'needAd': false,
+        };
+      }
+
+      final docRef = _firestore.doc('users/$userId/daily_usage/ai_tools');
+      final doc = await docRef.safeGet();
+
+      int count = 0;
+      int allowedExtra = 0;
+
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final limitBoundary = _getMostRecentFourAM();
+
+        // Bugün yapılan hesaplama sayısı
+        final dynamic lastUsedAtVal = data['lastCalculationAt'];
+        if (lastUsedAtVal != null) {
+          DateTime lastUsedAt = lastUsedAtVal is Timestamp ? lastUsedAtVal.toDate() : lastUsedAtVal as DateTime;
+          if (lastUsedAt.isAfter(limitBoundary)) {
+            count = data['calculationsCount'] ?? 0;
+          }
+        }
+
+        // Bugün ödüllü reklamla kazanılan ek haklar
+        final dynamic lastRewardedAtVal = data['lastRewardedAt'];
+        if (lastRewardedAtVal != null) {
+          DateTime lastRewardedAt = lastRewardedAtVal is Timestamp ? lastRewardedAtVal.toDate() : lastRewardedAtVal as DateTime;
+          if (lastRewardedAt.isAfter(limitBoundary)) {
+            allowedExtra = data['rewardedCalculationsAllowed'] ?? 0;
+          }
+        }
+      }
+
+      // Günde 3 ücretsiz hak. Her rewarded ad +1 hak sağlar.
+      final bool allowed = count < (3 + allowedExtra);
+      final bool needAd = count >= 3 && count >= (3 + allowedExtra);
+
       return {
-        'allowed': true,
+        'allowed': allowed,
+        'count': count,
+        'allowedExtra': allowedExtra,
+        'needAd': needAd,
+      };
+    } catch (e) {
+      debugPrint('⚠️ checkAiToolsDailyLimit hatası: $e');
+      return {
+        'allowed': true, // Ağ hatasında bloklamamak için varsayılan olarak izin ver
         'count': 0,
         'allowedExtra': 0,
         'needAd': false,
       };
     }
-
-    final docRef = _firestore.doc('users/$userId/daily_usage/ai_tools');
-    final doc = await docRef.safeGet();
-
-    int count = 0;
-    int allowedExtra = 0;
-
-    if (doc.exists && doc.data() != null) {
-      final data = doc.data()!;
-      final limitBoundary = _getMostRecentFourAM();
-
-      // Bugün yapılan hesaplama sayısı
-      final dynamic lastUsedAtVal = data['lastCalculationAt'];
-      if (lastUsedAtVal != null) {
-        DateTime lastUsedAt = lastUsedAtVal is Timestamp ? lastUsedAtVal.toDate() : lastUsedAtVal as DateTime;
-        if (lastUsedAt.isAfter(limitBoundary)) {
-          count = data['calculationsCount'] ?? 0;
-        }
-      }
-
-      // Bugün ödüllü reklamla kazanılan ek haklar
-      final dynamic lastRewardedAtVal = data['lastRewardedAt'];
-      if (lastRewardedAtVal != null) {
-        DateTime lastRewardedAt = lastRewardedAtVal is Timestamp ? lastRewardedAtVal.toDate() : lastRewardedAtVal as DateTime;
-        if (lastRewardedAt.isAfter(limitBoundary)) {
-          allowedExtra = data['rewardedCalculationsAllowed'] ?? 0;
-        }
-      }
-    }
-
-    // Günde 3 ücretsiz hak. Her rewarded ad +1 hak sağlar.
-    final bool allowed = count < (3 + allowedExtra);
-    final bool needAd = count >= 3 && count >= (3 + allowedExtra);
-
-    return {
-      'allowed': allowed,
-      'count': count,
-      'allowedExtra': allowedExtra,
-      'needAd': needAd,
-    };
   }
 
   // AI Araçları hesaplama sayısını artırır

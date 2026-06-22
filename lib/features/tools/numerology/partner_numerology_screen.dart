@@ -294,15 +294,19 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
       return;
     }
 
-    final limitInfo = await AiService().checkAiToolsDailyLimit(user.uid);
-    if (limitInfo['allowed'] == false) {
-      _showAiToolsLimitDialog(isTr, user.uid, () {
-        _executeCalculation(user.uid, name);
-      });
-      return;
+    try {
+      final limitInfo = await AiService().checkAiToolsDailyLimit(user.uid);
+      if (limitInfo['allowed'] == false) {
+        _showAiToolsLimitDialog(isTr, user.uid, () {
+          _executeCalculation(user.uid, name);
+        });
+        return;
+      }
+      _executeCalculation(user.uid, name);
+    } catch (e) {
+      debugPrint('⚠️ Limit check error: $e');
+      _executeCalculation(user.uid, name);
     }
-
-    _executeCalculation(user.uid, name);
   }
 
   Future<void> _executeCalculation(String userId, String name) async {

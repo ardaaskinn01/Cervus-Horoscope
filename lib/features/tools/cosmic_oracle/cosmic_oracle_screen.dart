@@ -220,11 +220,15 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
     if (questionText.isEmpty) return;
 
     // Günlük limit kontrolü
-    final limitInfo = await AiService().checkCosmicOracleLimit(user.uid);
-    if (limitInfo['allowed'] == false) {
-      _focusNode.unfocus();
-      _showPremiumLimitDialog(isTr);
-      return;
+    try {
+      final limitInfo = await AiService().checkCosmicOracleLimit(user.uid);
+      if (limitInfo['allowed'] == false) {
+        _focusNode.unfocus();
+        _showPremiumLimitDialog(isTr);
+        return;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Cosmic Oracle limit check error: $e');
     }
 
     setState(() {
