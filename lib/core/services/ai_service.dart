@@ -1476,90 +1476,119 @@ Explain the practical impact of this house-sign combination on the person's life
     // 3. Mevcut istek zaman damgasını ekle
     _requestTimestamps.add(DateTime.now());
 
-    final url = Uri.parse(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=$_apiKey",
-    );
+    final candidateModels = [
+      'gemini-3.1-flash-lite',
+      'gemini-2.5-flash-lite',
+      'gemini-2.0-flash-lite',
+    ];
 
-    final Map<String, dynamic> requestBody = {
-      "contents": [
-        {
-          "parts": [
-            {"text": prompt}
-          ]
-        }
-      ]
-    };
-    if (isJson) {
-      requestBody["generationConfig"] = {
-        "responseMimeType": "application/json"
+    for (final model in candidateModels) {
+      final url = Uri.parse(
+        "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$_apiKey",
+      );
+
+      final Map<String, dynamic> requestBody = {
+        "contents": [
+          {
+            "parts": [
+              {"text": prompt}
+            ]
+          }
+        ]
       };
-    }
+      if (isJson) {
+        requestBody["generationConfig"] = {
+          "responseMimeType": "application/json"
+        };
+      }
 
-    int retryCount = 0;
-    while (retryCount < 3) {
-      try {
-        final response = await http.post(
-          url,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(requestBody),
-        ).timeout(const Duration(seconds: 60)); // 60 saniyelik geniş zaman aşımı
+      int retryCount = 0;
+      bool modelFailed = false;
 
-        if (response.statusCode == 200) {
-          final Map<String, dynamic> resBody = jsonDecode(response.body);
-          
-          // Güvenlik ve boş yanıt kontrolü
-          final candidates = resBody['candidates'] as List?;
-          if (candidates == null || candidates.isEmpty) {
-            debugPrint('⚠️ Gemini API: Aday listesi boş.');
-            if (prompt.contains('Kozmik Kâhin') || prompt.contains('Kozmik Kahin')) {
-              return '{"answer_tr": "Kozmik Kâhin bu soruyu yanıtlamaktan çekiniyor. Lütfen göksel rehberliğe uygun, yapıcı başka bir soru sorun.", "answer_en": "The Cosmic Oracle is hesitant to answer this question. Please ask another constructive question suitable for celestial guidance."}';
+      while (retryCount < 2) {
+        try {
+          debugPrint('🔮 Gemini API Çağrısı: Model: $model, Deneme: ${retryCount + 1}');
+          final response = await http.post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(requestBody),
+          ).timeout(const Duration(seconds: 30)); // Her model denemesi için 30 saniye makul bir süredir
+
+          if (response.statusCode == 200) {
+            final Map<String, dynamic> resBody = jsonDecode(response.body);
+            
+            // Güvenlik ve boş yanıt kontrolü
+            final candidates = resBody['candidates'] as List?;
+            if (candidates == null || candidates.isEmpty) {
+              debugPrint('⚠️ Gemini API ($model): Aday listesi boş.');
+              if (prompt.contains('Kozmik Kâhin') || prompt.contains('Kozmik Kahin')) {
+                return '{"answer_tr": "Kozmik Kâhin bu soruyu yanıtlamaktan çekiniyor. Lütfen göksel rehberliğe uygun, yapıcı başka bir soru sorun.", "answer_en": "The Cosmic Oracle is hesitant to answer this question. Please ask another constructive question suitable for celestial guidance."}';
+              }
+              return null; // Güvenlik engelinde yeniden deneme yapma
             }
-            return null; // Güvenlik veya boş yanıtta yeniden deneme yapma
-          }
 
-          final candidate = candidates[0] as Map<String, dynamic>;
-          final finishReason = candidate['finishReason'];
-          if (finishReason != null && finishReason != 'STOP') {
-            debugPrint('⚠️ Gemini API: İşlem durduruldu (Gerekçe: $finishReason).');
-            if (prompt.contains('Kozmik Kâhin') || prompt.contains('Kozmik Kahin')) {
-              return '{"answer_tr": "Kozmik Kâhin bu soruyu yanıtlamaktan çekiniyor. Lütfen göksel rehberliğe uygun, yapıcı başka bir soru sorun.", "answer_en": "The Cosmic Oracle is hesitant to answer this question. Please ask another constructive question suitable for celestial guidance."}';
+            final candidate = candidates[0] as Map<String, dynamic>;
+            final finishReason = candidate['finishReason'];
+            if (finishReason != null && finishReason != 'STOP') {
+              debugPrint('⚠️ Gemini API ($model): İşlem durduruldu (Gerekçe: $finishReason).');
+              if (prompt.contains('Kozmik Kâhin') || prompt.contains('Kozmik Kahin')) {
+                return '{"answer_tr": "Kozmik Kâhin bu soruyu yanıtlamaktan çekiniyor. Lütfen göksel rehberliğe uygun, yapıcı başka bir soru sorun.", "answer_en": "The Cosmic Oracle is hesitant to answer this question. Please ask another constructive question suitable for celestial guidance."}';
+              }
+              return null; // Güvenlik engelinde yeniden deneme yapma
             }
-            return null; // Güvenlik engelinde yeniden deneme yapma
-          }
 
-          final content = candidate['content'] as Map<String, dynamic>?;
-          final parts = content?['parts'] as List?;
-          if (parts == null || parts.isEmpty) {
-            return null;
-          }
-
-          final String text = parts[0]['text'] ?? '';
-          return text.trim();
-        } else {
-          debugPrint('⚠️ Gemini API HTTP Hatası (Deneme ${retryCount + 1}): ${response.statusCode} - ${response.body}');
-          if (response.statusCode == 429 || response.statusCode >= 500) {
-            retryCount++;
-            if (retryCount < 3) {
-              await Future.delayed(const Duration(milliseconds: 1500));
-              continue;
+            final content = candidate['content'] as Map<String, dynamic>?;
+            final parts = content?['parts'] as List?;
+            if (parts == null || parts.isEmpty) {
+              return null;
             }
+
+            final String text = parts[0]['text'] ?? '';
+            return text.trim();
+          } else {
+            debugPrint('⚠️ Gemini API HTTP Hatası ($model, Deneme ${retryCount + 1}): ${response.statusCode} - ${response.body}');
+            if (response.statusCode == 429) {
+              // Hız sınırına takıldıysa 2 saniye bekleyip tekrar dene
+              retryCount++;
+              if (retryCount < 2) {
+                await Future.delayed(const Duration(milliseconds: 2000));
+                continue;
+              }
+            } else if (response.statusCode >= 500) {
+              // Sunucu hatası varsa 1.5 saniye bekleyip tekrar dene
+              retryCount++;
+              if (retryCount < 2) {
+                await Future.delayed(const Duration(milliseconds: 1500));
+                continue;
+              }
+            }
+            modelFailed = true;
+            break;
           }
-          return null;
-        }
-      } catch (e) {
-        if (e is TimeoutException) {
-          debugPrint('⚠️ Gemini API Zaman Aşımı: $e');
-          return null; // Zaman aşımında yeniden deneme yapma, 60 saniye yeterlidir
-        }
-        debugPrint('⚠️ Gemini Bağlantı Hatası (Deneme ${retryCount + 1}): $e');
-        retryCount++;
-        if (retryCount < 3) {
-          await Future.delayed(const Duration(milliseconds: 1500));
-        } else {
-          return null;
+        } catch (e) {
+          if (e is TimeoutException) {
+            debugPrint('⚠️ Gemini API Zaman Aşımı ($model): $e');
+            modelFailed = true;
+            break; // Zaman aşımında doğrudan sonraki modele geç
+          }
+          debugPrint('⚠️ Gemini Bağlantı Hatası ($model, Deneme ${retryCount + 1}): $e');
+          retryCount++;
+          if (retryCount < 2) {
+            await Future.delayed(const Duration(milliseconds: 1500));
+          } else {
+            modelFailed = true;
+          }
         }
       }
+
+      if (!modelFailed) {
+        // Başarılı bir şekilde sonuç alındıysa döngüden çık
+        break;
+      } else {
+        debugPrint('⚠️ $model modelinde sorun oluştu veya meşgul. Sonraki model deneniyor...');
+      }
     }
+
     return null;
   }
 
