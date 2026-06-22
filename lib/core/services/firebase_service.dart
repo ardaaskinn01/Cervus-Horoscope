@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:horoscope/core/models/user_model.dart';
+import 'package:horoscope/core/utils/firestore_extension.dart';
 
 class FirebaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -32,7 +33,7 @@ class FirebaseService {
   // Kullanıcı profilini Firestore'dan çek
   Future<UserModel?> getUserProfile(String uid) async {
     try {
-      final DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
+      final DocumentSnapshot doc = await _firestore.collection('users').doc(uid).safeGet();
       if (doc.exists && doc.data() != null) {
         return UserModel.fromMap(doc.data() as Map<String, dynamic>);
       }

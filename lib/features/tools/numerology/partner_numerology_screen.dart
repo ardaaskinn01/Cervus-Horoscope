@@ -14,6 +14,7 @@ import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/star_background.dart';
 import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/core/services/ad_service.dart';
+import 'package:horoscope/core/utils/firestore_extension.dart';
 
 class PartnerNumerologyScreen extends ConsumerStatefulWidget {
   const PartnerNumerologyScreen({super.key});
@@ -59,7 +60,7 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
     try {
       final querySnapshot = await FirebaseFirestore.instance
           .collection('users/${user.uid}/partner_numerology')
-          .get();
+          .safeGet();
 
       final items = querySnapshot.docs
           .map((doc) => NumerologyModel.fromMap(doc.data()))
@@ -309,6 +310,8 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
       _isLoadingAi = true;
     });
 
+    final isTr = ref.read(languageProvider).languageCode == 'tr';
+
     try {
       final numerology = await AiService().generateAndSavePartnerNumerology(
         userId: userId,
@@ -331,10 +334,24 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
           _history.insert(0, numerology);
         });
       } else {
-        setState(() { _isLoadingAi = false; });
+        if (mounted) {
+          setState(() { _isLoadingAi = false; });
+          CustomToast.show(
+            context,
+            isTr ? 'Mistik rapor oluşturulamadı. Lütfen internetinizi kontrol edin.' : 'Could not generate cosmic report. Please check your internet connection.',
+            isError: true,
+          );
+        }
       }
     } catch (_) {
-      setState(() { _isLoadingAi = false; });
+      if (mounted) {
+        setState(() { _isLoadingAi = false; });
+        CustomToast.show(
+          context,
+          isTr ? 'Bir hata oluştu. Lütfen tekrar deneyin.' : 'An error occurred. Please try again.',
+          isError: true,
+        );
+      }
     }
   }
 

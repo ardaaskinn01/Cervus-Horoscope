@@ -17,6 +17,7 @@ import 'package:horoscope/shared/widgets/birth_place_search_sheet.dart';
 import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/features/natal_chart/natal_chart_screen.dart'; // To reuse NatalChartPainter
 import 'package:horoscope/core/services/ad_service.dart';
+import 'package:horoscope/core/utils/firestore_extension.dart';
 
 class PartnerNatalChartScreen extends ConsumerStatefulWidget {
   const PartnerNatalChartScreen({super.key});
@@ -58,7 +59,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
     try {
       final querySnapshot = await FirebaseFirestore.instance
           .collection('users/${user.uid}/partner_natal_charts')
-          .get();
+          .safeGet();
 
       final items = querySnapshot.docs.map((doc) {
         final data = doc.data();
@@ -310,15 +311,29 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
           _history.insert(0, _PartnerNatalChartHistoryItem(name: name, chart: chart));
         });
       } else {
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+          final isTr = ref.read(languageProvider).languageCode == 'tr';
+          CustomToast.show(
+            context,
+            isTr ? 'Gök haritası hesaplanamadı. Lütfen internetinizi kontrol edin.' : 'Could not calculate natal chart. Please check your internet connection.',
+            isError: true,
+          );
+        }
       }
     } catch (_) {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
+        final isTr = ref.read(languageProvider).languageCode == 'tr';
+        CustomToast.show(
+          context,
+          isTr ? 'Bir hata oluştu. Lütfen tekrar deneyin.' : 'An error occurred. Please try again.',
+          isError: true,
+        );
       }
     }
   }

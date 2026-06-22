@@ -14,6 +14,7 @@ import 'package:horoscope/core/models/user_model.dart';
 import 'package:horoscope/core/models/tarot_reading_model.dart';
 import 'package:horoscope/core/utils/astrology_utils.dart';
 import 'package:horoscope/core/utils/birth_place_coords.dart';
+import 'package:horoscope/core/utils/firestore_extension.dart';
 import 'package:sweph/sweph.dart';
 
 class AiService {
@@ -38,7 +39,7 @@ class AiService {
     // Önce Firestore'da var mı kontrol et (Duble üretimi önle)
     try {
       debugPrint('🔮 Firestore Kontrolü Başlıyor: $docPath');
-      final docSnapshot = await docRef.get().timeout(const Duration(seconds: 4));
+      final docSnapshot = await docRef.safeGet(timeout: const Duration(seconds: 4));
       debugPrint('🔮 Firestore Kontrolü Tamamlandı. Var mı: ${docSnapshot.exists}');
       if (docSnapshot.exists && docSnapshot.data() != null) {
         debugPrint('ℹ️ Yorum Firestore\'da zaten mevcut, oradan çekiliyor.');
@@ -124,7 +125,7 @@ JSON formatı:
     final docRef = _firestore.doc(docPath);
 
     try {
-      final docSnapshot = await docRef.get();
+      final docSnapshot = await docRef.safeGet();
       if (docSnapshot.exists && docSnapshot.data() != null) {
         return docSnapshot.data();
       }
@@ -203,7 +204,7 @@ JSON formatı:
 
     if (!forceRecalculate) {
       try {
-        final docSnapshot = await docRef.get();
+        final docSnapshot = await docRef.safeGet();
         if (docSnapshot.exists && docSnapshot.data() != null) {
           return NatalChartModel.fromMap(docSnapshot.data() as Map<String, dynamic>);
         }
@@ -416,7 +417,7 @@ JSON formatı:
     final docRef = _firestore.doc(docPath);
 
     try {
-      final docSnapshot = await docRef.get();
+      final docSnapshot = await docRef.safeGet();
       if (docSnapshot.exists && docSnapshot.data() != null) {
         final cached = CompatibilityModel.fromMap(docSnapshot.data() as Map<String, dynamic>);
         // Giriş parametreleri birebir eşleşiyorsa önbellekten çek
@@ -678,7 +679,7 @@ JSON formatı:
 
     if (!forceRecalculate) {
       try {
-        final docSnapshot = await docRef.get();
+        final docSnapshot = await docRef.safeGet();
         if (docSnapshot.exists && docSnapshot.data() != null) {
           final data = docSnapshot.data() as Map<String, dynamic>;
           // Eski format kontrolü: personalityDimensions yoksa yeniden hesapla
@@ -937,7 +938,7 @@ JSON formatı:
 
     if (!forceRecalculate) {
       try {
-        final docSnapshot = await docRef.get();
+        final docSnapshot = await docRef.safeGet();
         if (docSnapshot.exists && docSnapshot.data() != null) {
           final model = BestMatchesModel.fromMap(docSnapshot.data() as Map<String, dynamic>);
           // Eski 3-burçlu veri kontrolü: 10'dan az ise yeniden hesapla
@@ -1019,7 +1020,7 @@ JSON formatı:
     final docRef = _firestore.doc('users/$userId/numerology/$docName');
 
     try {
-      final docSnapshot = await docRef.get();
+      final docSnapshot = await docRef.safeGet();
       if (docSnapshot.exists && docSnapshot.data() != null) {
         debugPrint('ℹ️ Numeroloji Firestore\'da zaten mevcut, oradan çekiliyor.');
         return NumerologyModel.fromMap(docSnapshot.data() as Map<String, dynamic>);
@@ -1104,7 +1105,7 @@ JSON formatı:
     final docRef = _firestore.doc('users/$userId/partner_numerology/$docName');
 
     try {
-      final docSnapshot = await docRef.get();
+      final docSnapshot = await docRef.safeGet();
       if (docSnapshot.exists && docSnapshot.data() != null) {
         return NumerologyModel.fromMap(docSnapshot.data() as Map<String, dynamic>);
       }
@@ -1183,7 +1184,7 @@ JSON formatı:
   Future<List<Map<String, dynamic>>> getCosmicOracleHistory(String userId) async {
     try {
       final docRef = _firestore.doc('users/$userId/cosmic_oracle/data');
-      final doc = await docRef.get();
+      final doc = await docRef.safeGet();
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
         if (data['history'] != null) {
@@ -1601,7 +1602,7 @@ Explain the practical impact of this house-sign combination on the person's life
   // Kullanıcının premium olup olmadığını sorgular
   Future<bool> isUserPremium(String userId) async {
     try {
-      final userDoc = await _firestore.doc('users/$userId').get();
+      final userDoc = await _firestore.doc('users/$userId').safeGet();
       if (userDoc.exists && userDoc.data() != null) {
         return userDoc.data()?['isPremium'] == true;
       }
@@ -1635,7 +1636,7 @@ Explain the practical impact of this house-sign combination on the person's life
     }
 
     final docRef = _firestore.doc('users/$userId/cosmic_oracle/data');
-    final doc = await docRef.get();
+    final doc = await docRef.safeGet();
     
     int questionsAskedToday = 0;
     bool rewardedWatchedToday = false;
@@ -1713,7 +1714,7 @@ Explain the practical impact of this house-sign combination on the person's life
     }
 
     final docRef = _firestore.doc('users/$userId/daily_usage/ai_tools');
-    final doc = await docRef.get();
+    final doc = await docRef.safeGet();
 
     int count = 0;
     int allowedExtra = 0;
@@ -1756,7 +1757,7 @@ Explain the practical impact of this house-sign combination on the person's life
   // AI Araçları hesaplama sayısını artırır
   Future<void> incrementAiToolsCalculationCount(String userId) async {
     final docRef = _firestore.doc('users/$userId/daily_usage/ai_tools');
-    final doc = await docRef.get();
+    final doc = await docRef.safeGet();
 
     final limitBoundary = _getMostRecentFourAM();
     int count = 0;
@@ -1790,7 +1791,7 @@ Explain the practical impact of this house-sign combination on the person's life
   // AI Araçları için ödüllü reklamla hak artırır
   Future<void> incrementAiToolsRewardedCount(String userId) async {
     final docRef = _firestore.doc('users/$userId/daily_usage/ai_tools');
-    final doc = await docRef.get();
+    final doc = await docRef.safeGet();
 
     final limitBoundary = _getMostRecentFourAM();
     int count = 0;

@@ -10,6 +10,7 @@ import 'package:horoscope/core/models/character_analysis_model.dart';
 import 'package:horoscope/core/providers/user_provider.dart';
 import 'package:horoscope/core/providers/language_provider.dart';
 import 'package:horoscope/core/services/ai_service.dart';
+import 'package:horoscope/core/utils/firestore_extension.dart';
 import 'package:horoscope/shared/widgets/glass_card.dart';
 import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/custom_toast.dart';
@@ -121,7 +122,7 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
       try {
         final docRef = FirebaseFirestore.instance
             .doc('users/${user.uid}/character_analysis/data');
-        final docSnapshot = await docRef.get();
+        final docSnapshot = await docRef.safeGet();
         if (docSnapshot.exists && docSnapshot.data() != null) {
           final data = docSnapshot.data()!;
           final dims = data['personalityDimensions'] as List?;
@@ -158,6 +159,7 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
   Future<void> _executeCalculation(String userId,
       {bool forceRecalculate = false}) async {
     setState(() { _isLoading = true; });
+    final isTr = ref.read(languageProvider).languageCode == 'tr';
 
     try {
       final aiService = AiService();
@@ -181,18 +183,42 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
           forceRecalculate: forceRecalculate,
         );
 
-        if (analysis != null && !forceRecalculate) {
-          await AiService().incrementAiToolsCalculationCount(userId);
-        }
-
-        if (mounted) {
-          setState(() { _analysis = analysis; _isLoading = false; });
+        if (analysis != null) {
+          if (!forceRecalculate) {
+            await AiService().incrementAiToolsCalculationCount(userId);
+          }
+          if (mounted) {
+            setState(() { _analysis = analysis; _isLoading = false; });
+          }
+        } else {
+          if (mounted) {
+            setState(() { _isLoading = false; });
+            CustomToast.show(
+              context,
+              isTr ? 'Karakter analizi oluşturulamadı. Lütfen internetinizi kontrol edin.' : 'Could not generate character analysis. Please check your internet connection.',
+              isError: true,
+            );
+          }
         }
       } else {
-        if (mounted) setState(() { _isLoading = false; });
+        if (mounted) {
+          setState(() { _isLoading = false; });
+          CustomToast.show(
+            context,
+            isTr ? 'Gök haritası hesaplanamadı. Lütfen internetinizi kontrol edin.' : 'Could not calculate natal chart. Please check your internet connection.',
+            isError: true,
+          );
+        }
       }
     } catch (_) {
-      if (mounted) setState(() { _isLoading = false; });
+      if (mounted) {
+        setState(() { _isLoading = false; });
+        CustomToast.show(
+          context,
+          isTr ? 'Bir hata oluştu. Lütfen tekrar deneyin.' : 'An error occurred. Please try again.',
+          isError: true,
+        );
+      }
     }
   }
 

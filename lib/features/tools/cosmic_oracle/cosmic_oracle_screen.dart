@@ -14,6 +14,7 @@ import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/star_background.dart';
 import 'package:horoscope/core/services/ad_service.dart';
+import 'package:horoscope/core/utils/firestore_extension.dart';
 
 // Impeller OpenGLES BackdropFilter çökme hatasını önlemek için tasarlanmış özel cam görünümlü kart.
 // BackdropFilter yerine hafif opak arka plan kullanarak çökme riskini tamamen sıfırlar.
@@ -248,8 +249,8 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
     });
 
     try {
-      // Doğum haritası bilgilerini Firestore'dan çekelim
-      final natalChartDoc = await FirebaseFirestore.instance.doc('users/${user.uid}/natal_chart/data').get();
+      // Doğum haritası bilgilerini Firestore\'dan çekelim
+      final natalChartDoc = await FirebaseFirestore.instance.doc('users/${user.uid}/natal_chart/data').safeGet();
       NatalChartModel? natalChart;
       if (natalChartDoc.exists && natalChartDoc.data() != null) {
         natalChart = NatalChartModel.fromMap(natalChartDoc.data()!);

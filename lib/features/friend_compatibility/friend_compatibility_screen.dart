@@ -18,6 +18,7 @@ import 'package:horoscope/shared/widgets/star_background.dart';
 import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/shared/widgets/birth_place_search_sheet.dart';
 import 'package:horoscope/core/services/ad_service.dart';
+import 'package:horoscope/core/utils/firestore_extension.dart';
 
 class FriendCompatibilityScreen extends ConsumerStatefulWidget {
   const FriendCompatibilityScreen({super.key});
@@ -53,7 +54,7 @@ class _FriendCompatibilityScreenState extends ConsumerState<FriendCompatibilityS
       final querySnapshot = await FirebaseFirestore.instance
           .collection('users/${user.uid}/compatibility')
           .where('type', isEqualTo: 'friendship')
-          .get();
+          .safeGet();
 
       final items = querySnapshot.docs
           .map((doc) => CompatibilityModel.fromMap(doc.data()))
@@ -284,6 +285,12 @@ class _FriendCompatibilityScreenState extends ConsumerState<FriendCompatibilityS
           if (compatibility != null) {
             _history.removeWhere((item) => item.partnerName.toLowerCase() == compatibility.partnerName.toLowerCase());
             _history.insert(0, compatibility);
+          } else {
+            CustomToast.show(
+              context,
+              isTr ? 'Gök kubbe ile bağlantı kurulamadı. Lütfen internetinizi kontrol edip tekrar deneyin.' : 'Could not connect to the sky. Please check your internet and try again.',
+              isError: true,
+            );
           }
         });
       }

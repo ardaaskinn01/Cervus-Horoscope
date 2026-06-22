@@ -302,10 +302,26 @@ class _NumerologyScreenState extends ConsumerState<NumerologyScreen> {
           _isLoadingAi = false;
         });
       } else {
-        setState(() { _isLoadingAi = false; });
+        if (mounted) {
+          setState(() { _isLoadingAi = false; });
+          final isTr = ref.read(languageProvider).languageCode == 'tr';
+          CustomToast.show(
+            context,
+            isTr ? 'Numeroloji analizi oluşturulamadı. Lütfen internetinizi kontrol edin.' : 'Could not generate numerology analysis. Please check your internet connection.',
+            isError: true,
+          );
+        }
       }
     } catch (_) {
-      setState(() { _isLoadingAi = false; });
+      if (mounted) {
+        setState(() { _isLoadingAi = false; });
+        final isTr = ref.read(languageProvider).languageCode == 'tr';
+        CustomToast.show(
+          context,
+          isTr ? 'Bir hata oluştu. Lütfen tekrar deneyin.' : 'An error occurred. Please try again.',
+          isError: true,
+        );
+      }
     }
   }
 
