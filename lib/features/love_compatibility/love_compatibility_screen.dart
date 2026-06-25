@@ -1183,7 +1183,7 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
                       ),
                       child: Center(
                         child: Text(
-                          isTr ? 'Horoscope Pro ile Şimdi Keşfet ✨' : 'Discover Now with Horoscope Pro ✨',
+                          isTr ? 'Astris Pro ile Şimdi Keşfet ✨' : 'Discover Now with Astris Pro ✨',
                           style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textDark, fontWeight: FontWeight.bold),
                         ),
                       ),

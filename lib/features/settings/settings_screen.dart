@@ -19,7 +19,7 @@ import 'package:horoscope/shared/widgets/glass_card.dart';
 import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/shared/widgets/birth_place_search_sheet.dart';
-import 'package:horoscope/shared/widgets/premium_dialog_helper.dart';
+// import 'package:horoscope/shared/widgets/premium_dialog_helper.dart';
 import 'package:horoscope/core/utils/date_formatter.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -275,7 +275,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // Gizlilik Politikası Aç
   Future<void> _openPrivacyPolicy() async {
     HapticFeedback.lightImpact();
-    final url = Uri.parse('https://cervusdigital.com/pickeat/privacy-policy/');
+    final url = Uri.parse('https://cervusdigital.com/astris/privacy-policy/');
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {}
+  }
+
+  // Kullanım Koşulları (EULA) Aç
+  Future<void> _openTermsOfUse() async {
+    HapticFeedback.lightImpact();
+    final url = Uri.parse('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/');
     try {
       if (await canLaunchUrl(url)) {
         await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -358,9 +369,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildProfileSection(isTr),
             const SizedBox(height: 20),
 
-            // Premium Banner
-            _buildPremiumBanner(isTr),
-            const SizedBox(height: 20),
+            // Premium Banner (İlk sürümde abonelikler pasif)
+            // _buildPremiumBanner(isTr),
+            // const SizedBox(height: 20),
 
             // 2. Dil Ayarları Kartı
             _buildLanguageSection(isTr, locale.languageCode),
@@ -382,6 +393,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  /*
   // Premium Banner
   Widget _buildPremiumBanner(bool isTr) {
     final user = ref.watch(userProvider);
@@ -414,7 +426,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isTr ? "Horoscope Pro Üyesiniz" : "You are a Horoscope Pro Member",
+                    isTr ? "Astris Pro Üyesiniz" : "You are an Astris Pro Member",
                     style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold),
                   ),
                   const SizedBox(height: 2),
@@ -431,22 +443,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
 
     // Pro'ya geç bannerı (Göz alıcı, altın ve mor parıltılı)
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bannerBgStart = isDark ? const Color(0xFF1D1635) : const Color(0xFFE2DCFF);
+    final bannerBgEnd = isDark ? const Color(0xFF171D33) : const Color(0xFFFFFFFF);
+    final bannerBorderColor = isDark 
+        ? AppColors.primaryGold.withValues(alpha: 0.6) 
+        : const Color(0xFF6D4AFF).withValues(alpha: 0.4);
+    final titleColor = isDark ? AppColors.primaryGold : const Color(0xFF5B36D6);
+    final subtitleColor = isDark ? const Color(0xFFB6BDD6) : const Color(0xFF4B5563);
+    final iconColor = isDark ? AppColors.primaryGold : const Color(0xFF6D4AFF);
+    final iconBgColor = (isDark ? AppColors.primaryGold : const Color(0xFF6D4AFF)).withValues(alpha: 0.15);
+    final shadowColor = (isDark ? AppColors.primaryGold : const Color(0xFF6D4AFF)).withValues(alpha: 0.1);
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.6), width: 1),
+        border: Border.all(color: bannerBorderColor, width: 1),
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF1D1635),
-            AppColors.cardSurface,
+            bannerBgStart,
+            bannerBgEnd,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryGold.withValues(alpha: 0.1),
+            color: shadowColor,
             blurRadius: 10,
             spreadRadius: 2,
           )
@@ -462,7 +486,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               top: -20,
               child: Opacity(
                 opacity: 0.3,
-                child: Icon(Icons.auto_awesome_outlined, size: 100, color: AppColors.primaryGold.withValues(alpha: 0.5)),
+                child: Icon(Icons.auto_awesome_outlined, size: 100, color: (isDark ? AppColors.primaryGold : const Color(0xFF6D4AFF)).withValues(alpha: 0.5)),
               ),
             ),
             Padding(
@@ -474,9 +498,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.primaryGold.withValues(alpha: 0.15),
+                      color: iconBgColor,
                     ),
-                    child: const Icon(Icons.workspace_premium_rounded, color: AppColors.primaryGold, size: 28)
+                    child: Icon(Icons.workspace_premium_rounded, color: iconColor, size: 28)
                         .animate(onPlay: (controller) => controller.repeat())
                         .shake(hz: 2, curve: Curves.easeInOut, duration: 1500.ms),
                   ),
@@ -487,15 +511,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isTr ? "Horoscope Pro'ya Yükseltin" : "Upgrade to Horoscope Pro",
-                          style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold),
+                          isTr ? "Astris Pro'ya Yükseltin" : "Upgrade to Astris Pro",
+                          style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: titleColor),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           isTr 
                               ? "Yapay zeka analizlerine sınırsız erişin ve reklamları kaldırın." 
                               : "Access AI readings without limits and remove ads.",
-                          style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 11),
+                          style: AppTextStyles.caption.copyWith(color: subtitleColor, fontSize: 11, fontWeight: FontWeight.w500),
                         ),
                         const SizedBox(height: 12),
                         // Şık, ışıltılı Pro Butonu
@@ -548,6 +572,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     ).animate().fade(delay: 50.ms, duration: 350.ms);
   }
+  */
 
   // 1. Profil Yönetimi
   Widget _buildProfileSection(bool isTr) {
@@ -972,6 +997,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: Text(isTr ? 'Gizlilik Politikası' : 'Privacy Policy', style: AppTextStyles.bodyMedium),
             trailing: Icon(Icons.chevron_right, color: AppColors.textSecondary),
             onTap: _openPrivacyPolicy,
+          ),
+          const Divider(height: 1, color: Colors.white12),
+          // Kullanım Koşulları (EULA)
+          ListTile(
+            leading: const Icon(Icons.description_rounded, color: AppColors.primaryGold),
+            title: Text(isTr ? 'Kullanım Koşulları (EULA)' : 'Terms of Use (EULA)', style: AppTextStyles.bodyMedium),
+            trailing: Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            onTap: _openTermsOfUse,
           ),
           const Divider(height: 1, color: Colors.white12),
           // Sürüm

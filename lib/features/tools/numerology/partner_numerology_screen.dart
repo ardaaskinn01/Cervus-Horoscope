@@ -264,7 +264,7 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         isTr ? 'Kapat' : 'Close',
-                        style: const TextStyle(color: Colors.white70),
+                        style: TextStyle(color: AppColors.textSecondary),
                       ),
                     ),
                   ],
@@ -453,7 +453,7 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
               icon: const Icon(Icons.person_outline_rounded, color: AppColors.primaryGold),
               border: const UnderlineInputBorder(),
               hintText: isTr ? 'Kişinin Adı / Takma Adı' : 'Person\'s Name / Nickname',
-              hintStyle: const TextStyle(color: Colors.white38),
+              hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6)),
             ),
             onChanged: (text) {
               if (text.trim().isNotEmpty && _selectedDate != null) {
@@ -465,7 +465,7 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
           const SizedBox(height: 16),
           GlassCard(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-            color: Colors.white.withValues(alpha: 0.03),
+            color: AppColors.borderLight.withValues(alpha: 0.1),
             child: TextField(
               controller: _dateController,
               keyboardType: TextInputType.datetime,
@@ -495,7 +495,7 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: isTr ? 'Doğum Tarihi (GG.AA.YYYY)' : 'Birth Date (DD.MM.YYYY)',
-                hintStyle: const TextStyle(color: Colors.white38),
+                hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6)),
                 icon: const Icon(Icons.calendar_today_rounded, color: AppColors.primaryGold, size: 20),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryGold),

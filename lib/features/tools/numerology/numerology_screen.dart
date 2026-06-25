@@ -245,7 +245,7 @@ class _NumerologyScreenState extends ConsumerState<NumerologyScreen> {
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         isTr ? 'Kapat' : 'Close',
-                        style: const TextStyle(color: Colors.white70),
+                        style: TextStyle(color: AppColors.textSecondary),
                       ),
                     ),
                   ],

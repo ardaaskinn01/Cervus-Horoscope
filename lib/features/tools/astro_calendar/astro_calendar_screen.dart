@@ -245,7 +245,7 @@ class _AstroCalendarScreenState extends ConsumerState<AstroCalendarScreen> with 
                     color: isSelected 
                         ? AppColors.primaryGold.withValues(alpha: 0.25)
                         : hasNote 
-                            ? Colors.white.withValues(alpha: 0.03) 
+                            ? AppColors.borderLight.withValues(alpha: 0.1) 
                             : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
@@ -253,7 +253,7 @@ class _AstroCalendarScreenState extends ConsumerState<AstroCalendarScreen> with 
                           ? AppColors.primaryGold 
                           : hasNote 
                               ? noteColor!.withValues(alpha: 0.4) 
-                              : Colors.white10,
+                              : AppColors.borderLight,
                       width: isSelected ? 1.5 : 1,
                     ),
                   ),
@@ -362,7 +362,7 @@ class _AstroCalendarScreenState extends ConsumerState<AstroCalendarScreen> with 
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white10,
+                  color: AppColors.borderLight,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -410,7 +410,7 @@ class _AstroCalendarScreenState extends ConsumerState<AstroCalendarScreen> with 
           child: GlassCard(
             color: isEclipse ? AppColors.warmAmber.withValues(alpha: 0.08) : AppColors.cardSurface,
             border: Border.all(
-              color: isEclipse ? AppColors.primaryGold.withValues(alpha: 0.3) : Colors.white10,
+              color: isEclipse ? AppColors.primaryGold.withValues(alpha: 0.3) : AppColors.borderLight,
             ),
             child: Row(
               children: [

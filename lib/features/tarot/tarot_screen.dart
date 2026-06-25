@@ -298,7 +298,7 @@ class _TarotScreenState extends ConsumerState<TarotScreen> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: isSelected ? AppColors.primaryGold : Colors.white24,
+                              color: isSelected ? AppColors.primaryGold : AppColors.borderLight,
                               width: isSelected ? 2.0 : 1.0,
                             ),
                             boxShadow: isSelected
@@ -464,10 +464,10 @@ class _TarotScreenState extends ConsumerState<TarotScreen> {
                   aspectRatio: 0.65,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: cardDrawn ? AppColors.primaryGold.withValues(alpha: 0.05) : Colors.white10,
+                      color: cardDrawn ? AppColors.primaryGold.withValues(alpha: 0.05) : AppColors.borderLight.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: cardDrawn ? AppColors.primaryGold.withValues(alpha: 0.7) : Colors.white24,
+                        color: cardDrawn ? AppColors.primaryGold.withValues(alpha: 0.7) : AppColors.borderLight,
                         width: cardDrawn ? 1.5 : 1.0,
                         style: cardDrawn ? BorderStyle.solid : BorderStyle.solid,
                       ),
@@ -545,8 +545,8 @@ class _TarotScreenState extends ConsumerState<TarotScreen> {
                               ],
                             ),
                           )
-                        : const Center(
-                            child: Icon(Icons.add, color: Colors.white24, size: 20),
+                        : Center(
+                            child: Icon(Icons.add, color: AppColors.textSecondary.withValues(alpha: 0.5), size: 20),
                           ),
                   ),
                 ),

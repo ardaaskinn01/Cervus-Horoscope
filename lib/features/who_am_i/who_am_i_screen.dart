@@ -96,7 +96,7 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     isTr ? 'Kapat' : 'Close',
-                    style: const TextStyle(color: Colors.white70),
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
               ],
@@ -448,7 +448,7 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
                         style: AppTextStyles.label.copyWith(
                             color: Colors.greenAccent, fontWeight: FontWeight.bold),
                       ),
-                      const Divider(color: Colors.white12),
+                      Divider(color: AppColors.borderLight),
                       ...(isTr ? res.strengthsTr : res.strengthsEn).map((item) =>
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -481,7 +481,7 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
                         style: AppTextStyles.label.copyWith(
                             color: Colors.amberAccent, fontWeight: FontWeight.bold),
                       ),
-                      const Divider(color: Colors.white12),
+                      Divider(color: AppColors.borderLight),
                       ...(isTr ? res.weaknessesTr : res.weaknessesEn).map((item) =>
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -610,7 +610,6 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
     );
   }
 
-  /// Zıt kişilik boyutu barı — iki kutup arası renkli bar
   Widget _buildDimensionBar({
     required String leftLabel,
     required String rightLabel,
@@ -620,20 +619,23 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
     final rightPercent = 100 - leftPercent;
     final leftDominant = leftPercent >= rightPercent;
 
-    // Renk: sola kaymışsa altın, sağa kaymışsa mor-pembe
-    final dominantColor = leftDominant
+    final Color dominantColor = leftDominant
         ? const Color(0xFFD4AF37)
         : const Color(0xFFB57BFF);
-    final dominantColorLight = leftDominant
+    final Color dominantColorLight = leftDominant
         ? const Color(0xFFFFF0A0)
         : const Color(0xFFE0B4FF);
+
+    final isDark = AppTextStyles.isDark;
+    final inactiveTextColor = isDark ? const Color(0x61FFFFFF) : const Color(0x8A000000); 
+    final barBgColor = isDark ? const Color(0x1AFFFFFF) : const Color(0x12000000); 
+    final barCenterColor = isDark ? const Color(0x3DFFFFFF) : const Color(0x24000000); 
 
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 4 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ─ Etiket satırı ─
           Row(
             children: [
               Expanded(
@@ -642,14 +644,13 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
                   style: AppTextStyles.bodySmall.copyWith(
                     fontSize: 12,
                     fontWeight: leftDominant ? FontWeight.bold : FontWeight.normal,
-                    color: leftDominant ? dominantColor : Colors.white38,
+                    color: leftDominant ? dominantColor : inactiveTextColor,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
-              // Yüzde badge — dominant olan
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
@@ -674,7 +675,7 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
                   style: AppTextStyles.bodySmall.copyWith(
                     fontSize: 12,
                     fontWeight: !leftDominant ? FontWeight.bold : FontWeight.normal,
-                    color: !leftDominant ? dominantColor : Colors.white38,
+                    color: !leftDominant ? dominantColor : inactiveTextColor,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -683,29 +684,25 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
             ],
           ),
           const SizedBox(height: 7),
-
-          // ─ Bar ─
           LayoutBuilder(
             builder: (context, constraints) {
               final totalWidth = constraints.maxWidth;
               return Stack(
                 children: [
-                  // Arkaplan
                   Container(
                     height: 10,
                     width: totalWidth,
                     decoration: BoxDecoration(
-                      color: Colors.white10,
+                      color: barBgColor,
                       borderRadius: BorderRadius.circular(6),
                     ),
                   ),
-                  // Merkez çizgi
                   Positioned(
                     left: totalWidth / 2 - 1,
                     child: Container(
                       width: 2,
                       height: 10,
-                      color: Colors.white24,
+                      color: barCenterColor,
                     ),
                   ),
                   // Dolgu — sol yüzde kadar

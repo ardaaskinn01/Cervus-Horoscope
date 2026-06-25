@@ -20,12 +20,15 @@ import 'package:sweph/sweph.dart';
 
 class AiService {
   // Gemini API Key loaded from environment variables
-  final String _apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+  // final String _apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
   
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Gemini Free Tier hız sınırını (12 RPM) yönetmek için statik zaman damgaları listesi
   static final List<DateTime> _requestTimestamps = [];
+  
+  // Çoklu API anahtarı havuzundaki aktif anahtarın indeksi
+  // static int _currentKeyIndex = 0;
 
   /// Belirtilen burç, cinsiyet ve tarih için günlük yorum ve skorları üretip Firestore'a kaydeder.
   /// Maliyeti azaltmak amacıyla tek bir API çağrısında hem Türkçe hem İngilizce içerik üretilir.
@@ -568,7 +571,11 @@ ${isLove ? '''Aşk Sinastri Yorumu için Özel Kurallar:
 - Venüs-Mars aspektleri: Fiziksel çekim ve tutku açısından yorumla. Kadın haritasındaki Mars ve erkek haritasındaki Venüs birbirini nasıl etkiliyor?
 - Güneş-Ay aspektleri: Birinin ruhu diğerinin kimliğini "evde" hissettiriyor mu?
 - Satürn aspektleri: Uzun vadeli bağlılık sinyalleri mi, kısıtlama mı?
-''' : ''}
+''' : '''Arkadaşlık Sinastri Yorumu için Özel Kurallar:
+- Merkür aspektleri ve konumları: Zihinsel uyum, sohbet kalitesi, espri anlayışı, zeka uyumu ve muhabbet sıklığını/kalitesini yorumla.
+- Ay aspektleri: Duygusal konfor alanı, güvende hissetme ve sessizce yan yana durabilme bağını (duygusal yakınlık) yorumla.
+- 11. Ev yerleşimleri: Sosyal çevreye bakış, ortak zevkler ve arkadaşlığı hayatına çekme şekillerini analiz et.
+'''}
 
 Görev:
 1. Bu iki kişinin TAM DOĞUM HARITASI verilerine ve sinastri açılarına dayanarak derinlemesine, gerçekçi ve samimi bir uyum analizi yap.
@@ -966,7 +973,9 @@ Karakteristik Kurallar (Çok Önemli):
 - Edebi ve Yorucu Cümlelerden Kaçın: Kısa, son derece net, doğrudan ve anlaşılır cümleler kur.
 
 Görev:
-1. Bu kullanıcının harita dinamiklerine (Sun/Moon/Rising uyumu) göre TÜM 12 burcun nasıl eşleştiğini belirle. En uyumludan en az uyumluya sırala.
+1. Bu kullanıcının harita dinamiklerine (Sun/Moon/Rising uyumu) göre TÜM 12 burcun romantik (aşk) ve arkadaşlık eşleşmelerini belirle.
+   - Romantik Eşleşmeleri (romanticMatches) belirlerken: Venüs-Mars (romantizm ve fiziksel kimya), Güneş-Ay (ruhsal yakınlık/evinde hissetme) uyumunu baz alarak en iyi aşk uyumundan en aza doğru sırala.
+   - Arkadaşlık Eşleşmelerini (friendMatches) belirlerken: Merkür-Merkür veya Merkür-Ay (zihinsel uyum, sohbet kalitesi, zeka, espriler) ve 11. Ev (sosyal çevre/arkadaşlık) dinamiklerini baz alarak en iyi dostluk uyumundan en aza doğru sırala.
 2. Her eşleşen burç için kısa, vurucu, net ve son derece samimi bir gerekçe (1-2 cümle) yaz. Bu gerekçeyi hem Türkçe hem İngilizce dillerinde ayrı ayrı ver.
 3. Sonucu aşağıdaki JSON formatında ver. JSON dışında hiçbir açıklama veya markdown bloğu yazma.
 
@@ -1450,8 +1459,10 @@ Explain the practical impact of this house-sign combination on the person's life
   Future<String?> callGemini(String prompt, {bool isJson = true}) => _callGemini(prompt, isJson: isJson);
 
   // Gemini Model API Çağrısı
+  // Gemini Model API Çağrısı
   Future<String?> _callGemini(String prompt, {bool isJson = true}) async {
-    if (_apiKey.isEmpty) {
+    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    if (apiKey.isEmpty) {
       debugPrint('❌ Gemini API Anahtarı bulunamadı (.env dosyası veya çevre değişkenleri eksik).');
       return null;
     }
@@ -1460,7 +1471,7 @@ Explain the practical impact of this house-sign combination on the person's life
     final now = DateTime.now();
     _requestTimestamps.removeWhere((t) => now.difference(t).inSeconds > 60);
 
-    // 2. Eğer son 60 saniyede 12 istek atıldıysa, en eskisinin süresi dolana kadar bekle (15 RPM limitini aşmamak için güvenli limit 12'dir)
+    // 2. Eğer son 60 saniyede 12 istek atıldıysa, en eskisinin süresi dolana kadar bekle (12 RPM limitini aşmamak için)
     if (_requestTimestamps.length >= 12) {
       final oldestRequest = _requestTimestamps.first;
       final waitDuration = const Duration(seconds: 60) - now.difference(oldestRequest);
@@ -1469,22 +1480,24 @@ Explain the practical impact of this house-sign combination on the person's life
         debugPrint('⏳ Gemini API Hız Sınırına (12 RPM) Ulaşıldı. ${waitDuration.inSeconds} saniye bekleniyor...');
         await Future.delayed(waitDuration);
       }
-      // Bekleme sonrasında kontrolü tekrarlamak için rekürsif çağrı
       return _callGemini(prompt, isJson: isJson);
     }
 
-    // 3. Mevcut istek zaman damgasını ekle
     _requestTimestamps.add(DateTime.now());
 
+    // 6 adet model sırayla meşguliyet veya kota aşımına karşı denenecektir.
     final candidateModels = [
       'gemini-3.1-flash-lite',
       'gemini-2.5-flash-lite',
-      'gemini-2.0-flash-lite',
+      'gemini-3-flash',
+      'gemini-2.5-flash',
+      'gemini-3.5-flash',
+      'gemini-3.1-pro',
     ];
 
     for (final model in candidateModels) {
       final url = Uri.parse(
-        "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$_apiKey",
+        "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey",
       );
 
       final Map<String, dynamic> requestBody = {
@@ -1503,6 +1516,7 @@ Explain the practical impact of this house-sign combination on the person's life
       }
 
       int retryCount = 0;
+      String? successfulText;
       bool modelFailed = false;
 
       while (retryCount < 2) {
@@ -1512,19 +1526,19 @@ Explain the practical impact of this house-sign combination on the person's life
             url,
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode(requestBody),
-          ).timeout(const Duration(seconds: 30)); // Her model denemesi için 30 saniye makul bir süredir
+          ).timeout(const Duration(seconds: 30));
 
           if (response.statusCode == 200) {
             final Map<String, dynamic> resBody = jsonDecode(response.body);
             
-            // Güvenlik ve boş yanıt kontrolü
             final candidates = resBody['candidates'] as List?;
             if (candidates == null || candidates.isEmpty) {
               debugPrint('⚠️ Gemini API ($model): Aday listesi boş.');
               if (prompt.contains('Kozmik Kâhin') || prompt.contains('Kozmik Kahin')) {
                 return '{"answer_tr": "Kozmik Kâhin bu soruyu yanıtlamaktan çekiniyor. Lütfen göksel rehberliğe uygun, yapıcı başka bir soru sorun.", "answer_en": "The Cosmic Oracle is hesitant to answer this question. Please ask another constructive question suitable for celestial guidance."}';
               }
-              return null; // Güvenlik engelinde yeniden deneme yapma
+              modelFailed = true;
+              break;
             }
 
             final candidate = candidates[0] as Map<String, dynamic>;
@@ -1534,28 +1548,26 @@ Explain the practical impact of this house-sign combination on the person's life
               if (prompt.contains('Kozmik Kâhin') || prompt.contains('Kozmik Kahin')) {
                 return '{"answer_tr": "Kozmik Kâhin bu soruyu yanıtlamaktan çekiniyor. Lütfen göksel rehberliğe uygun, yapıcı başka bir soru sorun.", "answer_en": "The Cosmic Oracle is hesitant to answer this question. Please ask another constructive question suitable for celestial guidance."}';
               }
-              return null; // Güvenlik engelinde yeniden deneme yapma
+              modelFailed = true;
+              break;
             }
 
             final content = candidate['content'] as Map<String, dynamic>?;
             final parts = content?['parts'] as List?;
             if (parts == null || parts.isEmpty) {
-              return null;
+              modelFailed = true;
+              break;
             }
 
             final String text = parts[0]['text'] ?? '';
-            return text.trim();
+            successfulText = text.trim();
+            break;
           } else {
             debugPrint('⚠️ Gemini API HTTP Hatası ($model, Deneme ${retryCount + 1}): ${response.statusCode} - ${response.body}');
-            if (response.statusCode == 429) {
-              // Hız sınırına takıldıysa 2 saniye bekleyip tekrar dene
-              retryCount++;
-              if (retryCount < 2) {
-                await Future.delayed(const Duration(milliseconds: 2000));
-                continue;
-              }
+            if (response.statusCode == 429 || response.statusCode == 403) {
+              modelFailed = true;
+              break;
             } else if (response.statusCode >= 500) {
-              // Sunucu hatası varsa 1.5 saniye bekleyip tekrar dene
               retryCount++;
               if (retryCount < 2) {
                 await Future.delayed(const Duration(milliseconds: 1500));
@@ -1569,7 +1581,7 @@ Explain the practical impact of this house-sign combination on the person's life
           if (e is TimeoutException) {
             debugPrint('⚠️ Gemini API Zaman Aşımı ($model): $e');
             modelFailed = true;
-            break; // Zaman aşımında doğrudan sonraki modele geç
+            break;
           }
           debugPrint('⚠️ Gemini Bağlantı Hatası ($model, Deneme ${retryCount + 1}): $e');
           retryCount++;
@@ -1581,11 +1593,12 @@ Explain the practical impact of this house-sign combination on the person's life
         }
       }
 
-      if (!modelFailed) {
-        // Başarılı bir şekilde sonuç alındıysa döngüden çık
-        break;
-      } else {
-        debugPrint('⚠️ $model modelinde sorun oluştu veya meşgul. Sonraki model deneniyor...');
+      if (successfulText != null) {
+        return successfulText;
+      }
+
+      if (modelFailed) {
+        debugPrint('⚠️ $model başarısız oldu veya meşgul. Sonraki modele geçiliyor...');
       }
     }
 

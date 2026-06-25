@@ -49,6 +49,15 @@ class ZodiacIcon extends StatelessWidget {
     return _symbols[normalized] ?? '🔮';
   }
 
+  static const LinearGradient _goldGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFFF7C948),
+      Color(0xFFFFD97D),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     final double innerSize = size * 0.55;
@@ -58,11 +67,11 @@ class ZodiacIcon extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: AppColors.goldGradient,
+        gradient: _goldGradient,
         boxShadow: showGlow
             ? [
                 BoxShadow(
-                  color: AppColors.warmAmber.withValues(alpha: 0.35),
+                  color: AppColors.primaryGold.withValues(alpha: 0.35),
                   blurRadius: size * 0.3,
                   spreadRadius: 1,
                 ),
@@ -79,7 +88,7 @@ class ZodiacIcon extends StatelessWidget {
           ),
           child: Center(
             child: ShaderMask(
-              shaderCallback: (bounds) => AppColors.goldGradient.createShader(bounds),
+              shaderCallback: (bounds) => _goldGradient.createShader(bounds),
               child: Text(
                 _symbol,
                 style: TextStyle(

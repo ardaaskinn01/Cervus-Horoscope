@@ -11,7 +11,7 @@ import 'package:horoscope/core/providers/language_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:horoscope/core/utils/astrology_utils.dart';
-import 'package:horoscope/core/services/revenuecat_service.dart';
+// import 'package:horoscope/core/services/revenuecat_service.dart';
 
 class UserNotifier extends Notifier<UserModel?> {
   final FirebaseService _firebaseService = FirebaseService();
@@ -98,7 +98,8 @@ class UserNotifier extends Notifier<UserModel?> {
         }
       }
 
-      // RevenueCat premium durumunu kontrol et
+      // RevenueCat premium durumunu kontrol et (İlk sürümde abonelikler pasif)
+      /*
       final isRcPremium = await RevenueCatService.checkPremiumStatus();
       if (profile.isPremium != isRcPremium) {
         profile = profile.copyWith(isPremium: isRcPremium);
@@ -106,6 +107,8 @@ class UserNotifier extends Notifier<UserModel?> {
           await _firebaseService.saveUserProfile(profile);
         } catch (_) {}
       }
+      */
+      profile = profile.copyWith(isPremium: false);
 
       state = profile;
 

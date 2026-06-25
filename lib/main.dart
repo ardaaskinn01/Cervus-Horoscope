@@ -13,7 +13,7 @@ import 'shared/router/app_router.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sweph/sweph.dart';
 import 'core/services/ad_service.dart';
-import 'package:horoscope/core/services/revenuecat_service.dart';
+// import 'package:horoscope/core/services/revenuecat_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,8 +34,8 @@ void main() async {
     debugPrint('⚠️ .env dosyası yüklenemedi: $e');
   }
   
-  // RevenueCat'i başlat
-  await RevenueCatService.init();
+  // RevenueCat'i başlat (İlk sürümde abonelikler pasif)
+  // await RevenueCatService.init();
   
   // AdMob reklam motorunu başlat
   await AdService.instance.initialize();
@@ -69,7 +69,7 @@ class MyApp extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
 
     return MaterialApp.router(
-      title: 'Mistik Burçlar',
+      title: 'Astris',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

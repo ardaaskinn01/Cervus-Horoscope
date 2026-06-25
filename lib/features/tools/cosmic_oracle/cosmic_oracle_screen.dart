@@ -183,7 +183,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
                         onPressed: () => Navigator.pop(context),
                         child: Text(
                           isTr ? 'Daha Sonra' : 'Maybe Later',
-                          style: const TextStyle(color: Colors.white70),
+                          style: TextStyle(color: AppColors.textSecondary),
                         ),
                       ),
                     ),
@@ -508,7 +508,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
                     const SizedBox(height: 4),
                     Text(
                       timeStr,
-                      style: AppTextStyles.caption.copyWith(fontSize: 8, color: Colors.white38),
+                      style: AppTextStyles.caption.copyWith(fontSize: 8, color: AppColors.textSecondary),
                     ),
                   ],
                 ),
@@ -551,7 +551,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
                           ),
                         ],
                       ),
-                      const Divider(color: Colors.white10),
+                      Divider(color: AppColors.borderLight),
                       Text(
                         answer,
                         style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary, height: 1.5),
@@ -631,7 +631,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
         padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 20),
         decoration: BoxDecoration(
           color: AppColors.cardSurface.withValues(alpha: 0.65),
-          border: const Border(top: BorderSide(color: Colors.white10)),
+          border: Border(top: BorderSide(color: AppColors.borderLight)),
         ),
         child: GradientButton(
           height: 48,
@@ -663,7 +663,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
       padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 20),
       decoration: BoxDecoration(
         color: AppColors.cardSurface.withValues(alpha: 0.65),
-        border: const Border(top: BorderSide(color: Colors.white10)),
+        border: Border(top: BorderSide(color: AppColors.borderLight)),
       ),
       child: Row(
         children: [
@@ -685,7 +685,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
                 hintText: isLocked
                     ? (isTr ? 'Görüşme kotası doldu.' : 'Daily limit reached.')
                     : (isTr ? 'Kozmik Kahin\'e sorun...' : 'Ask the Cosmic Oracle...'),
-                hintStyle: const TextStyle(color: Colors.white38, fontSize: 13.5),
+                hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6), fontSize: 13.5),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide(color: AppColors.primaryGold.withValues(alpha: 0.2)),
@@ -695,11 +695,11 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
                   borderSide: const BorderSide(color: AppColors.primaryGold),
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                fillColor: Colors.black26,
+                fillColor: AppColors.borderLight.withValues(alpha: 0.1),
                 filled: true,
                 prefixIcon: Icon(
                   isLocked ? Icons.lock_outline_rounded : Icons.psychology_alt_rounded,
-                  color: isLocked ? Colors.white24 : AppColors.primaryGold,
+                  color: isLocked ? AppColors.textSecondary.withValues(alpha: 0.3) : AppColors.primaryGold,
                   size: 20,
                 ),
               ),
@@ -719,13 +719,13 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
               width: 42,
               decoration: BoxDecoration(
                 gradient: isLocked ? null : AppColors.goldGradient,
-                color: isLocked ? Colors.white12 : null,
+                color: isLocked ? AppColors.borderLight : null,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
               child: Icon(
                 Icons.send_rounded,
-                color: isLocked ? Colors.white30 : AppColors.cardSurface,
+                color: isLocked ? AppColors.textSecondary.withValues(alpha: 0.4) : AppColors.cardSurface,
                 size: 18,
               ),
             ),

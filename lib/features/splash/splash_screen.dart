@@ -69,6 +69,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isTr = ref.watch(languageProvider).languageCode == 'tr';
     return Scaffold(
       body: StarBackground(
         child: Center(
@@ -103,7 +104,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               const SizedBox(height: 32),
               // Uygulama Başlığı
               Text(
-                'Mistik Burçlar',
+                'Astris',
                 style: AppTextStyles.h1.copyWith(
                   fontWeight: FontWeight.bold,
                   shadows: [
@@ -116,7 +117,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Yıldızların Rehberliği',
+                isTr ? 'Doğum Haritası, Tarot ve Fazlası' : 'Birth Chart, Tarot & More',
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textSecondary.withValues(alpha: 0.7),
                   letterSpacing: 1.5,

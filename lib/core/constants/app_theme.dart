@@ -77,13 +77,13 @@ class AppTheme {
       scaffoldBackgroundColor: AppColors.background,
       
       // Color Scheme
-      colorScheme: ColorScheme.light(
-        primary: const Color(0xFFB58E2E), // Daha okunaklı koyu altın/bronz tonu
-        secondary: AppColors.warmAmber,
-        surface: AppColors.cardSurface,
+      colorScheme: const ColorScheme.light(
+        primary: Color(0xFF6D4AFF), // Yeni Açık Tema Primary (Mor)
+        secondary: Color(0xFFFFB703), // Yeni Açık Tema Accent (Altın/Sarı)
+        surface: Color(0xFFFFFFFF),
         onPrimary: Colors.white,
         onSecondary: Colors.white,
-        onSurface: AppColors.textPrimary,
+        onSurface: Color(0xFF111827),
       ),
 
       // App Bar Theme
@@ -92,17 +92,17 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
         titleTextStyle: AppTextStyles.h3.copyWith(
-          color: const Color(0xFFB58E2E),
+          color: const Color(0xFF111827), // Başlık rengi koyu neutral
           fontWeight: FontWeight.bold,
         ),
         iconTheme: const IconThemeData(
-          color: Color(0xFFB58E2E),
+          color: Color(0xFF6D4AFF), // İkon rengi mor
         ),
       ),
 
       // Card Theme
       cardTheme: CardThemeData(
-        color: AppColors.cardSurface.withValues(alpha: 0.75),
+        color: const Color(0xFFFFFFFF).withValues(alpha: 0.75),
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -116,7 +116,7 @@ class AppTheme {
       // Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFB58E2E),
+          backgroundColor: const Color(0xFF6D4AFF), // Mor butonlar
           foregroundColor: Colors.white,
           textStyle: AppTextStyles.label,
           shape: RoundedRectangleBorder(

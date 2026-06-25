@@ -7,8 +7,8 @@ class AppTextStyles {
   // Dinamik olarak tema sağlayıcısı tarafından değiştirilir
   static bool isDark = true;
 
-  static Color get _textPrimaryColor => isDark ? const Color(0xFFF5E6C8) : const Color(0xFF2E2214);
-  static Color get _textSecondaryColor => isDark ? const Color(0xFFB8A88A) : const Color(0xFF705C49);
+  static Color get _textPrimaryColor => isDark ? const Color(0xFFFFFFFF) : const Color(0xFF111827);
+  static Color get _textSecondaryColor => isDark ? const Color(0xFFB6BDD6) : const Color(0xFF6B7280);
 
   // Headings (Cormorant Garamond - Mistik & Zarif)
   static TextStyle get h1 => GoogleFonts.cormorantGaramond(

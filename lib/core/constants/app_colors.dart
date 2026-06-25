@@ -5,21 +5,27 @@ class AppColors {
   AppColors._();
 
   // Ana Renkler
-  static Color get background => AppTextStyles.isDark ? const Color(0xFF0D0A1A) : const Color(0xFFF9F7FA); // Derin Uzay Moru / Krem
-  static const Color primaryGold = Color(0xFFD4A843); // Altın Vurgu
-  static const Color warmAmber = Color(0xFFC17B2A); // Sıcak Kehribar
-  static const Color deepBrown = Color(0xFF3D1F0A); // Koyu Kahve
-  static Color get cardSurface => AppTextStyles.isDark ? const Color(0xFF1A1428) : const Color(0xFFFFFFFF); // Glassmorphism / Beyaz
+  static Color get background => AppTextStyles.isDark ? const Color(0xFF0B1020) : const Color(0xFFF8F9FD); 
+  static Color get cardSurface => AppTextStyles.isDark ? const Color(0xFF171D33) : const Color(0xFFFFFFFF); 
   
+  static Color get primary => AppTextStyles.isDark ? const Color(0xFF7C5CFF) : const Color(0xFF6D4AFF);
+  static Color get accent => AppTextStyles.isDark ? const Color(0xFFF7C948) : const Color(0xFFFFB703);
+  static Color get success => AppTextStyles.isDark ? const Color(0xFF48D597) : const Color(0xFF34C759);
+
   // Metin Renkleri
-  static Color get textPrimary => AppTextStyles.isDark ? const Color(0xFFF5E6C8) : const Color(0xFF2E2214); // Krem Beyaz / Koyu Kahve
-  static Color get textSecondary => AppTextStyles.isDark ? const Color(0xFFB8A88A) : const Color(0xFF705C49); // Mistik İkincil Altın / Orta Kahve
-  static const Color textDark = Color(0xFF0D0A1A); // Buton içi vb. için koyu renk
+  static Color get textPrimary => AppTextStyles.isDark ? const Color(0xFFFFFFFF) : const Color(0xFF111827); 
+  static Color get textSecondary => AppTextStyles.isDark ? const Color(0xFFB6BDD6) : const Color(0xFF6B7280); 
+  
+  // Eski renklerle uyumluluk için sabitler (Böylece const Widget ağaçları kırılmaz)
+  static const Color primaryGold = Color(0xFFF7C948); // Altın Vurgu (Yeni Accent rengi)
+  static const Color warmAmber = Color(0xFF7C5CFF);   // Mor Vurgu (Yeni Primary rengi)
+  static const Color deepBrown = Color(0xFF3D1F0A);   // Koyu Kahve
+  static const Color textDark = Color(0xFFFFFFFF);    // Buton içi metin rengi (Beyaz)
+  static const Color accentPurple = Color(0xFF7C5CFF); // Mor Vurgu (Yeni Primary rengi)
 
   // Yardımcı Renkler
-  static const Color accentPurple = Color(0xFF7B5EA7); // Yıldız Tozu Moru
+  static Color get borderLight => AppTextStyles.isDark ? const Color(0x14FFFFFF) : const Color(0x1B111827); // %8 Opak Beyaz / %10 Koyu
   static const Color shadowColor = Color(0x80000000); // Gölgeler
-  static Color get borderLight => AppTextStyles.isDark ? const Color(0x14FFFFFF) : const Color(0x1B0D0A1A); // %8 Opak Beyaz / %10 Koyu
 
   // Gradiyentler
   static LinearGradient get cosmicGradient => LinearGradient(
@@ -27,25 +33,30 @@ class AppColors {
     end: Alignment.bottomCenter,
     colors: AppTextStyles.isDark 
         ? [
-            const Color(0xFF0D0A1A),
-            const Color(0xFF1D1635),
-            const Color(0xFF0D0A1A),
+            const Color(0xFF0B1020),
+            const Color(0xFF14192F),
+            const Color(0xFF0B1020),
           ]
         : [
-            const Color(0xFFF9F7FA),
-            const Color(0xFFF1EDF5),
-            const Color(0xFFF9F7FA),
+            const Color(0xFFF8F9FD),
+            const Color(0xFFEFEFF7),
+            const Color(0xFFF8F9FD),
           ],
   );
 
-  static const LinearGradient goldGradient = LinearGradient(
+  // Eski goldGradient yerine artık Primary renginden oluşan degradeyi döneriz, böylece tüm butonlar mor olur
+  static LinearGradient get goldGradient => LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Color(0xFFF5D061),
-      Color(0xFFD4A843),
-      Color(0xFFC17B2A),
-    ],
+    colors: AppTextStyles.isDark
+        ? [
+            const Color(0xFF7C5CFF),
+            const Color(0xFF9E85FF),
+          ]
+        : [
+            const Color(0xFF6D4AFF),
+            const Color(0xFF8B6EFF),
+          ],
   );
 
   static LinearGradient get glassGradient => LinearGradient(
@@ -57,8 +68,8 @@ class AppColors {
             const Color(0x0AFFFFFF), // %4 Opak
           ]
         : [
-            const Color(0x1F0D0A1A), // %12 Opak Koyu
-            const Color(0x0A0D0A1A), // %4 Opak Koyu
+            const Color(0x1F111827), // %12 Opak Koyu
+            const Color(0x0A111827), // %4 Opak Koyu
           ],
   );
 }

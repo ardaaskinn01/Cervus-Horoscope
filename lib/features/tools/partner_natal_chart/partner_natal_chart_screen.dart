@@ -128,7 +128,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
             timePickerTheme: TimePickerThemeData(
               backgroundColor: AppColors.cardSurface,
               dialHandColor: AppColors.primaryGold,
-              dialBackgroundColor: Colors.white12,
+              dialBackgroundColor: AppColors.borderLight,
             ),
           ),
           child: child!,
@@ -209,7 +209,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         isTr ? 'Kapat' : 'Close',
-                        style: const TextStyle(color: Colors.white70),
+                        style: TextStyle(color: AppColors.textSecondary),
                       ),
                     ),
                   ],
@@ -424,7 +424,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
                     icon: const Icon(Icons.person_outline_rounded, color: AppColors.primaryGold),
                     border: const UnderlineInputBorder(),
                     hintText: isTr ? 'Kişinin Adı / Takma Adı' : 'Person\'s Name / Nickname',
-                    hintStyle: const TextStyle(color: Colors.white38),
+                    hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6)),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -447,7 +447,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
                 const SizedBox(height: 16),
                 GlassCard(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                  color: Colors.white.withValues(alpha: 0.03),
+                  color: AppColors.borderLight.withValues(alpha: 0.1),
                   child: TextField(
                     controller: _dateController,
                     keyboardType: TextInputType.datetime,
@@ -471,7 +471,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: isTr ? 'Doğum Tarihi (GG.AA.YYYY)' : 'Birth Date (DD.MM.YYYY)',
-                      hintStyle: const TextStyle(color: Colors.white38),
+                      hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6)),
                       icon: const Icon(Icons.calendar_today_rounded, color: AppColors.primaryGold, size: 20),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryGold),
@@ -485,7 +485,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
                   onTap: () => _selectTime(context),
                   child: GlassCard(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                    color: Colors.white.withValues(alpha: 0.03),
+                    color: AppColors.borderLight.withValues(alpha: 0.1),
                     child: Row(
                       children: [
                         const Icon(Icons.access_time_rounded, color: AppColors.primaryGold, size: 20),
@@ -494,7 +494,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
                           child: Text(
                             timeStr,
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: _selectedTime == null ? Colors.white38 : AppColors.textPrimary,
+                              color: _selectedTime == null ? AppColors.textSecondary.withValues(alpha: 0.6) : AppColors.textPrimary,
                             ),
                           ),
                         ),
@@ -515,7 +515,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
                   },
                   child: GlassCard(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                    color: Colors.white.withValues(alpha: 0.03),
+                    color: AppColors.borderLight.withValues(alpha: 0.1),
                     child: Row(
                       children: [
                         const Icon(Icons.location_on_outlined, color: AppColors.primaryGold, size: 20),
@@ -524,7 +524,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
                           child: Text(
                             placeStr,
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: _selectedPlace == null ? Colors.white38 : AppColors.textPrimary,
+                              color: _selectedPlace == null ? AppColors.textSecondary.withValues(alpha: 0.6) : AppColors.textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -573,7 +573,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
           color: isSelected ? AppColors.primaryGold : AppColors.borderLight,
           width: isSelected ? 1.5 : 1.0,
         ),
-        color: isSelected ? AppColors.primaryGold.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.03),
+        color: isSelected ? AppColors.primaryGold.withValues(alpha: 0.1) : AppColors.borderLight.withValues(alpha: 0.1),
         child: Text(
           label,
           style: AppTextStyles.bodyMedium.copyWith(
@@ -700,9 +700,9 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
               _buildElementStat('💧', isTr ? 'Su' : 'Water', elements['Water'] ?? 0),
             ],
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12.0),
-            child: Divider(color: Colors.white12),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            child: Divider(color: AppColors.borderLight),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -735,7 +735,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: aspectsList.length,
-        separatorBuilder: (context, index) => const Divider(height: 8, color: Colors.white12),
+        separatorBuilder: (context, index) => Divider(height: 8, color: AppColors.borderLight),
         itemBuilder: (context, index) {
           final aspect = aspectsList[index] as Map<String, dynamic>;
           final p1 = aspect['planet1'] as String;
@@ -766,7 +766,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
                 const SizedBox(width: 12),
                 Text(
                   'Orb: ${orb.toStringAsFixed(1)}°',
-                  style: AppTextStyles.caption.copyWith(color: Colors.white70),
+                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -1067,7 +1067,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
       tableRows.add(
         TableRow(
           decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.05), width: 1)),
+            border: Border(bottom: BorderSide(color: AppColors.borderLight, width: 1)),
           ),
           children: [
             // Gezegen Symbol + Name
@@ -1208,7 +1208,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
       tableRows.add(
         TableRow(
           decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.05), width: 1)),
+            border: Border(bottom: BorderSide(color: AppColors.borderLight, width: 1)),
           ),
           children: [
             _buildCell(houseLabel, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),

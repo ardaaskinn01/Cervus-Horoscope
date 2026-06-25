@@ -52,7 +52,7 @@ class PremiumDialogHelper {
                 
                 // Title
                 Text(
-                  isTr ? "Horoscope Pro Üyelik" : "Horoscope Pro Membership",
+                  isTr ? "Astris Pro Üyelik" : "Astris Pro Membership",
                   style: AppTextStyles.h3.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.primaryGold,
@@ -307,7 +307,7 @@ class PremiumDialogHelper {
               SnackBar(
                 content: Text(
                   isPro 
-                      ? (isTr ? "Horoscope Pro üyeliğiniz aktif edildi! 🌟" : "Your Horoscope Pro membership has been activated! 🌟")
+                      ? (isTr ? "Astris Pro üyeliğiniz aktif edildi! 🌟" : "Your Astris Pro membership has been activated! 🌟")
                       : (isTr ? "Satın alım gerçekleştirilemedi." : "Purchase could not be completed."),
                 ),
                 backgroundColor: isPro ? Colors.green : Colors.redAccent,

@@ -331,6 +331,12 @@ class AstrologyUtils {
       ['Yükselen', 'Güneş'],
       ['Yükselen', 'Ay'],
       ['Yükselen', 'Venüs'],
+      ['Merkür', 'Ay'],
+      ['Ay', 'Merkür'],
+      ['Merkür', 'Güneş'],
+      ['Güneş', 'Merkür'],
+      ['Merkür', 'Venüs'],
+      ['Venüs', 'Merkür'],
     ];
 
     for (final pair in importantPairs) {

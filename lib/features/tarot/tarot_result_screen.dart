@@ -230,7 +230,7 @@ class _TarotResultScreenState extends ConsumerState<TarotResultScreen> {
                         style: TextStyle(
                           fontSize: 7.5,
                           fontWeight: FontWeight.bold,
-                          color: hasCosmicLink ? AppColors.primaryGold : AppColors.textSecondary,
+                          color: hasCosmicLink ? AppColors.primaryGold : const Color(0xFFB6BDD6),
                         ),
                         textAlign: TextAlign.center,
                       ),
