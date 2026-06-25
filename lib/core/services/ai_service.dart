@@ -53,32 +53,78 @@ class AiService {
       debugPrint('⚠️ Firestore okuma hatası, üretime devam ediliyor: $e');
     }
 
+    // Deterministic hash based on date and zodiac (and optionally gender)
+    int getDeterministicHash(String input) {
+      int hash = 0;
+      for (int i = 0; i < input.length; i++) {
+        hash = input.codeUnitAt(i) + ((hash << 5) - hash);
+      }
+      return hash.abs();
+    }
+
+    final hashInput = '${date}_${zodiac.toLowerCase()}';
+    final hash = getDeterministicHash(hashInput);
+
+    // List of 15 daily planetary transit focus themes
+    final transitThemes = [
+      "Ay'ın İkizler burcundaki transiti ve Merkür açısı: Bugün zihinsel dağınıklık veya yoğun merak getirebilir, zihnimizi tek bir konuya odaklamak zor olabilir.",
+      "Güneş ve Uranüs arasındaki uyumlu sekstil açı: Bugün beklenmedik güzel sürprizler, orijinal fikirler ve rutinin dışına çıkma arzusu yüksek.",
+      "Venüs ve Satürn kare açısı: Duygusal konularda veya ilişkilerde mesafeli hissetme, sorumlulukların duyguların önüne geçmesi olası.",
+      "Mars'ın Koç burcundaki güçlü konumu: İçsel motivasyon ve cesaret yüksek, ancak ani tepkiler vermeye veya aceleci davranmaya meyilliyiz.",
+      "Merkür retrosunun son günleri: İletişim kazalarına karşı dikkatli olunması gereken, geçmişteki konuların tekrar gündeme gelebileceği bir gün.",
+      "Ay ve Neptün kavuşumu: Sezgilerin çok güçlü olduğu, sanatsal veya yaratıcı uğraşlar için ideal ama gerçeklerden kaçma isteği uyandıran bir gün.",
+      "Jüpiter'in olumlu etkileşimi: Şans ve büyüme enerjisi devrede, sosyal ortamlarda veya eğitim/iş alanlarında yeni fırsatlar doğabilir.",
+      "Satürn'ün disipline edici transiti: Sabır ve planlama gerektiren konular ön planda, kısa vadeli kazançlar yerine uzun vadeli adımlar kazandırır.",
+      "Yeni Ay enerjisinin getirdiği taze başlangıçlar: Hayatınızda yeni hedefler belirlemek, temiz bir sayfa açmak ve niyet etmek için harika bir gün.",
+      "Dolunay'ın doruk noktası: Duyguların tavan yaptığı, uzun süredir sürüncemede kalan konuların netleşerek sonuca bağlandığı bir süreç.",
+      "Venüs'ün Boğa burcundaki konforlu transiti: Maddi konulara, huzura, konfora ve ikili ilişkilerde güvene odaklandığımız sakin bir gün.",
+      "Merkür ve Jüpiter üçgen açısı: Büyük resmi görmek, yeni fikirler üretmek, anlaşmalar yapmak veya eğitimde başarı elde etmek için elverişli.",
+      "Plüton'un dönüştürücü gücü: Eski alışkanlıkları geride bırakmak, içsel gücümüzü fark etmek ve derin bir yenilenme yaşamak için bir fırsat.",
+      "Ay'ın Başak burcundaki transiti: Detaylara odaklanmak, evi veya çalışma alanını düzenlemek, sağlığımıza özen göstermek için çok uygun.",
+      "Güneş ve Neptün karşıtlığı: Kararsızlık, kafa karışıklığı veya hayal kırıklığı riski. Gerçekçi adımlar atmaya özen gösterilmeli."
+    ];
+
+    final theme = transitThemes[hash % transitThemes.length];
+
+    // Compute dynamic ratings (range: 40 to 95)
+    final loveScore = 40 + (hash % 56);
+    final moneyScore = 40 + ((hash >> 2) % 56);
+    final careerScore = 40 + ((hash >> 4) % 56);
+    final energyScore = 45 + ((hash >> 6) % 51);
+
     final prompt = """
 Sen profesyonel bir astroloji uzmanısın.
 Burç: $zodiac
 Kullanıcı Cinsiyeti: $gender (male ise erkek, female ise kadın)
 Tarih: $date
 
+Bugünün Göksel Transit Teması: $theme
+
 Karakteristik Kurallar (Çok Önemli):
 - Sıradan, yapay zeka tarafından yazıldığı belli olan diplomatik ve politik dilden kesinlikle kaçın.
-- "Unutma ki astroloji sadece bir yol göstericidir", "kararlar senin", "hayatının kontrolü sende", "bu tavsiye niteliğindedir", "sabırlı olmalısın" gibi sorumluluk reddi (disclaimer) veya klişe yapay zeka uyarılarını asla kullanma. Gerçek, bilge ve iddialı bir astrolog gibi konuş.
-- Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun. Güçlü içgörüler ve net uyarılar vermekten çekinme.
-- Soyut tasvirler yerine kullanıcının hayatında uygulayabileceği somut adımlar ("actionable/concrete guidance") ver.
-- Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur. Derin sanatsal betimlemeler yapmak yerine kullanıcının hızlıca okuyup somut bir sonuç çıkarabileceği doğrudan ve sade bir dil kullan.
+- "Unutma ki astroloji sadece bir yol göstericidir", "kararlar senin", "hayatının kontrolü sende", "bu tavsiye niteliğindedir", "sabırlı olmalısın" gibi sorumluluk reddi (disclaimer) veya klişe yapay zeka uyarılarını asla kullanma.
+- Üslup (Çok Önemli): Pozitif, samimi, chill (rahat), arkadaşça ve rahatlatıcı bir dil kullan. Mentor veya kişisel gelişim uzmanı havasından (örneğin "şunu yapmalısın, böyle davranmalısın, kendini geliştir, vizyonunu belirle" gibi üstten bakan, ders veren tavsiyelerden) kesinlikle kaçın. Karşındaki insanla bir dost gibi konuş, ona destek ver ve içini ferahlat.
+- Yaşam Alanları (Çok Önemli): Sadece kurumsal iş hayatına odaklanma. Kullanıcı okulda, üniversitede, sınavlara hazırlık sürecinde veya kendi günlük projeleriyle meşgul olabilir. Bu yüzden "iş veya okul hayatı", "çalışmaların/günlük işlerin", "akademik ya da mesleki sorumlulukların" gibi kapsayıcı ifadeler kullan.
+- Dil ve Cümle Yapısı: Sade, net, doğrudan ve anlaşılır cümleler kur. Edebi, süslü, ağdalı veya şiirsel betimlemelerden kesinlikle kaçın. Kullanıcının hızlıca okuyup somut bir rahatlama ve yön bulma çıkarabileceği doğrudan ve sade bir dil kullan.
 
 Görev:
-1. Bu burç ve cinsiyete özel, belirtilen tarih için mistik, motive edici, son derece samimi, net ve somut günlük yorum yaz. Yorum mutlaka detaylı, derinlemesine ve en az 10 satır (yaklaşık 8-10 cümle) uzunluğunda olmalıdır.
-2. Aşk, Para, Kariyer ve Enerji puanlarını (0 ile 100 arası tamsayılar) belirle.
+1. Bu burç ve cinsiyete özel, belirtilen tarih için bugünün göksel transit temasını temel alan, son derece samimi, motive edici, rahatlatıcı ve net günlük yorum yaz. Yorum mutlaka detaylı, derinlemesine ve en az 10 satır (yaklaşık 8-10 cümle) uzunluğunda olmalıdır.
+2. Aşk, Para, Kariyer ve Enerji puanlarını şu değerler olarak belirle:
+   - Aşk (love): $loveScore
+   - Para (money): $moneyScore
+   - Kariyer (career): $careerScore
+   - Enerji (energy): $energyScore
+   (JSON çıktısında bu puanları aynen kullanmalısın.)
 3. Çıktıyı aşağıdaki JSON formatında ver. JSON dışında hiçbir açıklama veya markdown bloğu yazma.
 
 JSON formatı:
 {
   "comment_tr": "[Buraya en az 10 satır uzunluğunda detaylı Türkçe günlük yorumu yaz]",
   "comment_en": "[Buraya en az 10 satır uzunluğunda detaylı İngilizce günlük yorumu yaz]",
-  "love": [Aşk puanı],
-  "money": [Para puanı],
-  "career": [Kariyer puanı],
-  "energy": [Enerji puanı]
+  "love": $loveScore,
+  "money": $moneyScore,
+  "career": $careerScore,
+  "energy": $energyScore
 }
 """;
 
@@ -92,10 +138,10 @@ JSON formatı:
       final dailyComment = DailyCommentModel(
         commentTr: data['comment_tr'] ?? '',
         commentEn: data['comment_en'] ?? '',
-        love: data['love'] ?? 70,
-        money: data['money'] ?? 70,
-        career: data['career'] ?? 70,
-        energy: data['energy'] ?? 70,
+        love: loveScore,
+        money: moneyScore,
+        career: careerScore,
+        energy: energyScore,
         generatedAt: DateTime.now(),
       );
 

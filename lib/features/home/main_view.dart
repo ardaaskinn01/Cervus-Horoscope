@@ -1,7 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:horoscope/core/constants/app_colors.dart';
+import 'package:horoscope/core/constants/app_text_styles.dart';
+import 'package:horoscope/core/constants/app_strings.dart';
 import 'package:horoscope/core/providers/navigation_provider.dart';
 import 'package:horoscope/features/home/home_screen.dart';
 import 'package:horoscope/features/natal_chart/natal_chart_screen.dart';
@@ -28,6 +34,156 @@ class _MainViewState extends ConsumerState<MainView> {
     WhoAmIScreen(),
     SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkVersion();
+      }
+    });
+  }
+
+  Future<void> _checkVersion() async {
+    try {
+      final doc = await FirebaseFirestore.instance.doc('settings/app_config').get();
+      if (doc.exists && mounted) {
+        final data = doc.data();
+        if (data != null) {
+          final info = await PackageInfo.fromPlatform();
+          final currentBuild = int.tryParse(info.buildNumber) ?? 0;
+          final latestBuild = int.tryParse(data['latestBuildNumber']?.toString() ?? "") ?? currentBuild;
+
+          if (latestBuild > currentBuild) {
+            final iosUrl = data['iosUrl']?.toString() ?? "";
+            final androidUrl = data['androidUrl']?.toString() ?? "";
+            _showUpdateDialog(iosUrl, androidUrl);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("⚠️ Versiyon kontrol hatası: $e");
+    }
+  }
+
+  void _showUpdateDialog(String iosUrl, String androidUrl) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+          child: GlassCard(
+            borderRadius: 28,
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Glowing Icon
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.system_update_rounded,
+                    color: AppColors.primary,
+                    size: 36,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Title
+                Text(
+                  context.translate('update_new_version_title'),
+                  style: AppTextStyles.h3.copyWith(fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                // Description
+                Text(
+                  context.translate('update_new_version_desc'),
+                  style: AppTextStyles.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                // Action Buttons
+                Row(
+                  children: [
+                    // Later Button
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(color: AppColors.borderLight),
+                          ),
+                        ),
+                        child: Text(
+                          context.translate('update_btn_later'),
+                          style: AppTextStyles.label.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Update Button
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final url = Platform.isIOS ? iosUrl : androidUrl;
+                          if (url.isNotEmpty) {
+                            final uri = Uri.parse(url);
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                          }
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            gradient: AppColors.goldGradient,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              context.translate('update_btn_confirm'),
+                              style: AppTextStyles.label.copyWith(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   String _getPlacementForIndex(int index) {
     switch (index) {

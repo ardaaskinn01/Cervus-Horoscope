@@ -30,6 +30,11 @@ class AppStrings {
       'tools_title': 'Astroloji Araçları',
       // Settings
       'settings_title': 'Ayarlar',
+      // Version Update Check
+      'update_new_version_title': 'Yeni Sürüm Mevcut',
+      'update_new_version_desc': 'Uygulamamızı daha stabil ve yeni özelliklerle kullanabilmek için lütfen güncelleyin.',
+      'update_btn_later': 'Daha Sonra',
+      'update_btn_confirm': 'Güncelle',
     },
     'en': {
       'app_title': 'Mystic Horoscope',
@@ -55,6 +60,11 @@ class AppStrings {
       'tools_title': 'Astrology Tools',
       // Settings
       'settings_title': 'Settings',
+      // Version Update Check
+      'update_new_version_title': 'New Version Available',
+      'update_new_version_desc': 'Please update our app to the latest version to enjoy new features and improvements.',
+      'update_btn_later': 'Later',
+      'update_btn_confirm': 'Update',
     },
   };
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:horoscope/core/constants/app_colors.dart';
 import 'package:horoscope/core/constants/app_text_styles.dart';
 import 'package:horoscope/core/providers/user_provider.dart';
@@ -15,26 +16,12 @@ class SplashScreen extends ConsumerStatefulWidget {
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _logoController;
+class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   void initState() {
     super.initState();
-    
-    _logoController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    )..repeat();
-
     _initializeApp();
-  }
-
-  @override
-  void dispose() {
-    _logoController.dispose();
-    super.dispose();
   }
 
   Future<void> _initializeApp() async {
@@ -76,30 +63,39 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Dönen mistik kristal/küre logosu
-              RotationTransition(
-                turns: _logoController,
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: AppColors.goldGradient,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.warmAmber.withValues(alpha: 0.4),
-                        blurRadius: 30,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '🔮',
-                      style: TextStyle(fontSize: 48),
+              // Mistik logo görseli
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.warmAmber.withValues(alpha: 0.35),
+                      blurRadius: 35,
+                      spreadRadius: 3,
                     ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(30),
+                  child: Image.asset(
+                    'assets/images/astris.PNG',
+                    width: 110,
+                    height: 110,
+                    fit: BoxFit.cover,
                   ),
                 ),
+              )
+              .animate(onPlay: (controller) => controller.repeat(reverse: true))
+              .scale(
+                begin: const Offset(0.96, 0.96),
+                end: const Offset(1.04, 1.04),
+                duration: 2200.ms,
+                curve: Curves.easeInOut,
+              )
+              .shimmer(
+                delay: 2500.ms,
+                duration: 1500.ms,
+                color: Colors.white24,
               ),
               const SizedBox(height: 32),
               // Uygulama Başlığı
