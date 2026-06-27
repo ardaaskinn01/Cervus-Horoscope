@@ -12,6 +12,7 @@ class UserModel {
   final String localeCode;
   final DateTime createdAt;
   final bool isPremium;
+  final int profileChangeCount;
 
   UserModel({
     required this.uid,
@@ -24,6 +25,7 @@ class UserModel {
     required this.localeCode,
     required this.createdAt,
     this.isPremium = false,
+    this.profileChangeCount = 0,
   });
 
   UserModel copyWith({
@@ -37,6 +39,7 @@ class UserModel {
     String? localeCode,
     DateTime? createdAt,
     bool? isPremium,
+    int? profileChangeCount,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -49,6 +52,7 @@ class UserModel {
       localeCode: localeCode ?? this.localeCode,
       createdAt: createdAt ?? this.createdAt,
       isPremium: isPremium ?? this.isPremium,
+      profileChangeCount: profileChangeCount ?? this.profileChangeCount,
     );
   }
 
@@ -64,6 +68,7 @@ class UserModel {
       'localeCode': localeCode,
       'createdAt': Timestamp.fromDate(createdAt),
       'isPremium': isPremium,
+      'profileChangeCount': profileChangeCount,
     };
   }
 
@@ -79,6 +84,7 @@ class UserModel {
       'localeCode': localeCode,
       'createdAt': createdAt.toIso8601String(),
       'isPremium': isPremium,
+      'profileChangeCount': profileChangeCount,
     };
   }
 
@@ -123,6 +129,7 @@ class UserModel {
       localeCode: map['localeCode'] ?? 'tr',
       createdAt: parsedCreatedAt,
       isPremium: map['isPremium'] ?? false,
+      profileChangeCount: map['profileChangeCount'] ?? 0,
     );
   }
 }

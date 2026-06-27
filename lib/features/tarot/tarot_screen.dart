@@ -15,6 +15,8 @@ import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/star_background.dart';
 import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/features/tarot/tarot_result_screen.dart';
+import 'package:horoscope/core/services/limit_service.dart';
+import 'package:horoscope/shared/widgets/limit_dialog_helper.dart';
 
 class TarotScreen extends ConsumerStatefulWidget {
   const TarotScreen({super.key});
@@ -86,6 +88,26 @@ class _TarotScreenState extends ConsumerState<TarotScreen> {
       return;
     }
 
+    final limitStatus = await LimitService.instance.checkLimit('tarot');
+    if (limitStatus == LimitStatus.locked) {
+      LimitDialogHelper.showDailyLimitReachedDialog(context: context, ref: ref);
+      return;
+    } else if (limitStatus == LimitStatus.needAd) {
+      LimitDialogHelper.showAdRequiredDialog(
+        context: context,
+        ref: ref,
+        featureKey: 'tarot',
+        onAdCompleted: () {
+          _executeTarotReading(user, isTr);
+        },
+      );
+      return;
+    }
+
+    _executeTarotReading(user, isTr);
+  }
+
+  Future<void> _executeTarotReading(dynamic user, bool isTr) async {
     setState(() {
       _isLoading = true;
     });
@@ -126,6 +148,10 @@ class _TarotScreenState extends ConsumerState<TarotScreen> {
         user: user,
         userNatalChart: userNatalChart,
       );
+
+      if (result != null) {
+        await LimitService.instance.registerCalculation('tarot');
+      }
 
       if (result != null && mounted) {
         Navigator.push(

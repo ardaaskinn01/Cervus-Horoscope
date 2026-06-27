@@ -11,6 +11,10 @@ class FirebaseService {
   // Anonim oturum aç
   Future<User?> signInAnonymously() async {
     try {
+      if (_auth.currentUser != null) {
+        debugPrint('ℹ️ Mevcut anonim oturum kullanılıyor: ${_auth.currentUser!.uid}');
+        return _auth.currentUser;
+      }
       final UserCredential userCredential = await _auth.signInAnonymously();
       return userCredential.user;
     } catch (e) {

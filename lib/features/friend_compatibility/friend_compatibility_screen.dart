@@ -18,6 +18,8 @@ import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/shared/widgets/birth_place_search_sheet.dart';
 import 'package:horoscope/core/services/ad_service.dart';
 import 'package:horoscope/core/utils/firestore_extension.dart';
+import 'package:horoscope/core/services/limit_service.dart';
+import 'package:horoscope/shared/widgets/limit_dialog_helper.dart';
 
 import 'package:horoscope/core/utils/date_formatter.dart';
 
@@ -79,6 +81,98 @@ class _FriendCompatibilityScreenState extends ConsumerState<FriendCompatibilityS
     }
   }
 
+  Future<void> _deleteHistoryItem(CompatibilityModel item) async {
+    final user = ref.read(userProvider);
+    if (user == null) return;
+
+    final isTr = ref.read(languageProvider).languageCode == 'tr';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: GlassCard(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '🗑️',
+                  style: TextStyle(fontSize: 40),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  isTr ? 'Geçmişi Sil' : 'Delete History',
+                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  isTr
+                      ? '${item.partnerName} ile olan arkadaşlık uyumu analizini silmek istediğinize emin misiniz?'
+                      : 'Are you sure you want to delete the friendship compatibility analysis with ${item.partnerName}?',
+                  style: AppTextStyles.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(
+                          isTr ? 'İptal' : 'Cancel',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GradientButton(
+                        text: isTr ? 'Sil' : 'Delete',
+                        onTap: () => Navigator.pop(context, true),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final docPath = 'users/${user.uid}/compatibility/${item.partnerName}_${item.type}';
+      await FirebaseFirestore.instance.doc(docPath).delete();
+
+      if (mounted) {
+        setState(() {
+          _history.removeWhere((x) => x.partnerName == item.partnerName && x.type == item.type);
+          if (_result?.partnerName == item.partnerName && _result?.type == item.type) {
+            _result = null;
+          }
+        });
+        CustomToast.show(
+          context,
+          isTr ? 'Analiz başarıyla silindi.' : 'Analysis deleted successfully.',
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️ Geçmiş silme hatası: $e');
+      if (mounted) {
+        CustomToast.show(
+          context,
+          isTr ? 'Silinirken bir hata oluştu.' : 'Failed to delete.',
+          isError: true,
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -113,86 +207,6 @@ class _FriendCompatibilityScreenState extends ConsumerState<FriendCompatibilityS
         _dateController.text = "${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}";
       });
     }
-  }
-
-  void _showAiToolsLimitDialog(bool isTr, String userId, VoidCallback onAdCompleted) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: GlassCard(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  '📊',
-                  style: TextStyle(fontSize: 48),
-                ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
-                const SizedBox(height: 16),
-                Text(
-                  isTr ? 'Yapay Zeka Analiz Limiti' : 'AI Calculation Limit',
-                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  isTr
-                      ? 'Günlük 3 adet ücretsiz analiz hakkınız dolmuştur. Bir ödüllü reklam izleyerek hemen +1 analiz hakkı kazanabilir veya Premium\'a geçerek sınırsız analiz yapabilirsiniz.'
-                      : 'You have reached your daily limit of 3 free calculations. Watch a rewarded ad to earn +1 calculation right now, or upgrade to Premium for unlimited access.',
-                  style: AppTextStyles.bodyMedium.copyWith(height: 1.45),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                Column(
-                  children: [
-                    GradientButton(
-                      text: isTr ? 'Reklam İzle 📺' : 'Watch Ad 📺',
-                      onTap: () {
-                        Navigator.pop(context);
-                        AdService.instance.showRewardedAd(
-                          placement: 'ai_tools_rewarded',
-                          context: context,
-                          isPremium: false,
-                          onRewardEarned: () async {
-                            await AiService().incrementAiToolsRewardedCount(userId);
-                            onAdCompleted();
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        CustomToast.show(
-                          context,
-                          isTr ? 'Premium paketler çok yakında!' : 'Premium bundles coming soon!',
-                        );
-                      },
-                      child: Text(
-                        isTr ? 'Premium\'a Geç 🚀' : 'Upgrade to Premium 🚀',
-                        style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        isTr ? 'Kapat' : 'Close',
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 
   // Arkadaşlık Uyumu hesapla
@@ -234,19 +248,23 @@ class _FriendCompatibilityScreenState extends ConsumerState<FriendCompatibilityS
       return;
     }
 
-    try {
-      final limitInfo = await AiService().checkAiToolsDailyLimit(user.uid);
-      if (limitInfo['allowed'] == false) {
-        _showAiToolsLimitDialog(isTr, user.uid, () {
+    final limitStatus = await LimitService.instance.checkLimit('friend_compatibility');
+    if (limitStatus == LimitStatus.locked) {
+      LimitDialogHelper.showDailyLimitReachedDialog(context: context, ref: ref);
+      return;
+    } else if (limitStatus == LimitStatus.needAd) {
+      LimitDialogHelper.showAdRequiredDialog(
+        context: context,
+        ref: ref,
+        featureKey: 'friend_compatibility',
+        onAdCompleted: () {
           _executeCalculation(user.uid);
-        });
-        return;
-      }
-      _executeCalculation(user.uid);
-    } catch (e) {
-      debugPrint('⚠️ Limit check error: $e');
-      _executeCalculation(user.uid);
+        },
+      );
+      return;
     }
+
+    _executeCalculation(user.uid);
   }
 
   Future<void> _executeCalculation(String userId) async {
@@ -288,7 +306,7 @@ class _FriendCompatibilityScreenState extends ConsumerState<FriendCompatibilityS
       );
 
       if (compatibility != null) {
-        await AiService().incrementAiToolsCalculationCount(userId);
+        await LimitService.instance.registerCalculation('friend_compatibility');
       }
 
       if (mounted) {
@@ -680,50 +698,78 @@ class _FriendCompatibilityScreenState extends ConsumerState<FriendCompatibilityS
                   return Container(
                     width: 140,
                     margin: const EdgeInsets.only(right: 12),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _result = item;
-                        });
-                      },
-                      child: GlassCard(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                _getZodiacEmoji(item.partnerZodiacSign, fontSize: 24),
-                                Text(
-                                  '%${item.overallScore}',
-                                  style: AppTextStyles.label.copyWith(
-                                    color: AppColors.primaryGold,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _result = item;
+                              });
+                            },
+                            child: GlassCard(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      _getZodiacEmoji(item.partnerZodiacSign, fontSize: 24),
+                                      Padding(
+                                        padding: const EdgeInsets.only(right: 16.0),
+                                        child: Text(
+                                          '%${item.overallScore}',
+                                          style: AppTextStyles.label.copyWith(
+                                            color: AppColors.primaryGold,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            Text(
-                              item.partnerName,
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                fontWeight: FontWeight.bold,
-                                overflow: TextOverflow.ellipsis,
+                                  const Spacer(),
+                                  Text(
+                                    item.partnerName,
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    maxLines: 1,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${_getZodiacName(item.partnerZodiacSign, isTr)} ${item.partnerGender == 'female' ? '👩' : '👨'}',
+                                    style: AppTextStyles.caption.copyWith(fontSize: 9, color: AppColors.textSecondary),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
-                              maxLines: 1,
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${_getZodiacName(item.partnerZodiacSign, isTr)} ${item.partnerGender == 'female' ? '👩' : '👨'}',
-                              style: AppTextStyles.caption.copyWith(fontSize: 9, color: AppColors.textSecondary),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () => _deleteHistoryItem(item),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.4),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 14,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 },

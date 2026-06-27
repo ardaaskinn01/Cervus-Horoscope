@@ -11,7 +11,7 @@ import 'package:horoscope/core/providers/language_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:horoscope/core/utils/astrology_utils.dart';
-// import 'package:horoscope/core/services/revenuecat_service.dart';
+import 'package:horoscope/core/services/revenuecat_service.dart';
 
 class UserNotifier extends Notifier<UserModel?> {
   final FirebaseService _firebaseService = FirebaseService();
@@ -72,7 +72,10 @@ class UserNotifier extends Notifier<UserModel?> {
           final cacheStr = prefs.getString('cached_user_profile');
           if (cacheStr != null) {
             final Map<String, dynamic> map = jsonDecode(cacheStr);
-            profile = UserModel.fromMap(map);
+            profile = UserModel.fromMap(map).copyWith(uid: uid);
+            try {
+              await _firebaseService.saveUserProfile(profile);
+            } catch (_) {}
             debugPrint('ℹ️ Firestore\'da bulunamadı, yerel önbellekteki profil kullanılacak: ${profile.name}');
           }
         } catch (_) {}
@@ -98,8 +101,7 @@ class UserNotifier extends Notifier<UserModel?> {
         }
       }
 
-      // RevenueCat premium durumunu kontrol et (İlk sürümde abonelikler pasif)
-      /*
+      // RevenueCat premium durumunu kontrol et
       final isRcPremium = await RevenueCatService.checkPremiumStatus();
       if (profile.isPremium != isRcPremium) {
         profile = profile.copyWith(isPremium: isRcPremium);
@@ -107,8 +109,6 @@ class UserNotifier extends Notifier<UserModel?> {
           await _firebaseService.saveUserProfile(profile);
         } catch (_) {}
       }
-      */
-      profile = profile.copyWith(isPremium: false);
 
       state = profile;
 
@@ -221,13 +221,27 @@ class UserNotifier extends Notifier<UserModel?> {
       }
     }
 
-    // Doğum parametrelerinin veya adın değişip değişmediğini kontrol et
-    final bool birthDetailsChanged =
-        currentProfile.birthDate != mergedBirthDate ||
-        currentProfile.birthTime != birthTime ||
-        currentProfile.birthPlace != birthPlace ||
-        currentProfile.name != name ||
-        currentProfile.gender != gender;
+    // Ana detaylar (İsim, Cinsiyet, Doğum Yeri, Doğum Tarihi) değişti mi?
+    final bool isNameChanged = name != null && name.trim() != (currentProfile.name ?? '').trim();
+    final bool isGenderChanged = gender != null && gender != currentProfile.gender;
+    final bool isBirthPlaceChanged = birthPlace != null && birthPlace.trim() != (currentProfile.birthPlace ?? '').trim();
+    
+    bool isBirthDateChanged = false;
+    if (birthDate != null && currentProfile.birthDate != null) {
+      final oldLocal = currentProfile.birthDate!.toLocal();
+      isBirthDateChanged = birthDate.year != oldLocal.year ||
+                           birthDate.month != oldLocal.month ||
+                           birthDate.day != oldLocal.day;
+    } else if (birthDate != null || currentProfile.birthDate != null) {
+      isBirthDateChanged = true;
+    }
+
+    final bool isTimeChanged = birthTime != null && birthTime != currentProfile.birthTime;
+
+    // Ana detaylar değiştiyse hak düşer (İlk profil kurulumu hariç!). Sadece saat değiştiyse haktan düşmez!
+    final bool isInitialSetup = currentProfile.name == null || currentProfile.birthDate == null;
+    final bool isMainDetailsChanged = isNameChanged || isGenderChanged || isBirthPlaceChanged || isBirthDateChanged;
+    final bool birthDetailsChanged = isMainDetailsChanged || isTimeChanged;
 
     final updated = currentProfile.copyWith(
       name: name,
@@ -236,6 +250,9 @@ class UserNotifier extends Notifier<UserModel?> {
       birthPlace: birthPlace,
       gender: gender,
       zodiacSign: zodiacSign,
+      profileChangeCount: (isMainDetailsChanged && !isInitialSetup)
+          ? currentProfile.profileChangeCount + 1
+          : currentProfile.profileChangeCount,
     );
 
     state = updated;

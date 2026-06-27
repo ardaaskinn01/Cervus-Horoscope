@@ -16,6 +16,8 @@ import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/core/services/ad_service.dart';
 import 'package:horoscope/core/utils/firestore_extension.dart';
 import 'package:horoscope/core/utils/date_formatter.dart';
+import 'package:horoscope/core/services/limit_service.dart';
+import 'package:horoscope/shared/widgets/limit_dialog_helper.dart';
 
 class PartnerNumerologyScreen extends ConsumerStatefulWidget {
   const PartnerNumerologyScreen({super.key});
@@ -39,7 +41,7 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
   String? _aiAnalysisTr;
   String? _aiAnalysisEn;
 
-  List<NumerologyModel> _history = [];
+  List<_PartnerNumerologyHistoryItem> _history = [];
 
   @override
   void initState() {
@@ -67,14 +69,15 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
 
       final items = querySnapshot.docs.map((doc) {
         try {
-          return NumerologyModel.fromMap(doc.data());
+          final numerology = NumerologyModel.fromMap(doc.data());
+          return _PartnerNumerologyHistoryItem(docId: doc.id, numerology: numerology);
         } catch (e) {
           debugPrint('⚠️ Error parsing partner numerology doc ${doc.id}: $e');
           return null;
         }
-      }).whereType<NumerologyModel>().toList();
+      }).whereType<_PartnerNumerologyHistoryItem>().toList();
 
-      items.sort((a, b) => b.generatedAt.compareTo(a.generatedAt));
+      items.sort((a, b) => b.numerology.generatedAt.compareTo(a.numerology.generatedAt));
 
       if (mounted) {
         setState(() {
@@ -83,6 +86,99 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
       }
     } catch (e) {
       debugPrint('⚠️ Partner numeroloji geçmişi okuma hatası: $e');
+    }
+  }
+
+  Future<void> _deleteHistoryItem(_PartnerNumerologyHistoryItem item) async {
+    final user = ref.read(userProvider);
+    if (user == null) return;
+
+    final isTr = ref.read(languageProvider).languageCode == 'tr';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: GlassCard(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '🗑️',
+                  style: TextStyle(fontSize: 40),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  isTr ? 'Geçmişi Sil' : 'Delete History',
+                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  isTr
+                      ? '${item.numerology.name} kişisinin numeroloji analizini silmek istediğinize emin misiniz?'
+                      : 'Are you sure you want to delete the numerology analysis of ${item.numerology.name}?',
+                  style: AppTextStyles.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(
+                          isTr ? 'İptal' : 'Cancel',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GradientButton(
+                        text: isTr ? 'Sil' : 'Delete',
+                        onTap: () => Navigator.pop(context, true),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final docPath = 'users/${user.uid}/partner_numerology/${item.docId}';
+      await FirebaseFirestore.instance.doc(docPath).delete();
+
+      if (mounted) {
+        setState(() {
+          _history.removeWhere((x) => x.docId == item.docId);
+          if (_nameController.text == item.numerology.name) {
+            _aiAnalysisTr = null;
+            _aiAnalysisEn = null;
+          }
+        });
+        CustomToast.show(
+          context,
+          isTr ? 'Analiz başarıyla silindi.' : 'Analysis deleted successfully.',
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️ Geçmiş silme hatası: $e');
+      if (mounted) {
+        CustomToast.show(
+          context,
+          isTr ? 'Silinirken bir hata oluştu.' : 'Failed to delete.',
+          isError: true,
+        );
+      }
     }
   }
 
@@ -197,87 +293,6 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
     } catch (_) {}
   }
 
-  void _showAiToolsLimitDialog(bool isTr, String userId, VoidCallback onAdCompleted) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: GlassCard(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  '📊',
-                  style: TextStyle(fontSize: 48),
-                ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
-                const SizedBox(height: 16),
-                Text(
-                  isTr ? 'Yapay Zeka Analiz Limiti' : 'AI Calculation Limit',
-                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  isTr
-                      ? 'Günlük 3 adet ücretsiz analiz hakkınız dolmuştur. Bir ödüllü reklam izleyerek hemen +1 analiz hakkı kazanabilir veya Premium\'a geçerek sınırsız analiz yapabilirsiniz.'
-                      : 'You have reached your daily limit of 3 free calculations. Watch a rewarded ad to earn +1 calculation right now, or upgrade to Premium for unlimited access.',
-                  style: AppTextStyles.bodyMedium.copyWith(height: 1.45),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                Column(
-                  children: [
-                    GradientButton(
-                      text: isTr ? 'Reklam İzle 📺' : 'Watch Ad 📺',
-                      onTap: () {
-                        Navigator.pop(context);
-                        AdService.instance.showRewardedAd(
-                          placement: 'ai_tools_rewarded',
-                          context: context,
-                          isPremium: false,
-                          onRewardEarned: () async {
-                            await AiService().incrementAiToolsRewardedCount(userId);
-                            onAdCompleted();
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        CustomToast.show(
-                          context,
-                          isTr ? 'Premium paketler çok yakında!' : 'Premium bundles coming soon!',
-                        );
-                      },
-                      child: Text(
-                        isTr ? 'Premium\'a Geç 🚀' : 'Upgrade to Premium 🚀',
-                        style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        isTr ? 'Kapat' : 'Close',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // Gemini AI Rapor İsteme
   Future<void> _fetchAiNumerology() async {
     final user = ref.read(userProvider);
     if (user == null) return;
@@ -303,19 +318,23 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
       return;
     }
 
-    try {
-      final limitInfo = await AiService().checkAiToolsDailyLimit(user.uid);
-      if (limitInfo['allowed'] == false) {
-        _showAiToolsLimitDialog(isTr, user.uid, () {
+    final limitStatus = await LimitService.instance.checkLimit('partner_numerology');
+    if (limitStatus == LimitStatus.locked) {
+      LimitDialogHelper.showDailyLimitReachedDialog(context: context, ref: ref);
+      return;
+    } else if (limitStatus == LimitStatus.needAd) {
+      LimitDialogHelper.showAdRequiredDialog(
+        context: context,
+        ref: ref,
+        featureKey: 'partner_numerology',
+        onAdCompleted: () {
           _executeCalculation(user.uid, name);
-        });
-        return;
-      }
-      _executeCalculation(user.uid, name);
-    } catch (e) {
-      debugPrint('⚠️ Limit check error: $e');
-      _executeCalculation(user.uid, name);
+        },
+      );
+      return;
     }
+
+    _executeCalculation(user.uid, name);
   }
 
   Future<void> _executeCalculation(String userId, String name) async {
@@ -335,16 +354,20 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
       );
 
       if (numerology != null) {
-        await AiService().incrementAiToolsCalculationCount(userId);
+        await LimitService.instance.registerCalculation('partner_numerology');
       }
 
       if (numerology != null && mounted) {
+        final formattedDate = "${_selectedDate!.year}_${_selectedDate!.month}_${_selectedDate!.day}";
+        final String docKey = "${name}_$formattedDate";
+        final docId = docKey.toLowerCase().trim().replaceAll(' ', '_');
+
         setState(() {
           _aiAnalysisTr = numerology.aiAnalysisTr;
           _aiAnalysisEn = numerology.aiAnalysisEn;
           _isLoadingAi = false;
-          _history.removeWhere((item) => item.name.toLowerCase() == numerology.name.toLowerCase());
-          _history.insert(0, numerology);
+          _history.removeWhere((item) => item.numerology.name.toLowerCase() == numerology.name.toLowerCase());
+          _history.insert(0, _PartnerNumerologyHistoryItem(docId: docId, numerology: numerology));
         });
       } else {
         if (mounted) {
@@ -650,44 +673,82 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
           return Container(
             width: 140,
             margin: const EdgeInsets.only(right: 12),
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _nameController.text = item.name;
-                  _selectedDate = DateTime.now(); // Date details are not recalculated in UI as we restore direct values
-                  _lifePathNumber = item.lifePathNumber;
-                  _personalYearNumber = item.personalYearNumber;
-                  _aiAnalysisTr = item.aiAnalysisTr;
-                  _aiAnalysisEn = item.aiAnalysisEn;
-                });
-              },
-              child: GlassCard(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.name,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryGold,
-                        overflow: TextOverflow.ellipsis,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _nameController.text = item.numerology.name;
+                        _selectedDate = DateTime.now();
+                        _lifePathNumber = item.numerology.lifePathNumber;
+                        _personalYearNumber = item.numerology.personalYearNumber;
+                        _aiAnalysisTr = item.numerology.aiAnalysisTr;
+                        _aiAnalysisEn = item.numerology.aiAnalysisEn;
+                      });
+                    },
+                    child: GlassCard(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 16.0),
+                            child: Text(
+                              item.numerology.name,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryGold,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              maxLines: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Y.Yolu:${item.numerology.lifePathNumber}  Yıl:${item.numerology.personalYearNumber}',
+                            style: AppTextStyles.caption.copyWith(fontSize: 9, color: AppColors.textSecondary),
+                          ),
+                        ],
                       ),
-                      maxLines: 1,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Y.Yolu:${item.lifePathNumber}  Yıl:${item.personalYearNumber}',
-                      style: AppTextStyles.caption.copyWith(fontSize: 9, color: AppColors.textSecondary),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: GestureDetector(
+                    onTap: () => _deleteHistoryItem(item),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        size: 10,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         },
       ),
     );
   }
+}
+
+class _PartnerNumerologyHistoryItem {
+  final String docId;
+  final NumerologyModel numerology;
+
+  _PartnerNumerologyHistoryItem({
+    required this.docId,
+    required this.numerology,
+  });
 }

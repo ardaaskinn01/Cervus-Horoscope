@@ -38,7 +38,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     {'icon': Icons.map_rounded, 'title': 'Astro Portre', 'titleEn': 'Astro Portrait', 'route': 1},
     {'icon': Icons.favorite_rounded, 'title': 'Aşk Uyumu', 'titleEn': 'Love Compatibility', 'route': 'love'},
     {'icon': Icons.people_rounded, 'title': 'Arkadaşlık Uyumu', 'titleEn': 'Friend Compatibility', 'route': 'friend'},
-    {'icon': Icons.pin_rounded, 'title': 'Numeroloji', 'titleEn': 'Numerology', 'route': 'numerology'},
+    {'icon': Icons.style_rounded, 'title': 'Kozmik Tarot', 'titleEn': 'Cosmic Tarot', 'route': 'tarot'},
     {'icon': Icons.auto_awesome_rounded, 'title': 'Kozmik Kâhin', 'titleEn': 'Cosmic Oracle', 'route': 'cosmic_oracle'},
     {'icon': Icons.stars_rounded, 'title': 'Başkasının Portresi', 'titleEn': 'Partner\'s Portrait', 'route': 'partner_chart'},
   ];
@@ -295,8 +295,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             context.push('/love-compatibility');
                           } else if (route == 'friend') {
                             context.push('/friend-compatibility');
-                          } else if (route == 'numerology') {
-                            context.push('/numerology');
+                          } else if (route == 'tarot') {
+                            context.push('/tarot');
                           } else if (route == 'cosmic_oracle') {
                             context.push('/cosmic-oracle');
                           } else if (route == 'partner_chart') {

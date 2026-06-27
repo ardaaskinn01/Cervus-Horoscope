@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -12,16 +13,26 @@ import 'shared/router/app_router.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sweph/sweph.dart';
-import 'core/services/ad_service.dart';
-// import 'package:horoscope/core/services/revenuecat_service.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:horoscope/core/services/ad_service.dart';
+import 'package:horoscope/core/services/revenuecat_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Swiss Ephemeris for local natal chart calculations
   try {
+    final epheFilesPath = '${(await getApplicationSupportDirectory()).path}/ephe_files';
     await Sweph.init(
-      epheAssets: Sweph.bundledEpheAssets,
+      epheAssets: const [
+        "packages/sweph/assets/ephe/seas_18.se1",
+        "packages/sweph/assets/ephe/semo_18.se1",
+        "packages/sweph/assets/ephe/sepl_18.se1",
+        "packages/sweph/assets/ephe/sefstars.txt",
+        "packages/sweph/assets/ephe/seasnam.txt",
+      ],
+      epheFilesPath: epheFilesPath,
+      assetLoader: _RootBundleAssetLoader(),
     );
   } catch (e) {
     debugPrint('⚠️ Sweph başlatma hatası: $e');
@@ -34,8 +45,8 @@ void main() async {
     debugPrint('⚠️ .env dosyası yüklenemedi: $e');
   }
   
-  // RevenueCat'i başlat (İlk sürümde abonelikler pasif)
-  // await RevenueCatService.init();
+  // RevenueCat'i başlat
+  await RevenueCatService.init();
   
   // AdMob reklam motorunu başlat
   await AdService.instance.initialize();
@@ -86,5 +97,12 @@ class MyApp extends ConsumerWidget {
       ],
       routerConfig: AppRouter.router,
     );
+  }
+}
+
+class _RootBundleAssetLoader implements AssetLoader {
+  @override
+  Future<Uint8List> load(String assetPath) async {
+    return (await rootBundle.load(assetPath)).buffer.asUint8List();
   }
 }

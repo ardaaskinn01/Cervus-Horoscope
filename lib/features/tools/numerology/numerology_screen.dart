@@ -12,6 +12,8 @@ import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/star_background.dart';
 import 'package:horoscope/core/services/ad_service.dart';
 import 'package:horoscope/shared/widgets/custom_toast.dart';
+import 'package:horoscope/core/services/limit_service.dart';
+import 'package:horoscope/shared/widgets/limit_dialog_helper.dart';
 
 class NumerologyScreen extends ConsumerStatefulWidget {
   const NumerologyScreen({super.key});
@@ -178,106 +180,29 @@ class _NumerologyScreenState extends ConsumerState<NumerologyScreen> {
     });
   }
 
-  void _showAiToolsLimitDialog(bool isTr, String userId, VoidCallback onAdCompleted) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: GlassCard(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  '📊',
-                  style: TextStyle(fontSize: 48),
-                ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
-                const SizedBox(height: 16),
-                Text(
-                  isTr ? 'Yapay Zeka Analiz Limiti' : 'AI Calculation Limit',
-                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  isTr
-                      ? 'Günlük 3 adet ücretsiz analiz hakkınız dolmuştur. Bir ödüllü reklam izleyerek hemen +1 analiz hakkı kazanabilir veya Premium\'a geçerek sınırsız analiz yapabilirsiniz.'
-                      : 'You have reached your daily limit of 3 free calculations. Watch a rewarded ad to earn +1 calculation right now, or upgrade to Premium for unlimited access.',
-                  style: AppTextStyles.bodyMedium.copyWith(height: 1.45),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                Column(
-                  children: [
-                    GradientButton(
-                      text: isTr ? 'Reklam İzle 📺' : 'Watch Ad 📺',
-                      onTap: () {
-                        Navigator.pop(context);
-                        AdService.instance.showRewardedAd(
-                          placement: 'ai_tools_rewarded',
-                          context: context,
-                          isPremium: false,
-                          onRewardEarned: () async {
-                            await AiService().incrementAiToolsRewardedCount(userId);
-                            onAdCompleted();
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        CustomToast.show(
-                          context,
-                          isTr ? 'Premium paketler çok yakında!' : 'Premium bundles coming soon!',
-                        );
-                      },
-                      child: Text(
-                        isTr ? 'Premium\'a Geç 🚀' : 'Upgrade to Premium 🚀',
-                        style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        isTr ? 'Kapat' : 'Close',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   // Gemini AI Numeroloji Analizi İsteme
   Future<void> _fetchAiNumerology() async {
     final user = ref.read(userProvider);
     if (user == null) return;
-    final isTr = ref.read(languageProvider).languageCode == 'tr';
     final String fullName = user.name ?? '';
 
-    try {
-      final limitInfo = await AiService().checkAiToolsDailyLimit(user.uid);
-      if (limitInfo['allowed'] == false) {
-        _showAiToolsLimitDialog(isTr, user.uid, () {
+    final limitStatus = await LimitService.instance.checkLimit('numerology');
+    if (limitStatus == LimitStatus.locked) {
+      LimitDialogHelper.showDailyLimitReachedDialog(context: context, ref: ref);
+      return;
+    } else if (limitStatus == LimitStatus.needAd) {
+      LimitDialogHelper.showAdRequiredDialog(
+        context: context,
+        ref: ref,
+        featureKey: 'numerology',
+        onAdCompleted: () {
           _executeCalculation(user.uid, fullName);
-        });
-        return;
-      }
-      _executeCalculation(user.uid, fullName);
-    } catch (e) {
-      debugPrint('⚠️ Limit check error: $e');
-      _executeCalculation(user.uid, fullName);
+        },
+      );
+      return;
     }
+
+    _executeCalculation(user.uid, fullName);
   }
 
   Future<void> _executeCalculation(String userId, String fullName) async {
@@ -296,7 +221,7 @@ class _NumerologyScreenState extends ConsumerState<NumerologyScreen> {
       );
 
       if (numerology != null) {
-        await AiService().incrementAiToolsCalculationCount(userId);
+        await LimitService.instance.registerCalculation('numerology');
       }
 
       if (numerology != null && mounted) {

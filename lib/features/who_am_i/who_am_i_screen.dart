@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +16,7 @@ import 'package:horoscope/core/utils/firestore_extension.dart';
 import 'package:horoscope/shared/widgets/glass_card.dart';
 import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/custom_toast.dart';
-import 'package:horoscope/core/services/ad_service.dart';
+import 'package:horoscope/shared/widgets/premium_dialog_helper.dart';
 
 class WhoAmIScreen extends ConsumerStatefulWidget {
   const WhoAmIScreen({super.key});
@@ -35,78 +37,6 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
     });
   }
 
-  void _showAiToolsLimitDialog(bool isTr, String userId, VoidCallback onAdCompleted) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: GlassCard(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('📊', style: TextStyle(fontSize: 48))
-                    .animate().scale(duration: 400.ms, curve: Curves.elasticOut),
-                const SizedBox(height: 16),
-                Text(
-                  isTr ? 'Yapay Zeka Analiz Limiti' : 'AI Calculation Limit',
-                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  isTr
-                      ? 'Günlük 3 adet ücretsiz analiz hakkınız dolmuştur. Bir ödüllü reklam izleyerek hemen +1 analiz hakkı kazanabilir veya Premium\'a geçerek sınırsız analiz yapabilirsiniz.'
-                      : 'You have reached your daily limit of 3 free calculations. Watch a rewarded ad to earn +1 calculation right now, or upgrade to Premium for unlimited access.',
-                  style: AppTextStyles.bodyMedium.copyWith(height: 1.45),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                GradientButton(
-                  text: isTr ? 'Reklam İzle 📺' : 'Watch Ad 📺',
-                  onTap: () {
-                    Navigator.pop(context);
-                    AdService.instance.showRewardedAd(
-                      placement: 'ai_tools_rewarded',
-                      context: context,
-                      isPremium: false,
-                      onRewardEarned: () async {
-                        await AiService().incrementAiToolsRewardedCount(userId);
-                        onAdCompleted();
-                      },
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    CustomToast.show(context,
-                        isTr ? 'Premium paketler çok yakında!' : 'Premium bundles coming soon!');
-                  },
-                  child: Text(
-                    isTr ? 'Premium\'a Geç 🚀' : 'Upgrade to Premium 🚀',
-                    style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    isTr ? 'Kapat' : 'Close',
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _checkAndLoadAnalysis({required bool forceCalculate}) async {
     final user = ref.read(userProvider);
     if (user == null) return;
@@ -114,8 +44,6 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
     final bool hasBirthData =
         user.birthDate != null && user.birthTime != null && user.birthPlace != null;
     if (!hasBirthData) return;
-
-    final isTr = ref.read(languageProvider).languageCode == 'tr';
 
     if (!forceCalculate) {
       setState(() { _isLoading = true; });
@@ -141,15 +69,6 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
       } catch (_) {
         if (mounted) setState(() { _isLoading = false; });
       }
-      return;
-    }
-
-
-    final limitInfo = await AiService().checkAiToolsDailyLimit(user.uid);
-    if (limitInfo['allowed'] == false) {
-      _showAiToolsLimitDialog(isTr, user.uid, () {
-        _executeCalculation(user.uid, forceRecalculate: true);
-      });
       return;
     }
 
@@ -184,9 +103,6 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
         );
 
         if (analysis != null) {
-          if (!forceRecalculate) {
-            await AiService().incrementAiToolsCalculationCount(userId);
-          }
           if (mounted) {
             setState(() { _analysis = analysis; _isLoading = false; });
           }
@@ -234,17 +150,7 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text(isTr ? 'Karakter Analizi (Ben Kimim?)' : 'Character Analysis'),
-        actions: [
-          if (hasBirthData && _analysis != null)
-            IconButton(
-              icon: const Icon(Icons.favorite_rounded, color: AppColors.primaryGold),
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                context.push('/best-matches');
-              },
-              tooltip: isTr ? 'Kozmik Eşleşmeler' : 'Cosmic Matches',
-            ),
-        ],
+
       ),
       body: _isLoading
           ? _buildLoadingView(isTr)
@@ -395,14 +301,16 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
 
   Widget _buildResultView(bool isTr) {
     final res = _analysis!;
+    final user = ref.watch(userProvider);
+    final isPro = user?.isPremium ?? false;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 10.0, bottom: 160.0),
+      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 10.0, bottom: 120.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          // ─── 1. KİŞİLİK HARİTASI ───────────────────────────────
+          // ─── 1. KİŞİLİK HARİTASI (ÜCRETSİZ) ───────────────────
           Text(isTr ? 'Kişilik Haritası' : 'Personality Map', style: AppTextStyles.h3),
           const SizedBox(height: 10),
           GlassCard(
@@ -431,180 +339,223 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
                     }).toList(),
             ),
           ).animate().fade().slideY(begin: 0.1, duration: 400.ms),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
-          // ─── 2. GÜÇLÜ YÖNLER & GELİŞİM ALANLARI ───────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: GlassCard(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isTr ? '🍀 Güçlü Yönler' : '🍀 Strengths',
-                        style: AppTextStyles.label.copyWith(
-                            color: Colors.greenAccent, fontWeight: FontWeight.bold),
-                      ),
-                      Divider(color: AppColors.borderLight),
-                      ...(isTr ? res.strengthsTr : res.strengthsEn).map((item) =>
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('✦',
-                                    style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(item,
-                                      style: AppTextStyles.bodySmall.copyWith(fontSize: 11)),
-                                ),
-                              ],
-                            ),
-                          )),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: GlassCard(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isTr ? '⚠️ Gelişim Alanları' : '⚠️ Growth Areas',
-                        style: AppTextStyles.label.copyWith(
-                            color: Colors.amberAccent, fontWeight: FontWeight.bold),
-                      ),
-                      Divider(color: AppColors.borderLight),
-                      ...(isTr ? res.weaknessesTr : res.weaknessesEn).map((item) =>
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('✦',
-                                    style: TextStyle(color: Colors.amberAccent, fontSize: 12)),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(item,
-                                      style: AppTextStyles.bodySmall.copyWith(fontSize: 11)),
-                                ),
-                              ],
-                            ),
-                          )),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ).animate().fade(delay: 100.ms).slideY(begin: 0.1, duration: 400.ms),
-          const SizedBox(height: 20),
-
-          // ─── 3. KARİYER EĞİLİMLERİ ─────────────────────────────
-          Text(isTr ? 'Kariyer ve Yetenek Eğilimleri' : 'Career & Talent Tendencies',
-              style: AppTextStyles.h3),
-          const SizedBox(height: 10),
-          GlassCard(
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: (isTr ? res.careersTr : res.careersEn).map((job) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGold.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
-                ),
-                child: Text(
-                  job,
-                  style: AppTextStyles.bodySmall
-                      .copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                ),
-              )).toList(),
-            ),
-          ).animate().fade(delay: 200.ms).slideY(begin: 0.1, duration: 400.ms),
-          const SizedBox(height: 20),
-
-          // ─── 4. İÇSEL DÜNYA ────────────────────────────────────
-          Text(isTr ? 'İçsel Dünyan (Gizli Benliğin)' : 'Your Inner World (Secret Self)',
-              style: AppTextStyles.h3),
-          const SizedBox(height: 10),
-          GlassCard(
-            child: Column(
+          // ─── 2. GÜÇLÜ YÖNLER & GELİŞİM ALANLARI (PRO) ─────────
+          if (isPro) ...[  
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    const Text('🌙', style: TextStyle(fontSize: 20)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        isTr
-                            ? 'Ay Burcu • Bilinçaltı ve Duygusal Dünya'
-                            : 'Moon Sign • Subconscious & Emotional World',
-                        style: AppTextStyles.label.copyWith(
-                            color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                      ),
+                Expanded(
+                  child: GlassCard(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isTr ? '🍀 Güçlü Yönler' : '🍀 Strengths',
+                          style: AppTextStyles.label.copyWith(
+                              color: Colors.greenAccent, fontWeight: FontWeight.bold),
+                        ),
+                        Divider(color: AppColors.borderLight),
+                        ...(isTr ? res.strengthsTr : res.strengthsEn).map((item) =>
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('✦',
+                                      style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(item,
+                                        style: AppTextStyles.bodySmall.copyWith(fontSize: 11)),
+                                  ),
+                                ],
+                              ),
+                            )),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-                const Divider(),
-                Text(
-                  isTr ? res.secretSelfTr : res.secretSelfEn,
-                  style: AppTextStyles.bodyMedium.copyWith(height: 1.65),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: GlassCard(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isTr ? '⚠️ Gelişim Alanları' : '⚠️ Growth Areas',
+                          style: AppTextStyles.label.copyWith(
+                              color: Colors.amberAccent, fontWeight: FontWeight.bold),
+                        ),
+                        Divider(color: AppColors.borderLight),
+                        ...(isTr ? res.weaknessesTr : res.weaknessesEn).map((item) =>
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('✦',
+                                      style: TextStyle(color: Colors.amberAccent, fontSize: 12)),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(item,
+                                        style: AppTextStyles.bodySmall.copyWith(fontSize: 11)),
+                                  ),
+                                ],
+                              ),
+                            )),
+                      ],
+                    ),
+                  ),
                 ),
               ],
+            ).animate().fade(delay: 100.ms).slideY(begin: 0.1, duration: 400.ms),
+            const SizedBox(height: 20),
+          ] else ...[  
+            _buildProLockedSection(
+              title: isTr ? 'Güçlü Yönler & Gelişim Alanları' : 'Strengths & Growth Areas',
+              isTr: isTr,
+              minHeight: 140,
             ),
-          ).animate().fade(delay: 300.ms).slideY(begin: 0.1, duration: 400.ms),
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
+          ],
 
-          // ─── 5. RUHSAL YOLCULUK ─────────────────────────────────
-          Text(isTr ? 'Ruhsal Yolculuğun (Yaşam Dersin)' : 'Your Spiritual Journey (Life Lesson)',
-              style: AppTextStyles.h3),
-          const SizedBox(height: 10),
-          GlassCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Text('🌅', style: TextStyle(fontSize: 20)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        isTr
-                            ? 'Yükselen Burç • Hayat Amacı ve Dış Dünya'
-                            : 'Rising Sign • Life Purpose & Outer World',
-                        style: AppTextStyles.label.copyWith(
-                            color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+          // ─── 3. KARİYER EĞİLİMLERİ (PRO) ───────────────────────
+          if (isPro) ...[  
+            Text(isTr ? 'Kariyer ve Yetenek Eğilimleri' : 'Career & Talent Tendencies',
+                style: AppTextStyles.h3),
+            const SizedBox(height: 10),
+            GlassCard(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: (isTr ? res.careersTr : res.careersEn).map((job) => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGold.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    job,
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                  ),
+                )).toList(),
+              ),
+            ).animate().fade(delay: 200.ms).slideY(begin: 0.1, duration: 400.ms),
+            const SizedBox(height: 20),
+          ] else ...[  
+            _buildProLockedSection(
+              title: isTr ? 'Kariyer ve Yetenek Eğilimleri' : 'Career & Talent Tendencies',
+              isTr: isTr,
+              minHeight: 100,
+            ),
+            const SizedBox(height: 20),
+          ],
+
+          // ─── 4. İÇSEL DÜNYA (PRO) ───────────────────────────────
+          if (isPro) ...[  
+            Text(isTr ? 'İçsel Dünyan (Gizli Benliğin)' : 'Your Inner World (Secret Self)',
+                style: AppTextStyles.h3),
+            const SizedBox(height: 10),
+            GlassCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text('🌙', style: TextStyle(fontSize: 20)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          isTr
+                              ? 'Ay Burcu • Bilinçaltı ve Duygusal Dünya'
+                              : 'Moon Sign • Subconscious & Emotional World',
+                          style: AppTextStyles.label.copyWith(
+                              color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const Divider(),
-                Text(
-                  isTr ? res.spiritualJourneyTr : res.spiritualJourneyEn,
-                  style: AppTextStyles.bodyMedium.copyWith(height: 1.65),
-                ),
-              ],
+                    ],
+                  ),
+                  const Divider(),
+                  Text(
+                    isTr ? res.secretSelfTr : res.secretSelfEn,
+                    style: AppTextStyles.bodyMedium.copyWith(height: 1.65),
+                  ),
+                ],
+              ),
+            ).animate().fade(delay: 300.ms).slideY(begin: 0.1, duration: 400.ms),
+            const SizedBox(height: 20),
+          ] else ...[  
+            _buildProLockedSection(
+              title: isTr ? 'İçsel Dünyan (Gizli Benliğin)' : 'Your Inner World (Secret Self)',
+              isTr: isTr,
+              minHeight: 120,
             ),
-          ).animate().fade(delay: 400.ms).slideY(begin: 0.1, duration: 400.ms),
-          const SizedBox(height: 32),
+            const SizedBox(height: 20),
+          ],
 
-          // ─── Kozmik Eşleşmeler Butonu ───────────────────────────
-          GradientButton(
-            text: isTr ? 'Kozmik Eşleşmelerimi Gör 🗺️' : 'View Cosmic Matches 🗺️',
-            onTap: () {
-              HapticFeedback.lightImpact();
-              context.push('/best-matches');
-            },
-          ),
+          // ─── 5. RUHSAL YOLCULUK (PRO) ────────────────────────────
+          if (isPro) ...[  
+            Text(isTr ? 'Ruhsal Yolculuğun (Yaşam Dersin)' : 'Your Spiritual Journey (Life Lesson)',
+                style: AppTextStyles.h3),
+            const SizedBox(height: 10),
+            GlassCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text('🌅', style: TextStyle(fontSize: 20)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          isTr
+                              ? 'Yükselen Burç • Hayat Amacı ve Dış Dünya'
+                              : 'Rising Sign • Life Purpose & Outer World',
+                          style: AppTextStyles.label.copyWith(
+                              color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  Text(
+                    isTr ? res.spiritualJourneyTr : res.spiritualJourneyEn,
+                    style: AppTextStyles.bodyMedium.copyWith(height: 1.65),
+                  ),
+                ],
+              ),
+            ).animate().fade(delay: 400.ms).slideY(begin: 0.1, duration: 400.ms),
+            const SizedBox(height: 32),
+          ] else ...[  
+            _buildProLockedSection(
+              title: isTr ? 'Ruhsal Yolculuğun (Yaşam Dersin)' : 'Your Spiritual Journey (Life Lesson)',
+              isTr: isTr,
+              minHeight: 120,
+            ),
+            const SizedBox(height: 32),
+          ],
+
+          // ─── Burç Eşleşmeleri ────────────────────────────────────
+          if (isPro)
+            GradientButton(
+              text: isTr ? 'Burç Eşleşmelerini Gör ♊' : 'View Zodiac Matches ♊',
+              onTap: () {
+                HapticFeedback.lightImpact();
+                context.push('/best-matches');
+              },
+            )
+          else
+            _buildProLockedSection(
+              title: isTr ? 'Burç Eşleşmeleri' : 'Zodiac Matches',
+              isTr: isTr,
+              minHeight: 80,
+            ),
         ],
       ),
     );
@@ -726,6 +677,97 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildProLockedSection({
+    required String title,
+    required bool isTr,
+    double minHeight = 100,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: AppTextStyles.h3),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: () => PremiumDialogHelper.show(context, ref),
+          child: Stack(
+            children: [
+              // Blurlu içerik taklidi
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                  child: Container(
+                    width: double.infinity,
+                    constraints: BoxConstraints(minHeight: minHeight),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (int i = 0; i < 4; i++)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            height: 11,
+                            width: i == 1 ? 160 : double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(
+                                  alpha: i == 0 ? 0.45 : 0.18),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Kilit katmanı
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.primaryGold.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  constraints: BoxConstraints(minHeight: minHeight),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primaryGold.withValues(alpha: 0.15),
+                          border: Border.all(
+                              color: AppColors.primaryGold.withValues(alpha: 0.5)),
+                        ),
+                        child: const Icon(Icons.lock_rounded,
+                            color: AppColors.primaryGold, size: 28),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        isTr ? 'PRO\'ya Geç' : 'Unlock with PRO',
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.primaryGold,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

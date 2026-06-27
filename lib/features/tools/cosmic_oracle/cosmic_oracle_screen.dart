@@ -15,6 +15,8 @@ import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/star_background.dart';
 import 'package:horoscope/core/services/ad_service.dart';
 import 'package:horoscope/core/utils/firestore_extension.dart';
+import 'package:horoscope/core/services/limit_service.dart';
+import 'package:horoscope/shared/widgets/limit_dialog_helper.dart';
 
 // Impeller OpenGLES BackdropFilter çökme hatasını önlemek için tasarlanmış özel cam görünümlü kart.
 // BackdropFilter yerine hafif opak arka plan kullanarak çökme riskini tamamen sıfırlar.
@@ -74,9 +76,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
   List<Map<String, dynamic>> _history = [];
   bool _isLoadingHistory = true;
   bool _isGenerating = false;
-  int _questionsAskedToday = 0;
-  bool _rewardedAdWatchedToday = false;
-  bool _needAdToAsk = false;
+  LimitStatus _limitStatus = LimitStatus.allowed;
 
   @override
   void initState() {
@@ -94,7 +94,6 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
     super.dispose();
   }
 
-
   Future<void> _loadHistoryData() async {
     final user = ref.read(userProvider);
     if (user == null) return;
@@ -105,13 +104,11 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
 
     try {
       final history = await AiService().getCosmicOracleHistory(user.uid);
-      final limitInfo = await AiService().checkCosmicOracleLimit(user.uid);
+      final limitStatus = await LimitService.instance.checkLimit('cosmic_oracle');
       if (mounted) {
         setState(() {
           _history = history;
-          _questionsAskedToday = limitInfo['questionsAsked'] ?? 0;
-          _rewardedAdWatchedToday = limitInfo['rewardedWatched'] ?? false;
-          _needAdToAsk = limitInfo['needAd'] ?? false;
+          _limitStatus = limitStatus;
           _isLoadingHistory = false;
         });
         _scrollToBottom(delayMs: 200);
@@ -137,80 +134,6 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
     });
   }
 
-  // Premium Üyelik Teşvik Dialogu
-  void _showPremiumLimitDialog(bool isTr) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: GlassContainer(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  '🌌',
-                  style: TextStyle(fontSize: 48),
-                ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
-                const SizedBox(height: 16),
-                Text(
-                  isTr ? 'Kozmik Limit Aşıldı!' : 'Cosmic Limit Reached!',
-                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  isTr
-                      ? 'Kozmik Kâhine günde 1 soru sorma hakkınız bulunmaktadır. Soru sınırınızı günde 10 soruya çıkarmak ve tüm premium astroloji araçlarını sınırsız kullanmak için Yıldız Üyeliğine geçin!'
-                      : 'You have 1 cosmic query per day. Upgrade to Star Membership to ask up to 10 questions daily and unlock all premium astrological features!',
-                  style: AppTextStyles.bodyMedium.copyWith(height: 1.45),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  isTr
-                      ? 'Soru haklarınız her sabah 04:00\'da sıfırlanır.'
-                      : 'Daily question quotas reset every morning at 04:00 AM.',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(
-                          isTr ? 'Daha Sonra' : 'Maybe Later',
-                          style: TextStyle(color: AppColors.textSecondary),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: GradientButton(
-                        text: isTr ? 'Keşfet' : 'Explore',
-                        onTap: () {
-                          Navigator.pop(context);
-                          CustomToast.show(
-                            context,
-                            isTr ? 'Premium paketler çok yakında!' : 'Premium bundles coming soon!',
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // Soru sorma tetikleyicisi
   Future<void> _submitQuestion() async {
     final user = ref.read(userProvider);
     if (user == null) return;
@@ -220,15 +143,22 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
     if (questionText.isEmpty) return;
 
     // Günlük limit kontrolü
-    try {
-      final limitInfo = await AiService().checkCosmicOracleLimit(user.uid);
-      if (limitInfo['allowed'] == false) {
-        _focusNode.unfocus();
-        _showPremiumLimitDialog(isTr);
-        return;
-      }
-    } catch (e) {
-      debugPrint('⚠️ Cosmic Oracle limit check error: $e');
+    final limitStatus = await LimitService.instance.checkLimit('cosmic_oracle');
+    if (limitStatus == LimitStatus.locked) {
+      _focusNode.unfocus();
+      LimitDialogHelper.showDailyLimitReachedDialog(context: context, ref: ref);
+      return;
+    } else if (limitStatus == LimitStatus.needAd) {
+      _focusNode.unfocus();
+      LimitDialogHelper.showAdRequiredDialog(
+        context: context,
+        ref: ref,
+        featureKey: 'cosmic_oracle',
+        onAdCompleted: () {
+          _submitQuestion();
+        },
+      );
+      return;
     }
 
     setState(() {
@@ -253,7 +183,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
     });
 
     try {
-      // Doğum haritası bilgilerini Firestore\'dan çekelim
+      // Doğum haritası bilgilerini Firestore'dan çekelim
       final natalChartDoc = await FirebaseFirestore.instance.doc('users/${user.uid}/natal_chart/data').safeGet();
       NatalChartModel? natalChart;
       if (natalChartDoc.exists && natalChartDoc.data() != null) {
@@ -272,6 +202,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
       );
 
       if (result != null && mounted) {
+        await LimitService.instance.registerCalculation('cosmic_oracle');
         // Firestore'dan limitleri ve geçmişi yeniden çek
         await _loadHistoryData();
         if (mounted) {
@@ -306,17 +237,9 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
     final locale = ref.watch(languageProvider);
     final isTr = locale.languageCode == 'tr';
     final user = ref.watch(userProvider);
-    
-    // Geriye kalan hak miktarı
-    int displayQuota = 0;
-    if (_questionsAskedToday == 0) {
-      displayQuota = 1;
-    } else if (_questionsAskedToday == 1 && _rewardedAdWatchedToday) {
-      displayQuota = 1;
-    }
-
-    final int totalQuota = 1 + (_rewardedAdWatchedToday ? 1 : 0);
-    final bool needRewardedAd = _needAdToAsk && !_rewardedAdWatchedToday;
+    final isPremium = user?.isPremium ?? false;
+    final bool isLocked = _limitStatus == LimitStatus.locked;
+    final bool needRewardedAd = _limitStatus == LimitStatus.needAd;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -343,21 +266,29 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              isTr ? 'Soru Hakkı: $displayQuota / $totalQuota' : 'Queries Left: $displayQuota / $totalQuota',
+                              isPremium
+                                  ? (isTr ? 'Soru Hakkı: Sınırsız' : 'Queries: Unlimited')
+                                  : isLocked
+                                      ? (isTr ? 'Soru Hakkı: 0 / 1' : 'Queries Left: 0 / 1')
+                                      : (isTr ? 'Soru Hakkı: 1 / 1' : 'Queries Left: 1 / 1'),
                               style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              isTr 
-                                  ? (needRewardedAd ? 'Ek hak almak için reklam izleyebilirsiniz.' : 'Haklar her sabah 04:00\'da yenilenir.')
-                                  : (needRewardedAd ? 'Watch ad for +1 query.' : 'Resets daily at 04:00 AM.'),
+                              isPremium
+                                  ? (isTr ? 'Tüm limitler kaldırıldı.' : 'All limits removed.')
+                                  : isLocked
+                                      ? (isTr ? 'Bugünlük limitiniz doldu. Gece 04:00\'de yenilenir.' : 'Daily limit reached. Resets at 04:00 AM.')
+                                      : needRewardedAd
+                                          ? (isTr ? 'Kilit açmak için ödüllü reklam izleyin.' : 'Watch ad to unlock daily query.')
+                                          : (isTr ? 'Bugünkü ücretsiz soru hakkınız aktif.' : 'Your free daily query is active.'),
                               style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 9.5),
                             ),
                           ],
                         ),
                       ),
-                      if (displayQuota == 0) ...[
+                      if (isLocked && !isPremium) ...[
                         GestureDetector(
-                          onTap: () => _showPremiumLimitDialog(isTr),
+                          onTap: () => LimitDialogHelper.showDailyLimitReachedDialog(context: context, ref: ref),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
@@ -401,7 +332,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
               AdService.instance.getBannerAdWidget('cosmic_oracle_banner', isPremium: user?.isPremium ?? false),
 
               // 3. Soru Giriş Alanı
-              _buildInputArea(isTr, displayQuota, user),
+              _buildInputArea(isTr, user),
             ],
           ),
         ),
@@ -618,15 +549,15 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
           ],
         ),
       ),
-    ).animate().fade(duration: 300.ms);
+    );
   }
 
-  // Alt Soru Yazma Çubuğu
-  Widget _buildInputArea(bool isTr, int displayQuota, UserModel? user) {
-    final bool needRewardedAd = _needAdToAsk && !_rewardedAdWatchedToday;
-    final bool isLocked = displayQuota == 0 && !needRewardedAd;
+  Widget _buildInputArea(bool isTr, UserModel? user) {
+    final isPremium = user?.isPremium ?? false;
+    final bool isLocked = _limitStatus == LimitStatus.locked;
+    final bool needRewardedAd = _limitStatus == LimitStatus.needAd;
 
-    if (needRewardedAd) {
+    if (needRewardedAd && !isPremium) {
       return Container(
         padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 20),
         decoration: BoxDecoration(
@@ -635,15 +566,15 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
         ),
         child: GradientButton(
           height: 48,
-          text: isTr ? 'Reklam İzle ve Soru Sor (+1 Hak) 📺' : 'Watch Ad & Ask (+1 Query) 📺',
+          text: isTr ? 'Reklam İzle ve Soru Sor 📺' : 'Watch Ad & Ask 📺',
           onTap: () {
             AdService.instance.showRewardedAd(
               placement: 'cosmic_oracle_rewarded',
               context: context,
-              isPremium: user?.isPremium ?? false,
+              isPremium: isPremium,
               onRewardEarned: () async {
                 if (user != null) {
-                  await AiService().incrementCosmicOracleRewardedWatch(user.uid);
+                  await LimitService.instance.registerAdWatch('cosmic_oracle');
                   await _loadHistoryData();
                   if (mounted) {
                     CustomToast.show(
@@ -671,19 +602,19 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
             child: TextField(
               controller: _questionController,
               focusNode: _focusNode,
-              enabled: !isLocked && !_isGenerating,
+              enabled: (!isLocked || isPremium) && !_isGenerating,
               maxLines: null,
               keyboardType: TextInputType.multiline,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) {
-                if (!_isGenerating && !isLocked) {
+                if (!_isGenerating && (!isLocked || isPremium)) {
                   _submitQuestion();
                 }
               },
               style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
-                hintText: isLocked
-                    ? (isTr ? 'Görüşme kotası doldu.' : 'Daily limit reached.')
+                hintText: isLocked && !isPremium
+                    ? (isTr ? 'Bugünkü limitiniz doldu.' : 'Daily limit reached.')
                     : (isTr ? 'Kozmik Kahin\'e sorun...' : 'Ask the Cosmic Oracle...'),
                 hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6), fontSize: 13.5),
                 border: OutlineInputBorder(
@@ -698,8 +629,8 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
                 fillColor: AppColors.borderLight.withValues(alpha: 0.1),
                 filled: true,
                 prefixIcon: Icon(
-                  isLocked ? Icons.lock_outline_rounded : Icons.psychology_alt_rounded,
-                  color: isLocked ? AppColors.textSecondary.withValues(alpha: 0.3) : AppColors.primaryGold,
+                  isLocked && !isPremium ? Icons.lock_outline_rounded : Icons.psychology_alt_rounded,
+                  color: isLocked && !isPremium ? AppColors.textSecondary.withValues(alpha: 0.3) : AppColors.primaryGold,
                   size: 20,
                 ),
               ),
@@ -708,8 +639,8 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
           const SizedBox(width: 8),
           GestureDetector(
             onTap: () {
-              if (isLocked) {
-                _showPremiumLimitDialog(isTr);
+              if (isLocked && !isPremium) {
+                LimitDialogHelper.showDailyLimitReachedDialog(context: context, ref: ref);
               } else if (!_isGenerating) {
                 _submitQuestion();
               }
@@ -718,14 +649,14 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
               height: 42,
               width: 42,
               decoration: BoxDecoration(
-                gradient: isLocked ? null : AppColors.goldGradient,
-                color: isLocked ? AppColors.borderLight : null,
+                gradient: isLocked && !isPremium ? null : AppColors.goldGradient,
+                color: isLocked && !isPremium ? AppColors.borderLight : null,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
               child: Icon(
                 Icons.send_rounded,
-                color: isLocked ? AppColors.textSecondary.withValues(alpha: 0.4) : AppColors.cardSurface,
+                color: isLocked && !isPremium ? AppColors.textSecondary.withValues(alpha: 0.4) : AppColors.cardSurface,
                 size: 18,
               ),
             ),

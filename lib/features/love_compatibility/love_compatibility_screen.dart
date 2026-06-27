@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +20,8 @@ import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/shared/widgets/birth_place_search_sheet.dart';
 import 'package:horoscope/core/services/ad_service.dart';
 import 'package:horoscope/core/utils/firestore_extension.dart';
+import 'package:horoscope/core/services/limit_service.dart';
+import 'package:horoscope/shared/widgets/limit_dialog_helper.dart';
 import 'package:horoscope/shared/widgets/premium_dialog_helper.dart';
 
 import 'package:horoscope/core/utils/date_formatter.dart';
@@ -80,6 +84,98 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
     }
   }
 
+  Future<void> _deleteHistoryItem(CompatibilityModel item) async {
+    final user = ref.read(userProvider);
+    if (user == null) return;
+
+    final isTr = ref.read(languageProvider).languageCode == 'tr';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: GlassCard(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '🗑️',
+                  style: TextStyle(fontSize: 40),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  isTr ? 'Geçmişi Sil' : 'Delete History',
+                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  isTr
+                      ? '${item.partnerName} ile olan aşk uyumu analizini silmek istediğinize emin misiniz?'
+                      : 'Are you sure you want to delete the love compatibility analysis with ${item.partnerName}?',
+                  style: AppTextStyles.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(
+                          isTr ? 'İptal' : 'Cancel',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GradientButton(
+                        text: isTr ? 'Sil' : 'Delete',
+                        onTap: () => Navigator.pop(context, true),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final docPath = 'users/${user.uid}/compatibility/${item.partnerName}_${item.type}';
+      await FirebaseFirestore.instance.doc(docPath).delete();
+
+      if (mounted) {
+        setState(() {
+          _history.removeWhere((x) => x.partnerName == item.partnerName && x.type == item.type);
+          if (_result?.partnerName == item.partnerName && _result?.type == item.type) {
+            _result = null;
+          }
+        });
+        CustomToast.show(
+          context,
+          isTr ? 'Analiz başarıyla silindi.' : 'Analysis deleted successfully.',
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️ Geçmiş silme hatası: $e');
+      if (mounted) {
+        CustomToast.show(
+          context,
+          isTr ? 'Silinirken bir hata oluştu.' : 'Failed to delete.',
+          isError: true,
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -114,86 +210,6 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
         _dateController.text = "${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}";
       });
     }
-  }
-
-  void _showAiToolsLimitDialog(bool isTr, String userId, VoidCallback onAdCompleted) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: GlassCard(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  '📊',
-                  style: TextStyle(fontSize: 48),
-                ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
-                const SizedBox(height: 16),
-                Text(
-                  isTr ? 'Yapay Zeka Analiz Limiti' : 'AI Calculation Limit',
-                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  isTr
-                      ? 'Günlük 3 adet ücretsiz analiz hakkınız dolmuştur. Bir ödüllü reklam izleyerek hemen +1 analiz hakkı kazanabilir veya Premium\'a geçerek sınırsız analiz yapabilirsiniz.'
-                      : 'You have reached your daily limit of 3 free calculations. Watch a rewarded ad to earn +1 calculation right now, or upgrade to Premium for unlimited access.',
-                  style: AppTextStyles.bodyMedium.copyWith(height: 1.45),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                Column(
-                  children: [
-                    GradientButton(
-                      text: isTr ? 'Reklam İzle 📺' : 'Watch Ad 📺',
-                      onTap: () {
-                        Navigator.pop(context);
-                        AdService.instance.showRewardedAd(
-                          placement: 'ai_tools_rewarded',
-                          context: context,
-                          isPremium: false,
-                          onRewardEarned: () async {
-                            await AiService().incrementAiToolsRewardedCount(userId);
-                            onAdCompleted();
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        CustomToast.show(
-                          context,
-                          isTr ? 'Premium paketler çok yakında!' : 'Premium bundles coming soon!',
-                        );
-                      },
-                      child: Text(
-                        isTr ? 'Premium\'a Geç 🚀' : 'Upgrade to Premium 🚀',
-                        style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        isTr ? 'Kapat' : 'Close',
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 
   // Uyumluluk hesapla
@@ -235,19 +251,23 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
       return;
     }
 
-    try {
-      final limitInfo = await AiService().checkAiToolsDailyLimit(user.uid);
-      if (limitInfo['allowed'] == false) {
-        _showAiToolsLimitDialog(isTr, user.uid, () {
+    final limitStatus = await LimitService.instance.checkLimit('love_compatibility');
+    if (limitStatus == LimitStatus.locked) {
+      LimitDialogHelper.showDailyLimitReachedDialog(context: context, ref: ref);
+      return;
+    } else if (limitStatus == LimitStatus.needAd) {
+      LimitDialogHelper.showAdRequiredDialog(
+        context: context,
+        ref: ref,
+        featureKey: 'love_compatibility',
+        onAdCompleted: () {
           _executeCalculation(user.uid);
-        });
-        return;
-      }
-      _executeCalculation(user.uid);
-    } catch (e) {
-      debugPrint('⚠️ Limit check error: $e');
-      _executeCalculation(user.uid);
+        },
+      );
+      return;
     }
+
+    _executeCalculation(user.uid);
   }
 
   Future<void> _executeCalculation(String userId) async {
@@ -289,7 +309,7 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
       );
 
       if (compatibility != null) {
-        await AiService().incrementAiToolsCalculationCount(userId);
+        await LimitService.instance.registerCalculation('love_compatibility');
       }
 
       if (mounted) {
@@ -681,50 +701,78 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
                   return Container(
                     width: 140,
                     margin: const EdgeInsets.only(right: 12),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _result = item;
-                        });
-                      },
-                      child: GlassCard(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                _getZodiacEmoji(item.partnerZodiacSign, fontSize: 24),
-                                Text(
-                                  '%${item.overallScore}',
-                                  style: AppTextStyles.label.copyWith(
-                                    color: AppColors.primaryGold,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _result = item;
+                              });
+                            },
+                            child: GlassCard(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      _getZodiacEmoji(item.partnerZodiacSign, fontSize: 24),
+                                      Padding(
+                                        padding: const EdgeInsets.only(right: 16.0),
+                                        child: Text(
+                                          '%${item.overallScore}',
+                                          style: AppTextStyles.label.copyWith(
+                                            color: AppColors.primaryGold,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            Text(
-                              item.partnerName,
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                fontWeight: FontWeight.bold,
-                                overflow: TextOverflow.ellipsis,
+                                  const Spacer(),
+                                  Text(
+                                    item.partnerName,
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    maxLines: 1,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${_getZodiacName(item.partnerZodiacSign, isTr)} ${item.partnerGender == 'female' ? '👩' : '👨'}',
+                                    style: AppTextStyles.caption.copyWith(fontSize: 9, color: AppColors.textSecondary),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
-                              maxLines: 1,
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${_getZodiacName(item.partnerZodiacSign, isTr)} ${item.partnerGender == 'female' ? '👩' : '👨'}',
-                              style: AppTextStyles.caption.copyWith(fontSize: 9, color: AppColors.textSecondary),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () => _deleteHistoryItem(item),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.4),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 14,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -785,7 +833,7 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
     final res = _result!;
     final user = ref.watch(userProvider)!;
     final userSign = user.zodiacSign ?? 'aries';
-    final showPremiumContent = true;
+    final isPro = user.isPremium;
 
     // Açı ikonları
     Widget aspectBadge(String aspect, bool isHard) {
@@ -918,15 +966,50 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
           ).animate().fade(duration: 400.ms).slideY(begin: 0.1),
           const SizedBox(height: 20),
 
-          // ── 2. Sinastri Açıları Tablosu ──────────────────────────────
-          if (res.synastrAspects != null && res.synastrAspects!.isNotEmpty) ...[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                isTr ? '🔭 Sinastri Açıları' : '🔭 Synastry Aspects',
-                style: AppTextStyles.h3,
-              ),
+          // ── Diğer bölümler PRO durumuna göre ──────────────────────────
+          if (!isPro) ...[
+            _buildProLockedSection(
+              title: isTr ? '🔭 Sinastri Açıları' : '🔭 Synastry Aspects',
+              isTr: isTr, minHeight: 160,
             ),
+            const SizedBox(height: 20),
+            _buildProLockedSection(
+              title: isTr ? '✨ Kozmik Bağlantı Noktaları' : '✨ Cosmic Connection Points',
+              isTr: isTr, minHeight: 160,
+            ),
+            const SizedBox(height: 20),
+            _buildProLockedSection(
+              title: isTr ? '📊 Aşk Boyutları' : '📊 Love Dimensions',
+              isTr: isTr, minHeight: 160,
+            ),
+            const SizedBox(height: 20),
+            _buildProLockedSection(
+              title: isTr ? '🔮 Kozmik Yorum' : '🔮 Cosmic Commentary',
+              isTr: isTr, minHeight: 120,
+            ),
+            const SizedBox(height: 20),
+            _buildProLockedSection(
+              title: isTr ? '🔮 Ruh Eşi & Karmik Bağlar' : '🔮 Soul Connection & Karmic Bonds',
+              isTr: isTr, minHeight: 120,
+            ),
+            const SizedBox(height: 20),
+            _buildProLockedSection(
+              title: isTr ? '🛡️ İletişim & Çatışma Çözümü' : '🛡️ Communication & Conflict Resolution',
+              isTr: isTr, minHeight: 120,
+            ),
+            const SizedBox(height: 20),
+            _buildProLockedSection(
+              title: isTr ? '⏳ Gelecek Kozmik Zaman Tüneli' : '⏳ Future Cosmic Timeline',
+              isTr: isTr, minHeight: 120,
+            ),
+            const SizedBox(height: 32),
+          ] else ...[
+            // ── 2. Sinastri Açıları Tablosu
+            if (res.synastrAspects != null && res.synastrAspects!.isNotEmpty) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(isTr ? '🔭 Sinastri Açıları' : '🔭 Synastry Aspects', style: AppTextStyles.h3),
+              ),
             const SizedBox(height: 4),
             Text(
               isTr
@@ -1132,69 +1215,6 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
           ).animate().fade(duration: 500.ms, delay: 250.ms),
           const SizedBox(height: 24),
 
-          // ignore: dead_code
-          if (!showPremiumContent) ...[
-            GestureDetector(
-              onTap: () => PremiumDialogHelper.show(context, ref),
-              child: GlassCard(
-                border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.4), width: 1.5),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.lock_outline_rounded, color: AppColors.primaryGold, size: 24)
-                            .animate(onPlay: (controller) => controller.repeat(reverse: true))
-                            .shake(hz: 2, curve: Curves.easeInOut, duration: 2.seconds),
-                        const SizedBox(width: 8),
-                        Text(
-                          isTr ? 'Derin Sinastri Analizi (PRO)' : 'Deep Synastry Analysis (PRO)',
-                          style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      isTr
-                          ? 'İlişkinizin gizli kodlarını ve kozmik bağlarını keşfetmek için premium özellikleri açın:'
-                          : 'Unlock premium features to discover the hidden codes and cosmic bonds of your relationship:',
-                      style: AppTextStyles.bodyMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTeaserFeatureRow(Icons.psychology_outlined, isTr ? '🔮 Ruh Eşi & Karmik Bağlar' : '🔮 Soul Connection & Karmic Bonds', isTr ? 'Geçmiş yaşam karması ve ruhsal çekim dereceniz' : 'Past life karma and level of spiritual attraction'),
-                    _buildTeaserFeatureRow(Icons.gavel_outlined, isTr ? '🛡️ İletişim & Çatışma Çözümü' : '🛡️ Communication & Conflict Resolution', isTr ? 'Zor açılara karşı usta astrolog tavsiyeleri' : 'Master astrolog advice against hard aspects'),
-                    _buildTeaserFeatureRow(Icons.timeline_outlined, isTr ? '⏳ Gelecek Kozmik Zaman Tüneli' : '⏳ Future Cosmic Timeline', isTr ? 'Gelecek 1 yıldaki ilişki dönüm noktaları' : 'Relationship milestones in the next 1 year'),
-                    const SizedBox(height: 20),
-                    Container(
-                      width: double.infinity,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.goldGradient,
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryGold.withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          isTr ? 'Astris Pro ile Şimdi Keşfet ✨' : 'Discover Now with Astris Pro ✨',
-                          style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textDark, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-                     .shimmer(duration: 2.seconds, color: Colors.white54),
-                  ],
-                ),
-              ).animate().fade(duration: 500.ms, delay: 300.ms),
-            ),
-            const SizedBox(height: 32),
-          ] else ...[
             // ── Pro 1. Ruh Eşi ve Karmik Bağlar ─────────────────────────────
             if (isTr ? (res.karmicBondsTr?.isNotEmpty ?? false) : (res.karmicBondsEn?.isNotEmpty ?? false)) ...[
               Align(
@@ -1275,34 +1295,6 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
     ).animate().fade(duration: 400.ms);
   }
 
-  Widget _buildTeaserFeatureRow(IconData icon, String title, String subtitle) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: AppColors.primaryGold.withValues(alpha: 0.8), size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                ),
-                Text(
-                  subtitle,
-                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
 
   // Mini burç satırı (Çift Harita Kartı için)
   Widget _buildMiniSignRow(String emoji, String signName) {
@@ -1379,5 +1371,89 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
     if (score >= 60) return isTr ? 'Ortalama Uyum' : 'Average Match';
     if (score >= 45) return isTr ? 'Hassas Dengeler' : 'Delicate Balance';
     return isTr ? 'Kozmik Zıtlıklar' : 'Cosmic Opposites';
+  }
+
+  Widget _buildProLockedSection({
+    required String title,
+    required bool isTr,
+    double minHeight = 100,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: AppTextStyles.h3),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: () => PremiumDialogHelper.show(context, ref),
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                  child: Container(
+                    width: double.infinity,
+                    constraints: BoxConstraints(minHeight: minHeight),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (int i = 0; i < 4; i++)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            height: 11,
+                            width: i == 1 ? 160 : double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: i == 0 ? 0.45 : 0.18),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.4)),
+                  ),
+                  constraints: BoxConstraints(minHeight: minHeight),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primaryGold.withValues(alpha: 0.15),
+                          border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
+                        ),
+                        child: const Icon(Icons.lock_rounded, color: AppColors.primaryGold, size: 28),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        isTr ? 'PRO\'ya Geç' : 'Unlock with PRO',
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.primaryGold,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

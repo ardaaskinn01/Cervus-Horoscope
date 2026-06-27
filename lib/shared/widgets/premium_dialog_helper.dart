@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -80,19 +81,19 @@ class PremiumDialogHelper {
                   isTr ? "Mistik yolculuğunuzda kesintisiz, reklamsız deneyim." : "Seamless, ad-free experience on your journey.",
                 ),
                 _buildFeatureRow(
-                  Icons.psychology,
-                  isTr ? "Sınırsız Günlük Analiz" : "Unlimited Daily Analysis",
-                  isTr ? "Yapay zeka destekli kozmik yorumlara sınırsız erişim." : "Unlimited access to AI-powered cosmic readings.",
+                  Icons.auto_awesome,
+                  isTr ? "Sınırsız Günlük Analiz" : "Unlimited Daily Insights",
+                  isTr ? "Yapay zeka destekli kozmik yorumlara sınırsız erişim." : "Unlimited access to AI cosmic insights.",
                 ),
                 _buildFeatureRow(
                   Icons.favorite,
                   isTr ? "Detaylı Aşk & Sinastri" : "Detailed Love & Synastry",
-                  isTr ? "Aşk uyumu ve sinastri analizlerinde tam detaylar." : "Full details in love compatibility & synastry analysis.",
+                  isTr ? "Aşk uyumu ve sinastri analizlerinde tam detaylar." : "Full details in love compatibility and synastry analysis.",
                 ),
                 _buildFeatureRow(
-                  Icons.style,
-                  isTr ? "Sınırsız Tarot Okuması" : "Unlimited Tarot Readings",
-                  isTr ? "Sınırsız tarot kartı açılımı ve yapay zeka analizleri." : "Unlimited tarot card spreads and AI interpretations.",
+                  Icons.person_search_rounded,
+                  isTr ? "Detaylı Karakter Analizi" : "Detailed Character Analysis",
+                  isTr ? "Karakter analizindeki tüm kilitli bölümler ve burç eşleşmeleri açılır." : "Unlock All locked sections and zodiac sign matches are unlocked.",
                 ),
                 const SizedBox(height: 24),
                 
@@ -134,9 +135,12 @@ class PremiumDialogHelper {
                 
                 const SizedBox(height: 16),
                 
-                // Legal & Restore Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // Legal Links and Restore
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
                   children: [
                     TextButton(
                       onPressed: () async {
@@ -167,16 +171,46 @@ class PremiumDialogHelper {
                           }
                         }
                       },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       child: Text(
-                        isTr ? "Aboneliği Geri Yükle" : "Restore Purchase",
-                        style: AppTextStyles.caption.copyWith(color: AppColors.primaryGold),
+                        isTr ? "Geri Yükle" : "Restore",
+                        style: AppTextStyles.caption.copyWith(color: AppColors.primaryGold, fontSize: 10, fontWeight: FontWeight.bold),
                       ),
                     ),
+                    Text(
+                      "•",
+                      style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.5), fontSize: 10),
+                    ),
                     TextButton(
-                      onPressed: () => _openLegalUrl("https://cervusdigital.com/privacy-policy/"),
+                      onPressed: () => _openLegalUrl("https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        isTr ? "Kullanım Koşulları (EULA)" : "Terms of Use (EULA)",
+                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 10),
+                      ),
+                    ),
+                    Text(
+                      "•",
+                      style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.5), fontSize: 10),
+                    ),
+                    TextButton(
+                      onPressed: () => _openLegalUrl("https://cervusdigital.com/astris/privacy-policy/"),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       child: Text(
                         isTr ? "Gizlilik Sözleşmesi" : "Privacy Policy",
-                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 10),
                       ),
                     ),
                   ],
@@ -288,35 +322,56 @@ class PremiumDialogHelper {
 
     return GestureDetector(
       onTap: () async {
-        Navigator.pop(dialogContext);
         showDialog(
-          context: context,
+          context: dialogContext,
           barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(color: AppColors.primaryGold),
+          builder: (loadingCtx) => PopScope(
+            canPop: false,
+            child: const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGold),
+            ),
           ),
         );
 
         try {
           final isPro = await RevenueCatService.purchasePackage(package);
           await ref.read(userProvider.notifier).updatePremiumStatus(isPro);
-          
-          if (context.mounted) {
-            Navigator.pop(context); // Close loading spinner
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  isPro 
-                      ? (isTr ? "Astris Pro üyeliğiniz aktif edildi! 🌟" : "Your Astris Pro membership has been activated! 🌟")
-                      : (isTr ? "Satın alım gerçekleştirilemedi." : "Purchase could not be completed."),
+
+          if (dialogContext.mounted) {
+            Navigator.of(dialogContext, rootNavigator: true).pop();
+          }
+
+          if (isPro) {
+            if (dialogContext.mounted) {
+              Navigator.pop(dialogContext);
+            }
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isTr 
+                        ? "Astris Pro üyeliğiniz aktif edildi! 🌟" 
+                        : "Your Astris Pro membership has been activated! 🌟",
+                  ),
+                  backgroundColor: Colors.green,
                 ),
-                backgroundColor: isPro ? Colors.green : Colors.redAccent,
-              ),
-            );
+              );
+            }
           }
         } catch (e) {
-          if (context.mounted) {
-            Navigator.pop(context); // Close loading spinner
+          if (dialogContext.mounted) {
+            Navigator.of(dialogContext, rootNavigator: true).pop();
+          }
+
+          bool isCancelled = false;
+          if (e is PlatformException) {
+            final errorCode = PurchasesErrorHelper.getErrorCode(e);
+            if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
+              isCancelled = true;
+            }
+          }
+
+          if (!isCancelled && context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(isTr ? "Satın alma işlemi başarısız oldu." : "Purchase process failed."),
@@ -373,9 +428,28 @@ class PremiumDialogHelper {
                 ],
               ),
             ),
-            Text(
-              price,
-              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (package.packageType == PackageType.annual) ...[
+                  Text(
+                    isTr ? "₺599,99" : "\$599.99",
+                    style: TextStyle(
+                      color: Colors.redAccent.shade200,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.lineThrough,
+                      decorationColor: Colors.redAccent.shade200,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                ],
+                Text(
+                  price,
+                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold),
+                ),
+              ],
             ),
           ],
         ),

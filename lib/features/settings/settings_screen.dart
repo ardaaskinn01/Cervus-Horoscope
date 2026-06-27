@@ -19,7 +19,7 @@ import 'package:horoscope/shared/widgets/glass_card.dart';
 import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/shared/widgets/birth_place_search_sheet.dart';
-// import 'package:horoscope/shared/widgets/premium_dialog_helper.dart';
+import 'package:horoscope/shared/widgets/premium_dialog_helper.dart';
 import 'package:horoscope/core/utils/date_formatter.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -110,6 +110,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final user = ref.read(userProvider);
     if (user == null) return;
 
+    final isTr = ref.read(languageProvider).languageCode == 'tr';
+    final changeCount = user.profileChangeCount;
+
+    final bool isNameChanged = _nameController.text.trim() != (user.name ?? '').trim();
+    final bool isGenderChanged = _gender != user.gender;
+    final bool isBirthPlaceChanged = _birthPlaceController.text.trim() != (user.birthPlace ?? '').trim();
+    
+    bool isBirthDateChanged = false;
+    if (_birthDate != null && user.birthDate != null) {
+      final oldLocal = user.birthDate!.toLocal();
+      isBirthDateChanged = _birthDate!.year != oldLocal.year ||
+                           _birthDate!.month != oldLocal.month ||
+                           _birthDate!.day != oldLocal.day;
+    } else if (_birthDate != null || user.birthDate != null) {
+      isBirthDateChanged = true;
+    }
+
+    final bool isMainDetailsChanged = isNameChanged || isGenderChanged || isBirthPlaceChanged || isBirthDateChanged;
+
+    if (isMainDetailsChanged && changeCount >= 2) {
+      _showProfileLimitBlockDialog(isTr);
+      return;
+    }
+
     setState(() {
       _isSavingProfile = true;
     });
@@ -155,6 +179,62 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       }
     }
+  }
+
+  void _showProfileLimitBlockDialog(bool isTr) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: GlassCard(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '🔒',
+                  style: TextStyle(fontSize: 48),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  isTr ? 'Profil Değişim Limiti' : 'Profile Change Limit',
+                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  isTr
+                      ? 'Profil bilgilerinizi 2 kez değiştirme hakkınızı doldurdunuz. Bilgilerinizi tekrar güncellemek için lütfen destek ekibimizle iletişime geçin.'
+                      : 'You have reached your limit of 2 profile changes. Please contact our support team to update your profile information again.',
+                  style: AppTextStyles.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                GradientButton(
+                  text: isTr ? 'İletişime Geç' : 'Contact Us',
+                  onTap: () {
+                    Navigator.pop(context);
+                    CustomToast.show(
+                      context,
+                      isTr ? 'Destek talebi iletildi (destek@cervusdigital.com)' : 'Support request sent (support@cervusdigital.com)',
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    isTr ? 'Kapat' : 'Close',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   // Tarih ve Saat Seçimi
@@ -369,9 +449,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildProfileSection(isTr),
             const SizedBox(height: 20),
 
-            // Premium Banner (İlk sürümde abonelikler pasif)
-            // _buildPremiumBanner(isTr),
-            // const SizedBox(height: 20),
+            // Premium Banner
+            _buildPremiumBanner(isTr),
+            const SizedBox(height: 20),
 
             // 2. Dil Ayarları Kartı
             _buildLanguageSection(isTr, locale.languageCode),
@@ -393,7 +473,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  /*
   // Premium Banner
   Widget _buildPremiumBanner(bool isTr) {
     final user = ref.watch(userProvider);
@@ -572,7 +651,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     ).animate().fade(delay: 50.ms, duration: 350.ms);
   }
-  */
 
   // 1. Profil Yönetimi
   Widget _buildProfileSection(bool isTr) {
@@ -598,6 +676,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Text(
                     '$birthDateStr, ${user?.birthPlace ?? ''}',
                     style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isTr
+                        ? 'Profil Değiştirme Hakkı: ${2 - (user?.profileChangeCount ?? 0)}'
+                        : 'Profile Change Rights: ${2 - (user?.profileChangeCount ?? 0)}',
+                    style: AppTextStyles.caption.copyWith(
+                      color: (user?.profileChangeCount ?? 0) >= 2 
+                          ? Colors.redAccent 
+                          : AppColors.primaryGold.withValues(alpha: 0.8),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),

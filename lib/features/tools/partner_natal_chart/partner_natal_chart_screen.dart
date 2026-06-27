@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:horoscope/core/constants/app_colors.dart';
 import 'package:horoscope/core/constants/app_text_styles.dart';
@@ -17,6 +16,8 @@ import 'package:horoscope/shared/widgets/custom_toast.dart';
 import 'package:horoscope/features/natal_chart/natal_chart_screen.dart'; // To reuse NatalChartPainter
 import 'package:horoscope/core/services/ad_service.dart';
 import 'package:horoscope/core/utils/firestore_extension.dart';
+import 'package:horoscope/core/services/limit_service.dart';
+import 'package:horoscope/shared/widgets/limit_dialog_helper.dart';
 
 import 'package:horoscope/core/utils/date_formatter.dart';
 
@@ -69,7 +70,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
           final data = doc.data();
           final chart = NatalChartModel.fromMap(data);
           final name = data['name'] ?? doc.id;
-          return _PartnerNatalChartHistoryItem(name: name, chart: chart);
+          return _PartnerNatalChartHistoryItem(docId: doc.id, name: name, chart: chart);
         } catch (e) {
           debugPrint('⚠️ Error parsing partner chart document ${doc.id}: $e');
           return null;
@@ -85,6 +86,99 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
       }
     } catch (e) {
       debugPrint('⚠️ Partner doğum haritası geçmişi okuma hatası: $e');
+    }
+  }
+
+  Future<void> _deleteHistoryItem(_PartnerNatalChartHistoryItem item) async {
+    final user = ref.read(userProvider);
+    if (user == null) return;
+
+    final isTr = ref.read(languageProvider).languageCode == 'tr';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: GlassCard(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '🗑️',
+                  style: TextStyle(fontSize: 40),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  isTr ? 'Geçmişi Sil' : 'Delete History',
+                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  isTr
+                      ? '${item.name} kişisinin doğum haritası analizini silmek istediğinize emin misiniz?'
+                      : 'Are you sure you want to delete the natal chart analysis of ${item.name}?',
+                  style: AppTextStyles.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(
+                          isTr ? 'İptal' : 'Cancel',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GradientButton(
+                        text: isTr ? 'Sil' : 'Delete',
+                        onTap: () => Navigator.pop(context, true),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final docPath = 'users/${user.uid}/partner_natal_charts/${item.docId}';
+      await FirebaseFirestore.instance.doc(docPath).delete();
+
+      if (mounted) {
+        setState(() {
+          _history.removeWhere((x) => x.docId == item.docId);
+          if (_currentResultName == item.name) {
+            _result = null;
+            _currentResultName = null;
+          }
+        });
+        CustomToast.show(
+          context,
+          isTr ? 'Analiz başarıyla silindi.' : 'Analysis deleted successfully.',
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️ Geçmiş silme hatası: $e');
+      if (mounted) {
+        CustomToast.show(
+          context,
+          isTr ? 'Silinirken bir hata oluştu.' : 'Failed to delete.',
+          isError: true,
+        );
+      }
     }
   }
 
@@ -142,87 +236,6 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
     }
   }
 
-  void _showAiToolsLimitDialog(bool isTr, String userId, VoidCallback onAdCompleted) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: GlassCard(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  '📊',
-                  style: TextStyle(fontSize: 48),
-                ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
-                const SizedBox(height: 16),
-                Text(
-                  isTr ? 'Yapay Zeka Analiz Limiti' : 'AI Calculation Limit',
-                  style: AppTextStyles.h3.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  isTr
-                      ? 'Günlük 3 adet ücretsiz analiz hakkınız dolmuştur. Bir ödüllü reklam izleyerek hemen +1 analiz hakkı kazanabilir veya Premium\'a geçerek sınırsız analiz yapabilirsiniz.'
-                      : 'You have reached your daily limit of 3 free calculations. Watch a rewarded ad to earn +1 calculation right now, or upgrade to Premium for unlimited access.',
-                  style: AppTextStyles.bodyMedium.copyWith(height: 1.45),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                Column(
-                  children: [
-                    GradientButton(
-                      text: isTr ? 'Reklam İzle 📺' : 'Watch Ad 📺',
-                      onTap: () {
-                        Navigator.pop(context);
-                        AdService.instance.showRewardedAd(
-                          placement: 'ai_tools_rewarded',
-                          context: context,
-                          isPremium: false,
-                          onRewardEarned: () async {
-                            await AiService().incrementAiToolsRewardedCount(userId);
-                            onAdCompleted();
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        CustomToast.show(
-                          context,
-                          isTr ? 'Premium paketler çok yakında!' : 'Premium bundles coming soon!',
-                        );
-                      },
-                      child: Text(
-                        isTr ? 'Premium\'a Geç 🚀' : 'Upgrade to Premium 🚀',
-                        style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        isTr ? 'Kapat' : 'Close',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // Doğum haritası hesapla
   Future<void> _calculateNatalChart() async {
     final user = ref.read(userProvider);
     if (user == null) return;
@@ -279,18 +292,26 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
     final String normalizedDocName = name.toLowerCase().replaceAll(' ', '_');
     final String partnerPath = 'users/${user.uid}/partner_natal_charts/$normalizedDocName';
 
-    final limitInfo = await AiService().checkAiToolsDailyLimit(user.uid);
-    if (limitInfo['allowed'] == false) {
-      _showAiToolsLimitDialog(isTr, user.uid, () {
-        _executeCalculation(user.uid, name, timeStr, partnerPath, _selectedGender!);
-      });
+    final limitStatus = await LimitService.instance.checkLimit('partner_natal_chart');
+    if (limitStatus == LimitStatus.locked) {
+      LimitDialogHelper.showDailyLimitReachedDialog(context: context, ref: ref);
+      return;
+    } else if (limitStatus == LimitStatus.needAd) {
+      LimitDialogHelper.showAdRequiredDialog(
+        context: context,
+        ref: ref,
+        featureKey: 'partner_natal_chart',
+        onAdCompleted: () {
+          _executeCalculation(user.uid, name, timeStr, partnerPath, _selectedGender!, normalizedDocName);
+        },
+      );
       return;
     }
 
-    _executeCalculation(user.uid, name, timeStr, partnerPath, _selectedGender!);
+    _executeCalculation(user.uid, name, timeStr, partnerPath, _selectedGender!, normalizedDocName);
   }
 
-  Future<void> _executeCalculation(String userId, String name, String timeStr, String partnerPath, String gender) async {
+  Future<void> _executeCalculation(String userId, String name, String timeStr, String partnerPath, String gender, String docId) async {
     setState(() {
       _isLoading = true;
     });
@@ -308,7 +329,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
       );
 
       if (chart != null) {
-        await AiService().incrementAiToolsCalculationCount(userId);
+        await LimitService.instance.registerCalculation('partner_natal_chart');
       }
 
       if (chart != null && mounted) {
@@ -317,7 +338,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
           _currentResultName = name;
           _isLoading = false;
           _history.removeWhere((item) => item.name.toLowerCase() == name.toLowerCase());
-          _history.insert(0, _PartnerNatalChartHistoryItem(name: name, chart: chart));
+          _history.insert(0, _PartnerNatalChartHistoryItem(docId: docId, name: name, chart: chart));
         });
       } else {
         if (mounted) {
@@ -1349,36 +1370,64 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
           return Container(
             width: 140,
             margin: const EdgeInsets.only(right: 12),
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _result = item.chart;
-                  _currentResultName = item.name;
-                });
-              },
-              child: GlassCard(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.name,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryGold,
-                        overflow: TextOverflow.ellipsis,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _result = item.chart;
+                        _currentResultName = item.name;
+                      });
+                    },
+                    child: GlassCard(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 16.0),
+                            child: Text(
+                              item.name,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryGold,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              maxLines: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_getZodiacIcon(item.chart.sunSign)} ${_getZodiacTrName(item.chart.sunSign, isTr)}',
+                            style: AppTextStyles.caption.copyWith(fontSize: 9, color: AppColors.textSecondary),
+                          ),
+                        ],
                       ),
-                      maxLines: 1,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${_getZodiacIcon(item.chart.sunSign)} ${_getZodiacTrName(item.chart.sunSign, isTr)}',
-                      style: AppTextStyles.caption.copyWith(fontSize: 9, color: AppColors.textSecondary),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: GestureDetector(
+                    onTap: () => _deleteHistoryItem(item),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        size: 10,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         },
@@ -1388,10 +1437,12 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
 }
 
 class _PartnerNatalChartHistoryItem {
+  final String docId;
   final String name;
   final NatalChartModel chart;
 
   _PartnerNatalChartHistoryItem({
+    required this.docId,
     required this.name,
     required this.chart,
   });
