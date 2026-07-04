@@ -204,7 +204,7 @@ class _MainViewState extends ConsumerState<MainView> {
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
     final user = ref.watch(userProvider);
-    final isPremium = user?.isPremium ?? false;
+    final isPremium = user?.isAnyPremium ?? false;
 
     return Scaffold(
       extendBody: true, // Alt barın arkasının görünmesi (cam efekti) için

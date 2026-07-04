@@ -237,7 +237,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
     final locale = ref.watch(languageProvider);
     final isTr = locale.languageCode == 'tr';
     final user = ref.watch(userProvider);
-    final isPremium = user?.isPremium ?? false;
+    final isPremium = user?.isAnyPremium ?? false;
     final bool isLocked = _limitStatus == LimitStatus.locked;
     final bool needRewardedAd = _limitStatus == LimitStatus.needAd;
 
@@ -329,7 +329,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
               ),
 
               // Reklam Banner'ı
-              AdService.instance.getBannerAdWidget('cosmic_oracle_banner', isPremium: user?.isPremium ?? false),
+              AdService.instance.getBannerAdWidget('cosmic_oracle_banner', isPremium: isPremium),
 
               // 3. Soru Giriş Alanı
               _buildInputArea(isTr, user),
@@ -553,7 +553,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
   }
 
   Widget _buildInputArea(bool isTr, UserModel? user) {
-    final isPremium = user?.isPremium ?? false;
+    final isPremium = user?.isAnyPremium ?? false;
     final bool isLocked = _limitStatus == LimitStatus.locked;
     final bool needRewardedAd = _limitStatus == LimitStatus.needAd;
 

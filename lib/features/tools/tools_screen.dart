@@ -17,101 +17,101 @@ class ToolsScreen extends ConsumerWidget {
     final locale = ref.watch(languageProvider);
     final isTr = locale.languageCode == 'tr';
 
-    // Araçlar Listesi
+    // Araçlar Listesi (Dengeli açıklamalar - Karakter boyutu 40-55 arası)
     final List<Map<String, dynamic>> tools = [
       {
         'icon': '🌙',
         'titleTr': 'Ay Fazları Takvimi',
         'titleEn': 'Moon Phases Calendar',
-        'descTr': '2026 yılı dolunay, yeniay ve günlük ay fazı değişimleri.',
-        'descEn': '2026 full moons, new moons, and daily lunar phase shifts.',
+        'descTr': '2026 yılı dolunay, yeniay ve günlük ay fazları.',
+        'descEn': '2026 full moons, new moons, and daily lunar phases.',
         'route': '/moon-phases'
       },
       {
         'icon': '📅',
         'titleTr': 'Astroloji Takvimi',
         'titleEn': 'Astro Calendar',
-        'descTr': '2026 gökyüzü olayları, tutulmalar ve günlük olumlu/dikkatli transitle.',
-        'descEn': '2026 celestial events, eclipses, and daily cosmic transits.',
+        'descTr': '2026 gökyüzü olayları, tutulmalar ve günlük transitler.',
+        'descEn': '2026 celestial events, eclipses, and daily transits.',
         'route': '/astro-calendar'
       },
       {
         'icon': '☿',
         'titleTr': 'Geri Giden Gezegenler',
         'titleEn': 'Retrograde Periods',
-        'descTr': '2026 yılı Merkür, Venüs ve Mars retro tarihleri ve etkileri.',
-        'descEn': '2026 Mercury, Venus, and Mars retro dates and areas of impact.',
+        'descTr': '2026 yılı Merkür, Venüs ve Mars retro takvimi.',
+        'descEn': '2026 Mercury, Venus, and Mars retro periods.',
         'route': '/retrograde'
       },
       {
         'icon': '🔢',
         'titleTr': 'Kişisel Numeroloji',
         'titleEn': 'Personal Numerology',
-        'descTr': 'Kendi doğum tarihi ve isminize göre kozmik numeroloji analiziniz.',
-        'descEn': 'Your cosmic numerology analysis based on your birth date and name.',
+        'descTr': 'Kişisel doğum tarihiniz ve isminize göre numeroloji.',
+        'descEn': 'Personal numerology based on birth date and name.',
         'route': '/numerology'
       },
       {
         'icon': '🔮',
         'titleTr': 'Doğum Tarihi Numerolojisi',
         'titleEn': 'Birth Date Numerology',
-        'descTr': 'Başka birinin doğum tarihine göre yaşam yolu ve kişisel yıl analizini yapın.',
-        'descEn': 'Analyze life path and personal year numbers for someone else.',
+        'descTr': 'Başkasının doğum tarihine göre numeroloji analizi.',
+        'descEn': 'Analyze life path and personal years for someone else.',
         'route': '/partner-numerology'
       },
       {
         'icon': '💑',
         'titleTr': 'Aşk Uyumu',
         'titleEn': 'Love Compatibility',
-        'descTr': 'İki kişinin doğum bilgilerine göre aşk ve sinastri uyumu.',
-        'descEn': 'Love and synastry match analysis based on birth details.',
+        'descTr': 'İki kişinin doğum haritalarına göre aşk ve sinastri.',
+        'descEn': 'Love and synastry match based on birth details.',
         'route': '/love-compatibility'
       },
       {
         'icon': '🤝',
         'titleTr': 'Arkadaşlık Uyumu',
         'titleEn': 'Friendship Match',
-        'descTr': 'Burç haritası rezonansına göre arkadaşlık uyumu.',
-        'descEn': 'Social compatibility based on zodiac chart resonance.',
+        'descTr': 'Harita rezonansına göre sosyal arkadaşlık uyumu.',
+        'descEn': 'Social compatibility based on chart resonance.',
         'route': '/friend-compatibility'
       },
       {
         'icon': '🗺️',
         'titleTr': 'Astro Portre',
         'titleEn': 'Astro Portrait',
-        'descTr': 'Güneş, Ay, Yükselen konumları ve detaylı gezegen ev dağılımları.',
-        'descEn': 'Sun, Moon, Rising positions, and planet house distributions.',
+        'descTr': 'Güneş, Ay, Yükselen ve detaylı gezegen konumları.',
+        'descEn': 'Sun, Moon, Rising, and planet distributions.',
         'route': 1 // Tab değiştir
       },
       {
         'icon': '🌌',
         'titleTr': 'Başkasının Astro Portresi',
         'titleEn': 'Partner\'s Astro Portrait',
-        'descTr': 'Arkadaşınızın veya partnerinizin doğum bilgilerine göre astro portresini çıkartın.',
-        'descEn': 'Generate and view the astronomical astro portrait for a friend or partner.',
+        'descTr': 'Başka birinin doğum tarihine göre astro portresi.',
+        'descEn': 'Astro portrait of a friend or partner based on birth.',
         'route': '/partner-natal-chart'
       },
       {
         'icon': '👁️',
         'titleTr': 'Kozmik Kâhin',
         'titleEn': 'Cosmic Oracle',
-        'descTr': 'Yapay zeka tabanlı astroloji kâhinine günde 1 soru sorun.',
-        'descEn': 'Ask the AI-powered astrology oracle 1 question per day.',
+        'descTr': 'Yapay zeka kâhinine astroloji hakkında soru sorun.',
+        'descEn': 'Ask the AI-powered astrology oracle your questions.',
         'route': '/cosmic-oracle'
       },
       {
         'icon': '🃏',
         'titleTr': 'Kozmik Tarot',
         'titleEn': 'Cosmic Tarot',
-        'descTr': 'Doğum haritanızla entegre 3 kartlık açılım ile kaderinizi yorumlayın.',
-        'descEn': 'Interpret your fate with a 3-card spread integrated with your natal chart.',
+        'descTr': 'Doğum haritası entegreli 3 kartlık tarot açılımı.',
+        'descEn': '3-card tarot spread integrated with your natal chart.',
         'route': '/tarot'
       }
     ];
 
     final double screenWidth = MediaQuery.of(context).size.width;
     final int crossAxisCount = screenWidth > 600 ? 3 : 2;
-    final double childAspectRatio = screenWidth > 600 ? 0.95 : 0.82;
+    final double childAspectRatio = screenWidth > 600 ? 1.25 : 1.05;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -167,16 +167,16 @@ class ToolsScreen extends ConsumerWidget {
                             style: const TextStyle(fontSize: 22),
                           ),
                         ),
-                        const Spacer(),
+                        const SizedBox(height: 12),
                         // Başlık
                         Text(
                           title,
                           style: AppTextStyles.h4.copyWith(
                             color: AppColors.primaryGold,
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                            fontSize: 13,
                           ),
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 6),
@@ -185,10 +185,10 @@ class ToolsScreen extends ConsumerWidget {
                           desc,
                           style: AppTextStyles.bodySmall.copyWith(
                             color: AppColors.textSecondary,
-                            fontSize: 10.5,
-                            height: 1.4,
+                            fontSize: 10.0,
+                            height: 1.35,
                           ),
-                          maxLines: 4,
+                          maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],

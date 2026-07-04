@@ -148,33 +148,14 @@ class _TarotResultScreenState extends ConsumerState<TarotResultScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.4), width: 1.5),
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF1B1527),
-            Color(0xFF0C0914),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
       ),
-      child: Center(
-        child: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.15), width: 1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Center(
-            child: Icon(
-              Icons.star_purple500_sharp,
-              color: AppColors.primaryGold.withValues(alpha: 0.7),
-              size: 28,
-            ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(
-                  begin: const Offset(0.9, 0.9),
-                  end: const Offset(1.1, 1.1),
-                  duration: 1200.ms,
-                ),
-          ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.asset(
+          'assets/images/tarot_card_back.png',
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
         ),
       ),
     );
@@ -198,118 +179,234 @@ class _TarotResultScreenState extends ConsumerState<TarotResultScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: hasCosmicLink ? AppColors.primaryGold : Colors.white24,
+          color: hasCosmicLink ? AppColors.primaryGold : AppColors.primaryGold.withValues(alpha: 0.35),
           width: hasCosmicLink ? 2.0 : 1.2,
         ),
-        gradient: const LinearGradient(
+        gradient: const RadialGradient(
           colors: [
-            Color(0xFF221E30),
-            Color(0xFF141221),
+            Color(0xFF2E224E),
+            Color(0xFF140E26),
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          center: Alignment.center,
+          radius: 0.8,
         ),
+        boxShadow: hasCosmicLink
+            ? [
+                BoxShadow(
+                  color: AppColors.primaryGold.withValues(alpha: 0.35),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                )
+              ]
+            : null,
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // ── Üst: Astrolojik Eşleşme (sabit yükseklik) ──
-            SizedBox(
-              height: 32,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        association,
-                        style: TextStyle(
-                          fontSize: 7.5,
-                          fontWeight: FontWeight.bold,
-                          color: hasCosmicLink ? AppColors.primaryGold : const Color(0xFFB6BDD6),
+      child: Stack(
+        children: [
+          // ── Resim Arka Planı (Rider-Waite İllüstrasyonu) ──
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                'assets/images/tarot/${card.id}.jpg',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  // Resim yoksa, eski altın tılsımlı emoji stilimizi gösteriyoruz!
+                  return Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primaryGold.withValues(alpha: 0.35),
+                          width: 1.2,
                         ),
-                        textAlign: TextAlign.center,
+                        gradient: RadialGradient(
+                          colors: [
+                            AppColors.primaryGold.withValues(alpha: 0.08),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                      child: Text(
+                        draw.symbol,
+                        style: const TextStyle(fontSize: 26),
                       ),
                     ),
-                    if (hasCosmicLink)
-                      Container(
-                        margin: const EdgeInsets.only(top: 2),
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          isTr ? '✨ BAĞLANTI' : '✨ LINK',
-                          style: const TextStyle(
-                            fontSize: 6,
-                            color: AppColors.primaryGold,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                  );
+                },
+              ),
+            ),
+          ),
+          
+          // Görselin üstüne hafif koyu degrade atıyoruz ki üzerindeki yazılar (kart ismi, astroloji) rahat okunsun
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.black.withValues(alpha: 0.75),
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.85),
                   ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.0, 0.5, 1.0],
                 ),
               ),
             ),
+          ),
 
-            const Spacer(),
-
-            // ── Orta: Kart Sembolü ──
-            Text(
-              draw.symbol,
-              style: const TextStyle(fontSize: 28),
-            ),
-
-            const Spacer(),
-
-            // ── Alt: Kart İsmi + Yön Rozeti (sabit yükseklik) ──
-            SizedBox(
-              height: 36,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      isTr ? draw.cardNameTr.split(' (').first : draw.cardNameEn,
-                      style: AppTextStyles.label.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 9.5,
-                        color: hasCosmicLink ? AppColors.primaryGold : Colors.white,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-                    decoration: BoxDecoration(
-                      color: draw.isUpright
-                          ? Colors.green.withValues(alpha: 0.15)
-                          : Colors.redAccent.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      draw.isUpright
-                          ? (isTr ? 'DÜZ' : 'UPRIGHT')
-                          : (isTr ? 'TERS' : 'REVERSED'),
-                      style: TextStyle(
-                        fontSize: 7,
-                        fontWeight: FontWeight.bold,
-                        color: draw.isUpright ? Colors.greenAccent : Colors.redAccent,
-                      ),
-                    ),
-                  ),
-                ],
+          // İç İnce Altın Çerçeve
+          Positioned.fill(
+            child: Container(
+              margin: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: AppColors.primaryGold.withValues(alpha: 0.15),
+                  width: 0.8,
+                ),
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
-          ],
-        ),
+          ),
+
+          // Köşe Yıldızları (✦ Süslemeler)
+          Positioned(
+            top: 8,
+            left: 8,
+            child: Text('✦', style: TextStyle(fontSize: 6, color: AppColors.primaryGold.withValues(alpha: 0.5))),
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Text('✦', style: TextStyle(fontSize: 6, color: AppColors.primaryGold.withValues(alpha: 0.5))),
+          ),
+          Positioned(
+            bottom: 8,
+            left: 8,
+            child: Text('✦', style: TextStyle(fontSize: 6, color: AppColors.primaryGold.withValues(alpha: 0.5))),
+          ),
+          Positioned(
+            bottom: 8,
+            right: 8,
+            child: Text('✦', style: TextStyle(fontSize: 6, color: AppColors.primaryGold.withValues(alpha: 0.5))),
+          ),
+
+          // Kart İçeriği (Yazılar)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // ── Üst: Astrolojik Eşleşme ──
+                SizedBox(
+                  height: 32,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            association,
+                            style: TextStyle(
+                              fontSize: 7.5,
+                              fontWeight: FontWeight.bold,
+                              color: hasCosmicLink ? AppColors.primaryGold : const Color(0xFFCBB6E6),
+                              letterSpacing: 0.5,
+                              shadows: const [
+                                Shadow(
+                                  color: Colors.black54,
+                                  offset: Offset(0.5, 0.5),
+                                  blurRadius: 2,
+                                ),
+                              ],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        if (hasCosmicLink)
+                          Container(
+                            margin: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGold.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              isTr ? '✨ BAĞLANTI' : '✨ LINK',
+                              style: const TextStyle(
+                                fontSize: 6,
+                                color: AppColors.primaryGold,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // ── Alt: Kart İsmi + Yön Rozeti ──
+                SizedBox(
+                  height: 36,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          isTr ? draw.cardNameTr.split(' (').first : draw.cardNameEn,
+                          style: AppTextStyles.label.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 9.5,
+                            color: hasCosmicLink ? AppColors.primaryGold : Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.9),
+                                offset: const Offset(1, 1),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: draw.isUpright
+                              ? Colors.green.withValues(alpha: 0.2)
+                              : Colors.redAccent.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: draw.isUpright ? Colors.green.withValues(alpha: 0.5) : Colors.redAccent.withValues(alpha: 0.5),
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Text(
+                          draw.isUpright
+                              ? (isTr ? 'DÜZ' : 'UPRIGHT')
+                              : (isTr ? 'TERS' : 'REVERSED'),
+                          style: TextStyle(
+                            fontSize: 7,
+                            fontWeight: FontWeight.bold,
+                            color: draw.isUpright ? Colors.greenAccent : Colors.redAccent,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

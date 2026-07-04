@@ -6,6 +6,7 @@ import 'package:horoscope/core/constants/app_text_styles.dart';
 import 'package:horoscope/core/services/limit_service.dart';
 import 'package:horoscope/core/services/ad_service.dart';
 import 'package:horoscope/core/providers/language_provider.dart';
+import 'package:horoscope/core/providers/user_provider.dart';
 import 'package:horoscope/shared/widgets/glass_card.dart';
 import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/premium_dialog_helper.dart';
@@ -92,8 +93,28 @@ class LimitDialogHelper {
   static void showDailyLimitReachedDialog({
     required BuildContext context,
     required WidgetRef ref,
-  }) {
+  }) async {
     final isTr = ref.read(languageProvider).languageCode == 'tr';
+    final user = ref.read(userProvider);
+    final bool isPro = user?.isPro == true;
+    final isGlobal = await LimitService.instance.isGlobalLimitReached();
+
+    if (!context.mounted) return;
+
+    String limitMessage = "";
+    if (isPro) {
+      limitMessage = isTr
+          ? 'Günlük Pro üyelik yapay zeka limitinize (10/10) ulaştınız. Gece 04:00\'den sonra tekrar deneyebilir veya şimdi Pro+ (Pro Plus) üyeliğine geçerek tamamen sınırsız analiz yapabilirsiniz.'
+          : 'You have reached your daily Pro limit of 10 calculations. Try again after 04:00 AM, or upgrade to Pro+ right now for truly unlimited access.';
+    } else {
+      limitMessage = isGlobal
+          ? (isTr
+              ? 'Günlük toplam yapay zeka limitinize (3/3) ulaştınız. Gece 04:00\'den sonra tekrar deneyebilir veya şimdi Premium\'a geçerek beklemeden sınırsız erişim sağlayabilirsiniz.'
+              : 'You have reached your daily limit for AI calculations. Try again after 04:00 AM, or upgrade to Premium right now for unlimited, instant access.')
+          : (isTr
+              ? 'Bu özellik için bugünkü günlük hakkınız dolmuştur. Gece 04:00\'den sonra tekrar deneyebilir veya şimdi Premium\'a geçerek beklemeden sınırsız erişim sağlayabilirsiniz.'
+              : 'You have reached your daily limit for this feature. Try again after 04:00 AM, or upgrade to Premium right now for unlimited, instant access.');
+    }
 
     showDialog(
       context: context,
@@ -116,15 +137,15 @@ class LimitDialogHelper {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  isTr
-                      ? 'Bu özellik için bugünkü günlük hakkınız dolmuştur. Gece 04:00\'den sonra tekrar deneyebilir veya şimdi Premium\'a geçerek beklemeden sınırsız erişim sağlayabilirsiniz.'
-                      : 'You have reached your daily limit for this feature. Try again after 04:00 AM, or upgrade to Premium right now for unlimited, instant access.',
+                  limitMessage,
                   style: AppTextStyles.bodyMedium.copyWith(height: 1.45),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
                 GradientButton(
-                  text: isTr ? 'Premium\'a Yükselt ✨' : 'Upgrade to Premium ✨',
+                  text: isPro
+                      ? (isTr ? 'Pro+\'a Yükselt ✨' : 'Upgrade to Pro+ ✨')
+                      : (isTr ? 'Premium\'a Yükselt ✨' : 'Upgrade to Premium ✨'),
                   onTap: () {
                     Navigator.pop(dialogCtx);
                     PremiumDialogHelper.show(context, ref);

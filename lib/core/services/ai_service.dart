@@ -462,6 +462,7 @@ JSON formatı:
     required String partnerGender,
     required String partnerZodiacSign,
     required String type, // "love" or "friendship"
+    String? relationshipStatus, // "dating" | "new_relationship" | "long_term_relationship" | "newlywed" | "long_term_marriage"
   }) async {
     final docPath = 'users/$userId/compatibility/${partnerName}_$type';
     final docRef = _firestore.doc(docPath);
@@ -477,6 +478,7 @@ JSON formatı:
             cached.partnerBirthDate.day == partnerBirthDate.day &&
             cached.partnerBirthTime == partnerBirthTime &&
             cached.partnerBirthPlace == partnerBirthPlace &&
+            cached.relationshipStatus == relationshipStatus &&
             cached.synastrAspects != null) {
           debugPrint('ℹ️ Uyum analizi (sinastri dahil) önbellekten alındı.');
           return cached;
@@ -580,11 +582,36 @@ $aspectLines
 """;
     }
 
+    String relationshipStatusText = "";
+    if (isLove && relationshipStatus != null) {
+      switch (relationshipStatus) {
+        case 'dating':
+          relationshipStatusText = "Flört (Dating)";
+          break;
+        case 'new_relationship':
+          relationshipStatusText = "Yeni İlişki (New Relationship)";
+          break;
+        case 'long_term_relationship':
+          relationshipStatusText = "Uzun İlişki (Long-Term Relationship)";
+          break;
+        case 'newlywed':
+          relationshipStatusText = "Yeni Evli (Newlyweds)";
+          break;
+        case 'long_term_marriage':
+          relationshipStatusText = "Uzun Süreli Evli (Long-Term Marriage)";
+          break;
+        case 'ex_relationship':
+          relationshipStatusText = "Eski İlişki (Ex / Past Relationship)";
+          break;
+      }
+    }
+
     // ── 4. Gemini Prompt ───────────────────────────────────────────────────
     final prompt = """
 Sen dünyanın en iyi sinastri ve uyum analizi uzmanı astrologusun. 
 İki kişinin doğum haritaları arasındaki gerçek sinastri açıları (interaspects) hesaplanmış ve sana verilmiştir.
 Uyum Türü: ${isLove ? 'Aşk Uyumu (Romantik İlişki)' : 'Arkadaşlık Uyumu'}
+${relationshipStatusText.isNotEmpty ? 'Çiftin Mevcut İlişki Durumu: $relationshipStatusText' : ''}
 
 ══════════════════════════════════════
 KİŞİ 1 (${user.name ?? 'Kullanıcı'}):
@@ -614,6 +641,7 @@ Karakteristik Kurallar (Çok Önemli):
 - Bütünsel Element ve Harita Sentezi (Astrolojik Ağırlık): Sadece elementlerin sayısal oranlarına bakarak mekanik yorumlar yapma. Bir kişinin haritasında hava/toprak çoğunlukta olsa bile, eğer Güneş (Sun), Ay (Moon), Venüs (Venus) veya Mars gibi kişisel gezegenleri Su gruplarında (Yengeç, Akrep, Balık) ise, bu kişi duygusal açıdan soğuk veya mesafeli değildir. Aksine derin duygulara, ilgi ve şefkat ihtiyacına sahiptir (örneğin Güneş ve Mars'ı Yengeç olan bir kadın son derece duygusal, korumacı ve ilgi isteyendir). Kişisel gezegenlerin (Güneş, Ay, Venüs, Mars) konumlarını, element genel dağılımının önüne koyarak duygusal yakınlık/mesafe sentezi yap.
 
 ${isLove ? '''Aşk Sinastri Yorumu için Özel Kurallar:
+- İlişki Durumu: Bu çiftin mevcut ilişki durumu "$relationshipStatusText". Yapacağın tüm analizleri, genel yorumları ve Pro analiz bölümlerini (özellikle çatışma çözümleri ve büyüme tüneli) bu ilişki durumunun dinamiklerini göz önünde bulundurarak yorumla. (Örneğin flört aşamasındalarsa daha çok birbirini tanıma ve çekim, evlilerse ev hayatı, sorumluluk paylaşımı ve uzun vadeli uyumu esas al).
 - Venüs-Mars aspektleri: Fiziksel çekim ve tutku açısından yorumla. Kadın haritasındaki Mars ve erkek haritasındaki Venüs birbirini nasıl etkiliyor?
 - Güneş-Ay aspektleri: Birinin ruhu diğerinin kimliğini "evde" hissettiriyor mu?
 - Satürn aspektleri: Uzun vadeli bağlılık sinyalleri mi, kısıtlama mı?
@@ -711,6 +739,7 @@ JSON formatı:
         conflictResolutionEn: conflictResolution?['en'] ?? '',
         growthTimelineTr: growthTimeline?['tr'] ?? '',
         growthTimelineEn: growthTimeline?['en'] ?? '',
+        relationshipStatus: relationshipStatus,
       );
 
       await docRef.set(compatibility.toMap(), SetOptions(merge: true));
@@ -785,7 +814,21 @@ Karakteristik Kurallar (Çok Önemli):
 Görev:
 1. Bu doğum haritasına göre kullanıcının kişiliğini detaylıca analiz et.
 2. Aşağıdaki alanları belirle:
-   - "personalityDimensions": Tam 12 adet zıt kişilik boyutu. Her boyut için leftPercent değeri 0-100 arasında bir tamsayı olmalı. Bu değer sol kutbun ne kadar baskın olduğunu gösterir (sağ = 100 - leftPercent). Gerçekçi ve harita bazlı değerler ver. 50-50 verme, gerçek bir kutba yaklaştır.
+   - "personalityDimensions": Tam 12 adet zıt kişilik boyutu. Her boyut için leftPercent değeri 0-100 arasında bir tamsayı olmalı. Bu değer sol kutbun ne kadar baskın olduğunu gösterir (sağ = 100 - leftPercent).
+     Bu yüzdeleri rastgele veya ezbere VERME. Doğum haritasındaki şu astrolojik dinamiklere göre profesyonelce hesapla:
+     1. Sezgisel (Intuitive) vs Analitik (Analytical): Su & Ateş grupları ile Neptün/Ay konumları Sezgisel'i; Toprak & Hava grupları ile Merkür/Satürn konumları Analitik'i artırır.
+     2. İçe Dönük (Introverted) vs Dışa Dönük (Extroverted): Haritanın alt yarısı (1-6. evler) ve dişil burçlar İçe Dönük'ü; haritanın üst yarısı (7-12. evler) ve eril burçlar Dışa Dönük'ü artırır.
+     3. Duygusal (Emotional) vs Mantıksal (Rational): Su burçları, Ay ve Venüs konumları Duygusal'ı; Hava/Toprak burçları, Merkür ve Satürn konumları Mantıksal'ı artırır.
+     4. Spontane (Spontaneous) vs Planlı (Structured): Ateş burçları, Mars ve Uranüs Spontane'yi; Toprak burçları, Oğlak ve Satürn Planlı'yı artırır.
+     5. İdealist (Idealistic) vs Realist (Realistic): Jüpiter, Neptün, Balık ve Yay İdealist'i; Satürn, Oğlak, Başak ve Boğa Realist'i artırır.
+     6. Bağımsız (Independent) vs Uyumlu (Cooperative): Güneş, Mars, Koç, Aslan ve 1. ev Bağımsız'ı; Terazi, Boğa, Venüs, 7. ev ve 11. ev Uyumlu'yu artırır.
+     7. Risk Seven (Risk-Taking) vs Güvene Önem Veren (Security-Seeking): Ateş burçları, Mars, Uranüs ve 5./8. evler Risk Seven'i; Toprak burçları, Satürn, Boğa ve 2./4. evler Güvene Önem Veren'i artırır.
+     8. Sabırsız (Impulsive) vs Sabırlı (Patient): Öncü burçlar (Koç, Yengeç, Terazi, Oğlak), Mars ve Koç Sabırsız'ı; Sabit burçlar (Boğa, Aslan, Akrep, Kova), Satürn ve Boğa Sabırlı'yı artırır.
+     9. Yaratıcı (Creative) vs Pratik (Practical): 5. ev, Neptün, Venüs, Su ve Ateş burçları Yaratıcı'yı; Başak, Boğa, Satürn ve Merkür Pratik'i artırır.
+     10. Kararlı (Decisive) vs Esnek (Adaptable): Sabit burçlar, Güneş ve Satürn Kararlı'yı; Değişken burçlar (İkizler, Başak, Yay, Balık) ve Merkür Esnek'i artırır.
+     11. İçgüdüsel (Instinctive) vs Düşünceli (Deliberate): Ay, Plüton, Mars ve Akrep/Yengeç/Koç İçgüdüsel'i; Merkür, Satürn ve Terazi/Başak Düşünceli'yi artırır.
+     12. Tutkulu (Passionate) vs Sakin (Calm): Akrep, Koç, Aslan, Mars ve Plüton Tutkulu'yu; Boğa, Terazi, Balık, Venüs ve Neptün Sakin'i artırır.
+     Değerleri 50-50 verme, kullanıcının haritasına göre belirgin bir kutba yaklaştır.
    - "strengths" (5 adet kısa madde, TR ve EN ayrı).
    - "weaknesses" (5 adet kısa madde, TR ve EN ayrı).
    - "careers" (6 meslek adı, TR ve EN ayrı).

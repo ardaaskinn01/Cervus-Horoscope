@@ -477,8 +477,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildPremiumBanner(bool isTr) {
     final user = ref.watch(userProvider);
     final isPremium = user?.isPremium ?? false;
+    final isPro = user?.isPro ?? false;
 
-    if (isPremium) {
+    if (isPremium || isPro) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
@@ -505,12 +506,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isTr ? "Astris Pro Üyesiniz" : "You are an Astris Pro Member",
+                    isPremium
+                        ? (isTr ? "Astris Pro+ Üyesiniz" : "You are an Astris Pro+ Member")
+                        : (isTr ? "Astris Pro Üyesiniz" : "You are an Astris Pro Member"),
                     style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    isTr ? "Tüm kozmik kapılar ve yapay zeka sınırları kalktı. ✨" : "All cosmic gates and AI limits are removed. ✨",
+                    isPremium
+                        ? (isTr 
+                            ? "Tüm kozmik kapılar ve yapay zeka sınırları kalktı. ✨" 
+                            : "All cosmic gates and AI limits are removed. ✨")
+                        : (isTr 
+                            ? "Tüm kozmik kapılar açıldı. Günlük yapay zeka limitiniz 10/10. 🌟" 
+                            : "All cosmic gates are unlocked. Daily AI limit is 10. 🌟"),
                     style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 11),
                   ),
                 ],

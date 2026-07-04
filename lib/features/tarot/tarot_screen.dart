@@ -341,38 +341,12 @@ class _TarotScreenState extends ConsumerState<TarotScreen> {
                             borderRadius: BorderRadius.circular(8),
                             child: Stack(
                               children: [
-                                // Kart Arka Yüz Tasarımı (Premium Glassmorphic Pattern)
-                                Container(
-                                  decoration: const BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Color(0xFF1F1B2C),
-                                        Color(0xFF0F0C1B),
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.star_border_rounded,
-                                          size: 24,
-                                          color: AppColors.primaryGold.withValues(alpha: 0.6),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '✦',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color: AppColors.primaryGold.withValues(alpha: 0.4),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                // Kart Arka Yüz Tasarımı (Premium Celestial Image)
+                                Image.asset(
+                                  'assets/images/tarot_card_back.png',
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
                                 ),
                                 // Seçim sırası rozeti
                                 if (isSelected)

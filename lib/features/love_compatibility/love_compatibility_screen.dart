@@ -41,6 +41,7 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
   bool _knowsPartnerBirthTime = true;
   String? _partnerBirthPlace;
   String _selectedGender = 'female'; // 'male' or 'female'
+  String _selectedRelationshipStatus = 'dating'; // 'dating' | 'new_relationship' | 'long_term_relationship' | 'newlywed' | 'long_term_marriage' | 'ex_relationship'
   bool _isLoading = false;
   CompatibilityModel? _result;
   List<CompatibilityModel> _history = [];
@@ -306,6 +307,7 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
         partnerGender: _selectedGender,
         partnerZodiacSign: partnerZodiac,
         type: 'love',
+        relationshipStatus: _selectedRelationshipStatus,
       );
 
       if (compatibility != null) {
@@ -367,7 +369,7 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
       bottomNavigationBar: SafeArea(
         child: AdService.instance.getBannerAdWidget(
           'love_compatibility_banner',
-          isPremium: user?.isPremium ?? false,
+          isPremium: user?.isAnyPremium ?? false,
         ),
       ),
     );
@@ -604,6 +606,61 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
           ),
           const SizedBox(height: 16),
 
+          // İlişki Durumu Başlığı
+          Text(
+            isTr ? 'İlişki Durumu' : 'Relationship Status',
+            style: AppTextStyles.label.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 8),
+
+          // İlişki Durumu Seçimi Dropdown
+          GlassCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedRelationshipStatus,
+                isExpanded: true,
+                dropdownColor: AppColors.cardSurface,
+                icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryGold),
+                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary),
+                items: [
+                  DropdownMenuItem(
+                    value: 'dating',
+                    child: Text(isTr ? 'Flört' : 'Dating'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'new_relationship',
+                    child: Text(isTr ? 'Yeni İlişki' : 'New Relationship'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'long_term_relationship',
+                    child: Text(isTr ? 'Uzun İlişki' : 'Long-Term Relationship'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'newlywed',
+                    child: Text(isTr ? 'Yeni Evli' : 'Newlywed'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'long_term_marriage',
+                    child: Text(isTr ? 'Uzun Süreli Evli' : 'Long-Term Marriage'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'ex_relationship',
+                    child: Text(isTr ? 'Eski İlişki' : 'Ex Relationship'),
+                  ),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() {
+                      _selectedRelationshipStatus = val;
+                    });
+                  }
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Cinsiyet Başlığı
           Text(
             isTr ? 'Cinsiyet' : 'Gender',
@@ -833,7 +890,7 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
     final res = _result!;
     final user = ref.watch(userProvider)!;
     final userSign = user.zodiacSign ?? 'aries';
-    final isPro = user.isPremium;
+    final isPro = user.isAnyPremium;
 
     // Açı ikonları
     Widget aspectBadge(String aspect, bool isHard) {
@@ -867,6 +924,25 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
                   isTr ? 'Kozmik Sinastri Analizi' : 'Cosmic Synastry Analysis',
                   style: AppTextStyles.caption.copyWith(color: AppColors.primaryGold, letterSpacing: 1.5),
                 ),
+                if (res.relationshipStatus != null) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGold.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3), width: 0.8),
+                    ),
+                    child: Text(
+                      _getRelationshipStatusTrName(res.relationshipStatus!, isTr),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.primaryGold,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 9.5,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -1455,5 +1531,23 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
         ),
       ],
     );
+  }
+  String _getRelationshipStatusTrName(String status, bool isTr) {
+    switch (status) {
+      case 'dating':
+        return isTr ? 'Flört' : 'Dating';
+      case 'new_relationship':
+        return isTr ? 'Yeni İlişki' : 'New Relationship';
+      case 'long_term_relationship':
+        return isTr ? 'Uzun İlişki' : 'Long-Term Relationship';
+      case 'newlywed':
+        return isTr ? 'Yeni Evli' : 'Newlywed';
+      case 'long_term_marriage':
+        return isTr ? 'Uzun Süreli Evli' : 'Long-Term Marriage';
+      case 'ex_relationship':
+        return isTr ? 'Eski İlişki' : 'Ex Relationship';
+      default:
+        return isTr ? 'Bilinmiyor' : 'Unknown';
+    }
   }
 }

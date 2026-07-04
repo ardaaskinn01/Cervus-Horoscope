@@ -102,9 +102,10 @@ class UserNotifier extends Notifier<UserModel?> {
       }
 
       // RevenueCat premium durumunu kontrol et
-      final isRcPremium = await RevenueCatService.checkPremiumStatus();
-      if (profile.isPremium != isRcPremium) {
-        profile = profile.copyWith(isPremium: isRcPremium);
+      final isRcProPlus = await RevenueCatService.checkProPlusStatus();
+      final isRcPro = await RevenueCatService.checkProStatus();
+      if (profile.isPremium != isRcProPlus || profile.isPro != isRcPro) {
+        profile = profile.copyWith(isPremium: isRcProPlus, isPro: isRcPro);
         try {
           await _firebaseService.saveUserProfile(profile);
         } catch (_) {}
@@ -292,11 +293,11 @@ class UserNotifier extends Notifier<UserModel?> {
   }
 
   // Premium durumunu güncelle
-  Future<void> updatePremiumStatus(bool isPremium) async {
+  Future<void> updatePremiumStatus({required bool isProPlus, required bool isPro}) async {
     final currentProfile = state;
     if (currentProfile == null) return;
     
-    final updated = currentProfile.copyWith(isPremium: isPremium);
+    final updated = currentProfile.copyWith(isPremium: isProPlus, isPro: isPro);
     state = updated;
     
     try {
@@ -306,10 +307,21 @@ class UserNotifier extends Notifier<UserModel?> {
       if (updated.uid != 'offline_anonymous') {
         await _firebaseService.saveUserProfile(updated);
       }
-      debugPrint('ℹ️ Premium durumu güncellendi: $isPremium');
+      debugPrint('ℹ️ Premium durumu güncellendi: Pro+=$isProPlus, Pro=$isPro');
     } catch (e) {
       debugPrint('⚠️ Premium durumu güncellenirken hata: $e');
     }
+  }
+
+  // RevenueCat ile premium durumlarını eşitle
+  Future<void> syncPremiumStatus() async {
+    final currentProfile = state;
+    if (currentProfile == null) return;
+
+    final isProPlus = await RevenueCatService.checkProPlusStatus();
+    final isPro = await RevenueCatService.checkProStatus();
+
+    await updatePremiumStatus(isProPlus: isProPlus, isPro: isPro);
   }
 }
 

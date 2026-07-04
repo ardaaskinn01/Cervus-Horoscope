@@ -28,6 +28,8 @@ class CompatibilityModel {
   final String? growthTimelineTr;
   final String? growthTimelineEn;
 
+  final String? relationshipStatus; // "dating" | "new_relationship" | "long_term_relationship" | "newlywed" | "long_term_marriage" | "ex_relationship"
+
   CompatibilityModel({
     required this.partnerName,
     required this.partnerBirthDate,
@@ -51,6 +53,7 @@ class CompatibilityModel {
     this.conflictResolutionEn,
     this.growthTimelineTr,
     this.growthTimelineEn,
+    this.relationshipStatus,
   });
 
   Map<String, dynamic> toMap() {
@@ -77,6 +80,7 @@ class CompatibilityModel {
       if (conflictResolutionEn != null) 'conflictResolutionEn': conflictResolutionEn,
       if (growthTimelineTr != null) 'growthTimelineTr': growthTimelineTr,
       if (growthTimelineEn != null) 'growthTimelineEn': growthTimelineEn,
+      if (relationshipStatus != null) 'relationshipStatus': relationshipStatus,
     };
   }
 
@@ -128,6 +132,7 @@ class CompatibilityModel {
       conflictResolutionEn: map['conflictResolutionEn'] as String?,
       growthTimelineTr: map['growthTimelineTr'] as String?,
       growthTimelineEn: map['growthTimelineEn'] as String?,
+      relationshipStatus: map['relationshipStatus'] as String?,
     );
   }
 }

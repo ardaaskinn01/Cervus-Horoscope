@@ -121,14 +121,108 @@ class PremiumDialogHelper {
                       return _buildErrorState(isTr);
                     }
 
+                    final proPlusPackages = availablePackages.where(
+                      (pkg) => pkg.storeProduct.identifier.toLowerCase().contains('plus') || pkg.storeProduct.identifier.toLowerCase().contains('proplus')
+                    ).toList();
+                    final proPackages = availablePackages.where(
+                      (pkg) => !pkg.storeProduct.identifier.toLowerCase().contains('plus') && !pkg.storeProduct.identifier.toLowerCase().contains('proplus')
+                    ).toList();
+
+                    // Fiyata göre küçükten büyüğe sıralama yapıyoruz
+                    proPlusPackages.sort((a, b) => a.storeProduct.price.compareTo(b.storeProduct.price));
+                    proPackages.sort((a, b) => a.storeProduct.price.compareTo(b.storeProduct.price));
+
                     return Column(
-                      children: availablePackages.map((pkg) => _buildPackageCard(
-                        context: context,
-                        ref: ref,
-                        dialogContext: ctx,
-                        package: pkg,
-                        isTr: isTr,
-                      )).toList(),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (proPackages.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                            child: Text(
+                              isTr ? "ASTRIS PRO" : "ASTRIS PRO",
+                              style: AppTextStyles.label.copyWith(
+                                color: AppColors.primaryGold,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.5,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            isTr 
+                                ? "• Günlük 10 yapay zeka hakkı\n• Reklam yok\n• Tüm kilitli bölümler açık"
+                                : "• Daily 10 AI limit\n• No ads\n• All details unlocked",
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                              height: 1.5,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...proPackages.map((pkg) => _buildPackageCard(
+                            context: context,
+                            ref: ref,
+                            dialogContext: ctx,
+                            package: pkg,
+                            isTr: isTr,
+                            isProPlus: false,
+                          )),
+                          const SizedBox(height: 16),
+                        ],
+                        if (proPlusPackages.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+                            child: Row(
+                              children: [
+                                Text(
+                                  isTr ? "ASTRIS PRO+" : "ASTRIS PRO+",
+                                  style: AppTextStyles.label.copyWith(
+                                    color: AppColors.primaryGold,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    gradient: AppColors.goldGradient,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    isTr ? "ÖNERİLEN" : "RECOMMENDED",
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.textDark,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 8,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            isTr 
+                                ? "• Sınırsız yapay zeka hakkı\n• Reklam yok\n• Tüm kilitli bölümler açık"
+                                : "• Truly unlimited AI calculations\n• No ads\n• All details unlocked",
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                              height: 1.5,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...proPlusPackages.map((pkg) => _buildPackageCard(
+                            context: context,
+                            ref: ref,
+                            dialogContext: ctx,
+                            package: pkg,
+                            isTr: isTr,
+                            isProPlus: true,
+                          )),
+                        ],
+                      ],
                     );
                   },
                 ),
@@ -145,18 +239,22 @@ class PremiumDialogHelper {
                     TextButton(
                       onPressed: () async {
                         try {
-                          final isPro = await RevenueCatService.restorePurchases();
-                          await ref.read(userProvider.notifier).updatePremiumStatus(isPro);
+                          final restoreSuccess = await RevenueCatService.restorePurchases();
+                          if (restoreSuccess) {
+                            await ref.read(userProvider.notifier).syncPremiumStatus();
+                          }
+                          final user = ref.read(userProvider);
+                          final bool hasAny = user?.isAnyPremium == true;
                           if (ctx.mounted) {
                             Navigator.pop(ctx);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  isPro
+                                  hasAny
                                       ? (isTr ? "Aboneliğiniz başarıyla geri yüklendi! ✨" : "Subscription restored successfully! ✨")
-                                      : (isTr ? "Geri yüklenecek abonelik bulunamadı." : "No subscription found to restore."),
+                                      : (isTr ? "Geri yüklenecek aktif abonelik bulunamadı." : "No active subscription found to restore."),
                                 ),
-                                backgroundColor: isPro ? Colors.green : Colors.orange,
+                                backgroundColor: hasAny ? Colors.green : Colors.orange,
                               ),
                             );
                           }
@@ -299,23 +397,30 @@ class PremiumDialogHelper {
     required BuildContext dialogContext,
     required Package package,
     required bool isTr,
+    required bool isProPlus,
   }) {
     String name = "";
-    bool isPopular = false;
+    final id = package.identifier.toLowerCase();
+    
+    final bool isMonthly = package.packageType == PackageType.monthly || id.contains('monthly');
+    final bool isAnnual = package.packageType == PackageType.annual || id.contains('annual') || id.contains('yearly');
+    final bool isLifetime = package.packageType == PackageType.lifetime || id.contains('lifetime');
+    
+    bool isPopular = isAnnual;
 
-    switch (package.packageType) {
-      case PackageType.monthly:
-        name = isTr ? "Aylık Paket" : "Monthly Package";
-        break;
-      case PackageType.annual:
-        name = isTr ? "Yıllık Paket" : "Annual Package";
-        isPopular = true;
-        break;
-      case PackageType.lifetime:
-        name = isTr ? "Ömür Boyu" : "Lifetime Access";
-        break;
-      default:
-        name = package.storeProduct.title;
+    if (isMonthly) {
+      name = isTr ? "Aylık Paket" : "Monthly Package";
+    } else if (isAnnual) {
+      name = isTr ? "Yıllık Paket" : "Annual Package";
+    } else if (isLifetime) {
+      name = isTr ? "Ömür Boyu" : "Lifetime Access";
+    } else {
+      String rawTitle = package.storeProduct.title;
+      if (rawTitle.contains('(')) {
+        name = rawTitle.split('(').first.trim();
+      } else {
+        name = rawTitle;
+      }
     }
 
     final price = package.storeProduct.priceString;
@@ -334,24 +439,32 @@ class PremiumDialogHelper {
         );
 
         try {
-          final isPro = await RevenueCatService.purchasePackage(package);
-          await ref.read(userProvider.notifier).updatePremiumStatus(isPro);
+          final purchaseSuccess = await RevenueCatService.purchasePackage(package);
+          if (purchaseSuccess) {
+            await ref.read(userProvider.notifier).syncPremiumStatus();
+          }
 
           if (dialogContext.mounted) {
             Navigator.of(dialogContext, rootNavigator: true).pop();
           }
 
-          if (isPro) {
+          if (purchaseSuccess) {
             if (dialogContext.mounted) {
               Navigator.pop(dialogContext);
             }
             if (context.mounted) {
+              final user = ref.read(userProvider);
+              final bool isPlus = user?.isPremium == true;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isTr 
-                        ? "Astris Pro üyeliğiniz aktif edildi! 🌟" 
-                        : "Your Astris Pro membership has been activated! 🌟",
+                    isPlus
+                        ? (isTr 
+                            ? "Astris Pro+ üyeliğiniz aktif edildi! 🌟" 
+                            : "Your Astris Pro+ membership has been activated! 🌟")
+                        : (isTr 
+                            ? "Astris Pro üyeliğiniz aktif edildi! 🌟" 
+                            : "Your Astris Pro membership has been activated! 🌟"),
                   ),
                   backgroundColor: Colors.green,
                 ),
@@ -422,19 +535,28 @@ class PremiumDialogHelper {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    package.storeProduct.description,
+                    package.storeProduct.description.isNotEmpty
+                        ? package.storeProduct.description
+                        : (isMonthly
+                            ? (isTr ? "Aylık yenilenen abonelik" : "Monthly auto-renewing subscription")
+                            : (isAnnual
+                                ? (isTr ? "Yıllık yenilenen abonelik" : "Yearly auto-renewing subscription")
+                                : (isTr ? "Tek seferlik ödeme" : "One-time payment"))),
                     style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 10),
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (package.packageType == PackageType.annual) ...[
+                if (isAnnual) ...[
                   Text(
-                    isTr ? "₺599,99" : "\$599.99",
+                    isProPlus
+                        ? (isTr ? "₺2.999,99" : "\$299.99")
+                        : (isTr ? "₺599,99" : "\$599.99"),
                     style: TextStyle(
                       color: Colors.redAccent.shade200,
                       fontSize: 11,

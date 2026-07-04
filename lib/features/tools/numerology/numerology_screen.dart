@@ -297,7 +297,7 @@ class _NumerologyScreenState extends ConsumerState<NumerologyScreen> {
       bottomNavigationBar: SafeArea(
         child: AdService.instance.getBannerAdWidget(
           'numerology_banner',
-          isPremium: ref.watch(userProvider)?.isPremium ?? false,
+          isPremium: ref.watch(userProvider)?.isAnyPremium ?? false,
         ),
       ),
     );

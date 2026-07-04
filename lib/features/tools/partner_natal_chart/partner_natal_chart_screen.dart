@@ -392,7 +392,7 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
       bottomNavigationBar: SafeArea(
         child: AdService.instance.getBannerAdWidget(
           'partner_chart_banner',
-          isPremium: ref.watch(userProvider)?.isPremium ?? false,
+          isPremium: ref.watch(userProvider)?.isAnyPremium ?? false,
         ),
       ),
     );
@@ -876,12 +876,16 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
     }
   }
 
-  void _showPlanetInterpretationBottomSheet(String planet, String sign, String house, bool isTr) {
+  Future<void> _showPlanetInterpretationBottomSheet(String planet, String sign, String house, bool isTr) async {
+    final allowed = await LimitService.instance.checkAndRequestPortraitCommentAccess(context: context, ref: ref);
+    if (!allowed) return;
+
     final user = ref.read(userProvider);
     if (user == null) return;
     final docName = _currentResultName!.toLowerCase().replaceAll(' ', '_');
     final docPath = 'users/${user.uid}/partner_natal_charts/$docName';
 
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -900,12 +904,16 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
     );
   }
 
-  void _showRisingSignInterpretationSheet(String risingSign, bool isTr) {
+  Future<void> _showRisingSignInterpretationSheet(String risingSign, bool isTr) async {
+    final allowed = await LimitService.instance.checkAndRequestPortraitCommentAccess(context: context, ref: ref);
+    if (!allowed) return;
+
     final user = ref.read(userProvider);
     if (user == null) return;
     final docName = _currentResultName!.toLowerCase().replaceAll(' ', '_');
     final docPath = 'users/${user.uid}/partner_natal_charts/$docName';
 
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -921,12 +929,16 @@ class _PartnerNatalChartScreenState extends ConsumerState<PartnerNatalChartScree
     );
   }
 
-  void _showHouseInterpretationBottomSheet(String houseNumber, String localizedSign, String rawSign, bool isTr) {
+  Future<void> _showHouseInterpretationBottomSheet(String houseNumber, String localizedSign, String rawSign, bool isTr) async {
+    final allowed = await LimitService.instance.checkAndRequestPortraitCommentAccess(context: context, ref: ref);
+    if (!allowed) return;
+
     final user = ref.read(userProvider);
     if (user == null) return;
     final docName = _currentResultName!.toLowerCase().replaceAll(' ', '_');
     final docPath = 'users/${user.uid}/partner_natal_charts/$docName';
 
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

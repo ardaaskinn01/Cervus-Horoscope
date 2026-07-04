@@ -302,7 +302,7 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
   Widget _buildResultView(bool isTr) {
     final res = _analysis!;
     final user = ref.watch(userProvider);
-    final isPro = user?.isPremium ?? false;
+    final isPro = user?.isAnyPremium ?? false;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 10.0, bottom: 120.0),
@@ -656,18 +656,24 @@ class _WhoAmIScreenState extends ConsumerState<WhoAmIScreen> {
                       color: barCenterColor,
                     ),
                   ),
-                  // Dolgu — sol yüzde kadar
-                  Animate().custom(
-                    duration: 900.ms,
-                    curve: Curves.easeOutCubic,
-                    builder: (context, val, child) => Container(
-                      height: 10,
-                      width: totalWidth * val * (leftPercent / 100.0),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [dominantColor.withValues(alpha: 0.6), dominantColorLight],
+                  // Dolgu — sol dominant ise soldan sağa, sağ dominant ise sağdan sola
+                  Positioned(
+                    left: leftDominant ? 0 : null,
+                    right: leftDominant ? null : 0,
+                    child: Animate().custom(
+                      duration: 900.ms,
+                      curve: Curves.easeOutCubic,
+                      builder: (context, val, child) => Container(
+                        height: 10,
+                        width: totalWidth * val * ((leftDominant ? leftPercent : rightPercent) / 100.0),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: leftDominant
+                                ? [dominantColor.withValues(alpha: 0.6), dominantColorLight]
+                                : [dominantColorLight, dominantColor.withValues(alpha: 0.6)],
+                          ),
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                        borderRadius: BorderRadius.circular(6),
                       ),
                     ),
                   ),

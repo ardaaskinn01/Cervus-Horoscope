@@ -33,12 +33,38 @@ class RevenueCatService {
     }
   }
 
-  /// Mevcut kullanıcının premium durumunu kontrol eder
-  static Future<bool> checkPremiumStatus() async {
+  /// Mevcut kullanıcının PRO+ (Sınırsız) durumunu kontrol eder
+  static Future<bool> checkProPlusStatus() async {
+    if (!_isConfigured) return false;
+    try {
+      CustomerInfo customerInfo = await Purchases.getCustomerInfo();
+      return customerInfo.entitlements.all["proplus"]?.isActive ?? false;
+    } catch (e) {
+      debugPrint("⚠️ PRO+ durumu kontrol edilirken hata: $e");
+      return false;
+    }
+  }
+
+  /// Mevcut kullanıcının PRO durumunu kontrol eder
+  static Future<bool> checkProStatus() async {
     if (!_isConfigured) return false;
     try {
       CustomerInfo customerInfo = await Purchases.getCustomerInfo();
       return customerInfo.entitlements.all["pro"]?.isActive ?? false;
+    } catch (e) {
+      debugPrint("⚠️ PRO durumu kontrol edilirken hata: $e");
+      return false;
+    }
+  }
+
+  /// Mevcut kullanıcının premium (PRO veya PRO+) durumunu kontrol eder
+  static Future<bool> checkPremiumStatus() async {
+    if (!_isConfigured) return false;
+    try {
+      CustomerInfo customerInfo = await Purchases.getCustomerInfo();
+      final isPro = customerInfo.entitlements.all["pro"]?.isActive ?? false;
+      final isProPlus = customerInfo.entitlements.all["proplus"]?.isActive ?? false;
+      return isPro || isProPlus;
     } catch (e) {
       debugPrint("⚠️ Premium durumu kontrol edilirken hata: $e");
       return false;
@@ -65,7 +91,9 @@ class RevenueCatService {
     try {
       final result = await Purchases.purchase(PurchaseParams.package(package));
       final customerInfo = result.customerInfo;
-      return customerInfo.entitlements.all["pro"]?.isActive ?? false;
+      final isPro = customerInfo.entitlements.all["pro"]?.isActive ?? false;
+      final isProPlus = customerInfo.entitlements.all["proplus"]?.isActive ?? false;
+      return isPro || isProPlus;
     } on PlatformException catch (e) {
       var errorCode = PurchasesErrorHelper.getErrorCode(e);
       if (errorCode == PurchasesErrorCode.purchaseCancelledError) {
@@ -85,7 +113,9 @@ class RevenueCatService {
     if (!_isConfigured) return false;
     try {
       CustomerInfo customerInfo = await Purchases.restorePurchases();
-      return customerInfo.entitlements.all["pro"]?.isActive ?? false;
+      final isPro = customerInfo.entitlements.all["pro"]?.isActive ?? false;
+      final isProPlus = customerInfo.entitlements.all["proplus"]?.isActive ?? false;
+      return isPro || isProPlus;
     } catch (e) {
       debugPrint("❌ Geri yükleme hatası: $e");
       rethrow;

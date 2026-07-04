@@ -458,7 +458,7 @@ class _PartnerNumerologyScreenState extends ConsumerState<PartnerNumerologyScree
       bottomNavigationBar: SafeArea(
         child: AdService.instance.getBannerAdWidget(
           'partner_numerology_banner',
-          isPremium: ref.watch(userProvider)?.isPremium ?? false,
+          isPremium: ref.watch(userProvider)?.isAnyPremium ?? false,
         ),
       ),
     );

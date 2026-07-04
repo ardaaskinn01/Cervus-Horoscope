@@ -9,6 +9,7 @@ import 'package:horoscope/core/models/natal_chart_model.dart';
 import 'package:horoscope/core/providers/user_provider.dart';
 import 'package:horoscope/core/providers/language_provider.dart';
 import 'package:horoscope/core/services/ai_service.dart';
+import 'package:horoscope/core/services/limit_service.dart';
 import 'package:horoscope/shared/widgets/glass_card.dart';
 import 'package:horoscope/shared/widgets/gradient_button.dart';
 
@@ -814,11 +815,15 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
     );
   }
 
-  void _showPlanetInterpretationBottomSheet(String planet, String sign, String house, bool isTr) {
+  Future<void> _showPlanetInterpretationBottomSheet(String planet, String sign, String house, bool isTr) async {
+    final allowed = await LimitService.instance.checkAndRequestPortraitCommentAccess(context: context, ref: ref);
+    if (!allowed) return;
+
     final user = ref.read(userProvider);
     if (user == null) return;
     final docPath = 'users/${user.uid}/natal_chart/data';
 
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -837,11 +842,15 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
     );
   }
 
-  void _showRisingSignInterpretationSheet(String risingSign, bool isTr) {
+  Future<void> _showRisingSignInterpretationSheet(String risingSign, bool isTr) async {
+    final allowed = await LimitService.instance.checkAndRequestPortraitCommentAccess(context: context, ref: ref);
+    if (!allowed) return;
+
     final user = ref.read(userProvider);
     if (user == null) return;
     final docPath = 'users/${user.uid}/natal_chart/data';
 
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -857,11 +866,15 @@ class _NatalChartScreenState extends ConsumerState<NatalChartScreen> {
     );
   }
 
-  void _showHouseInterpretationBottomSheet(String houseNumber, String localizedSign, String rawSign, bool isTr) {
+  Future<void> _showHouseInterpretationBottomSheet(String houseNumber, String localizedSign, String rawSign, bool isTr) async {
+    final allowed = await LimitService.instance.checkAndRequestPortraitCommentAccess(context: context, ref: ref);
+    if (!allowed) return;
+
     final user = ref.read(userProvider);
     if (user == null) return;
     final docPath = 'users/${user.uid}/natal_chart/data';
 
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1208,10 +1221,13 @@ class _RisingSignInterpretationSheetState extends State<RisingSignInterpretation
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: SafeArea(
+        top: true,
+        bottom: true,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1253,7 +1269,7 @@ class _RisingSignInterpretationSheetState extends State<RisingSignInterpretation
             ),
           const SizedBox(height: 24),
         ],
-      ),
+      ),),
     );
   }
 }
@@ -1345,10 +1361,13 @@ class _HouseInterpretationSheetState extends State<HouseInterpretationSheet> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: SafeArea(
+        top: true,
+        bottom: true,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1388,7 +1407,7 @@ class _HouseInterpretationSheetState extends State<HouseInterpretationSheet> {
             ),
           const SizedBox(height: 24),
         ],
-      ),
+      ),),
     );
   }
 }
@@ -1487,10 +1506,13 @@ class PlanetInterpretationSheetState extends State<PlanetInterpretationSheet> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: SafeArea(
+        top: true,
+        bottom: true,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1532,7 +1554,7 @@ class PlanetInterpretationSheetState extends State<PlanetInterpretationSheet> {
             ),
           const SizedBox(height: 24),
         ],
-      ),
+      ),),
     );
   }
 }

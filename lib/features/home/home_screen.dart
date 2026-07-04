@@ -274,6 +274,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: 12),
                   GridView.builder(
+                    padding: EdgeInsets.zero,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _quickActions.length,
@@ -320,7 +321,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 style: AppTextStyles.label.copyWith(
                                   fontSize: 12,
                                 ),
-                                maxLines: 2,
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
@@ -328,6 +329,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       );
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        ref.read(bottomNavIndexProvider.notifier).state = 2;
+                      },
+                      borderRadius: BorderRadius.circular(30),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGold.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.25)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              isTr ? 'Daha Fazlası' : 'Show More',
+                              style: const TextStyle(
+                                color: AppColors.primaryGold,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 12,
+                              color: AppColors.primaryGold,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ).animate().fade(delay: 350.ms, duration: 400.ms).slideY(begin: 0.05, duration: 400.ms),

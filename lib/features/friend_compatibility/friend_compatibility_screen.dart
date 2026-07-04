@@ -364,7 +364,7 @@ class _FriendCompatibilityScreenState extends ConsumerState<FriendCompatibilityS
       bottomNavigationBar: SafeArea(
         child: AdService.instance.getBannerAdWidget(
           'friend_compatibility_banner',
-          isPremium: user?.isPremium ?? false,
+          isPremium: user?.isAnyPremium ?? false,
         ),
       ),
     );
