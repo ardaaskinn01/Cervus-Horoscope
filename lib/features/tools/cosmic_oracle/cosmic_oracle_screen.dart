@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:horoscope/core/constants/app_colors.dart';
 import 'package:horoscope/core/constants/app_text_styles.dart';
 import 'package:horoscope/core/models/natal_chart_model.dart';
@@ -70,10 +70,11 @@ class CosmicOracleScreen extends ConsumerStatefulWidget {
 
 class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
   final _questionController = TextEditingController();
-  final _scrollController = ScrollController();
   final _focusNode = FocusNode();
   
-  List<Map<String, dynamic>> _history = [];
+  Map<String, dynamic>? _activeQA;
+  String? _pendingQuestion;
+  bool _isFirstLoad = true;
   bool _isLoadingHistory = true;
   bool _isGenerating = false;
   LimitStatus _limitStatus = LimitStatus.allowed;
@@ -89,12 +90,11 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
   @override
   void dispose() {
     _questionController.dispose();
-    _scrollController.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  Future<void> _loadHistoryData() async {
+  Future<void> _loadHistoryData({bool setLatestActive = false}) async {
     final user = ref.read(userProvider);
     if (user == null) return;
 
@@ -107,11 +107,15 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
       final limitStatus = await LimitService.instance.checkLimit('cosmic_oracle');
       if (mounted) {
         setState(() {
-          _history = history;
           _limitStatus = limitStatus;
           _isLoadingHistory = false;
+          if (_isFirstLoad || setLatestActive) {
+            _isFirstLoad = false;
+            if (history.isNotEmpty) {
+              _activeQA = history.first;
+            }
+          }
         });
-        _scrollToBottom(delayMs: 200);
       }
     } catch (_) {
       if (mounted) {
@@ -120,18 +124,6 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
         });
       }
     }
-  }
-
-  void _scrollToBottom({int delayMs = 100}) {
-    Future.delayed(Duration(milliseconds: delayMs), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
   }
 
   Future<void> _submitQuestion() async {
@@ -163,24 +155,12 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
 
     setState(() {
       _isGenerating = true;
+      _pendingQuestion = questionText;
+      _activeQA = null;
     });
 
     _questionController.clear();
     _focusNode.unfocus();
-
-    // Geçici olarak soruyu ekrana ekle (AskedAt: now)
-    final tempEntry = {
-      'question': questionText,
-      'answerTr': '',
-      'answerEn': '',
-      'askedAt': DateTime.now(),
-      'isTemp': true, // Yükleniyor durumunu görselleştirmek için
-    };
-
-    setState(() {
-      _history.insert(0, tempEntry); // En son soru en altta kalacak şekilde ters sıralı history listesinden dolayı ekle
-      _scrollToBottom();
-    });
 
     try {
       // Doğum haritası bilgilerini Firestore'dan çekelim
@@ -204,10 +184,11 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
       if (result != null && mounted) {
         await LimitService.instance.registerCalculation('cosmic_oracle');
         // Firestore'dan limitleri ve geçmişi yeniden çek
-        await _loadHistoryData();
+        await _loadHistoryData(setLatestActive: true);
         if (mounted) {
           setState(() {
             _isGenerating = false;
+            _pendingQuestion = null;
           });
         }
       } else {
@@ -221,8 +202,9 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
   void _handleError(bool isTr) {
     if (mounted) {
       setState(() {
-        _history.removeWhere((item) => item['isTemp'] == true);
         _isGenerating = false;
+        _pendingQuestion = null;
+        _activeQA = null;
       });
       CustomToast.show(
         context,
@@ -239,7 +221,6 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
     final user = ref.watch(userProvider);
     final isPremium = user?.isAnyPremium ?? false;
     final bool isLocked = _limitStatus == LimitStatus.locked;
-    final bool needRewardedAd = _limitStatus == LimitStatus.needAd;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -278,7 +259,7 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
                                   ? (isTr ? 'Tüm limitler kaldırıldı.' : 'All limits removed.')
                                   : isLocked
                                       ? (isTr ? 'Bugünlük limitiniz doldu. Gece 04:00\'de yenilenir.' : 'Daily limit reached. Resets at 04:00 AM.')
-                                      : needRewardedAd
+                                      : _limitStatus == LimitStatus.needAd
                                           ? (isTr ? 'Kilit açmak için ödüllü reklam izleyin.' : 'Watch ad to unlock daily query.')
                                           : (isTr ? 'Bugünkü ücretsiz soru hakkınız aktif.' : 'Your free daily query is active.'),
                               style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 9.5),
@@ -317,26 +298,157 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
                 ),
               ),
 
-              // 2. Chat / Mesaj Geçmişi Alanı
+              // 2. Ana İçerik Alanı
               Expanded(
                 child: _isLoadingHistory
                     ? const Center(
                         child: CircularProgressIndicator(color: AppColors.primaryGold),
                       )
-                    : _history.isEmpty
-                        ? _buildWelcomeState(isTr)
-                        : _buildChatList(isTr),
+                    : _buildMainContent(isTr),
               ),
 
               // Reklam Banner'ı
               AdService.instance.getBannerAdWidget('cosmic_oracle_banner', isPremium: isPremium),
 
-              // 3. Soru Giriş Alanı
-              _buildInputArea(isTr, user),
+              // 3. Soru Giriş Alanı veya Yeni Soru Sor Butonu
+              _isGenerating
+                  ? const SizedBox.shrink()
+                  : _activeQA != null
+                      ? _buildNewQuestionButton(isTr)
+                      : _buildInputArea(isTr, user),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMainContent(bool isTr) {
+    if (_isGenerating) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildQuestionCard(_pendingQuestion ?? ''),
+            const SizedBox(height: 16),
+            _buildThinkingBubble(isTr),
+          ],
+        ),
+      );
+    }
+
+    if (_activeQA != null) {
+      final String question = _activeQA!['question'] ?? '';
+      final String answer = isTr
+          ? (_activeQA!['answerTr'] ?? '')
+          : (_activeQA!['answerEn'] ?? '');
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildQuestionCard(question),
+            const SizedBox(height: 16),
+            _buildAnswerCard(isTr, answer),
+          ],
+        ),
+      );
+    }
+
+    return _buildWelcomeState(isTr);
+  }
+
+  Widget _buildQuestionCard(String question) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        margin: const EdgeInsets.only(left: 48, bottom: 4, top: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.deepPurple.withValues(alpha: 0.25),
+              Colors.indigo.withValues(alpha: 0.2),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+            bottomLeft: Radius.circular(16),
+          ),
+          border: Border.all(color: Colors.deepPurpleAccent.withValues(alpha: 0.3)),
+        ),
+        child: Text(
+          question,
+          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
+        ),
+      ),
+    ).animate().fade(duration: 300.ms).slideX(begin: 0.05);
+  }
+
+  Widget _buildAnswerCard(bool isTr, String answer) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(right: 48, bottom: 12, top: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.cardSurface.withValues(alpha: 0.8),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+            bottomRight: Radius.circular(16),
+          ),
+          border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.25)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.auto_awesome_rounded, color: AppColors.primaryGold, size: 14),
+                const SizedBox(width: 6),
+                Text(
+                  isTr ? 'Kâhin' : 'Oracle',
+                  style: AppTextStyles.caption.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryGold,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+            Divider(color: AppColors.borderLight),
+            Text(
+              answer,
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary, height: 1.5),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fade(duration: 400.ms).slideX(begin: -0.05);
+  }
+
+  Widget _buildNewQuestionButton(bool isTr) {
+    return Container(
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 20),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface.withValues(alpha: 0.65),
+        border: Border(top: BorderSide(color: AppColors.borderLight)),
+      ),
+      child: GradientButton(
+        height: 48,
+        text: isTr ? 'Yeni Soru Sor 🔮' : 'Ask Another Question 🔮',
+        onTap: () {
+          setState(() {
+            _activeQA = null;
+            _questionController.clear();
+          });
+          HapticFeedback.lightImpact();
+        },
+      ).animate().fade(duration: 300.ms).scale(curve: Curves.easeOutBack),
     );
   }
 
@@ -375,127 +487,6 @@ class _CosmicOracleScreenState extends ConsumerState<CosmicOracleScreen> {
     );
   }
 
-  // Chat Listesi
-  Widget _buildChatList(bool isTr) {
-    // History listemiz Firestore'dan en yeni en üstte olacak şekilde geliyor (sort by askedAt desc).
-    // Ancak sohbet akışı için en eski en üstte, en yeni en altta olmalıdır.
-    final chatItems = List<Map<String, dynamic>>.from(_history.reversed);
-
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: chatItems.length + (_isGenerating ? 1 : 0),
-      itemBuilder: (context, index) {
-        // En sondaki kâhin düşünüyor animasyonu
-        if (index == chatItems.length) {
-          return _buildThinkingBubble(isTr);
-        }
-
-        final item = chatItems[index];
-        final isTemp = item['isTemp'] == true;
-        final String question = item['question'] ?? '';
-        final String answer = isTr
-            ? (item['answerTr'] ?? '')
-            : (item['answerEn'] ?? '');
-        final askedAt = item['askedAt'] != null
-            ? (item['askedAt'] is Timestamp
-                ? (item['askedAt'] as Timestamp).toDate()
-                : item['askedAt'] as DateTime)
-            : DateTime.now();
-
-        final String timeStr = DateFormat('HH:mm').format(askedAt);
-
-        return Column(
-          children: [
-            // Kullanıcı Sorusu
-            Align(
-              alignment: Alignment.centerRight,
-              child: Container(
-                margin: const EdgeInsets.only(left: 48, bottom: 4, top: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.deepPurple.withValues(alpha: 0.25),
-                      Colors.indigo.withValues(alpha: 0.2),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                  ),
-                  border: Border.all(color: Colors.deepPurpleAccent.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      question,
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      timeStr,
-                      style: AppTextStyles.caption.copyWith(fontSize: 8, color: AppColors.textSecondary),
-                    ),
-                  ],
-                ),
-              ),
-            ).animate().fade(duration: 300.ms).slideX(begin: 0.05),
-
-            // Kâhin Cevabı
-            if (isTemp)
-              const SizedBox.shrink()
-            else if (answer.isNotEmpty)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  margin: const EdgeInsets.only(right: 48, bottom: 12, top: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardSurface.withValues(alpha: 0.8),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                      bottomRight: Radius.circular(16),
-                    ),
-                    border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.25)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.auto_awesome_rounded, color: AppColors.primaryGold, size: 14),
-                          const SizedBox(width: 6),
-                          Text(
-                            isTr ? 'Kâhin' : 'Oracle',
-                            style: AppTextStyles.caption.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryGold,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Divider(color: AppColors.borderLight),
-                      Text(
-                        answer,
-                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary, height: 1.5),
-                      ),
-                    ],
-                  ),
-                ),
-              ).animate().fade(duration: 400.ms).slideX(begin: -0.05),
-          ],
-        );
-      },
-    );
-  }
 
   // Düşünüyor Baloncuğu
   Widget _buildThinkingBubble(bool isTr) {

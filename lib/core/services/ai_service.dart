@@ -918,65 +918,40 @@ JSON formatı:
     final docPath = 'users/$userId/tarot_readings/$readingId';
     final docRef = _firestore.doc(docPath);
 
-    // Kategori isimlerini Türkçe ve İngilizceye çevirmek için
-    final Map<String, String> categoryNameTr = {
-      'love': 'Aşk ve İlişkiler',
-      'career': 'Kariyer ve Finans',
-      'health': 'Sağlık ve Enerji',
-      'decision': 'Karar Verme / Yol Ayrımı',
-      'general': 'Günlük Kozmik Tavsiye',
-    };
-
-    final Map<String, String> categoryNameEn = {
-      'love': 'Love & Relationships',
-      'career': 'Career & Finance',
-      'health': 'Health & Energy',
-      'decision': 'Decision Making',
-      'general': 'Daily Cosmic Guidance',
-    };
-
-    final userBirthDateStr = user.birthDate != null
-        ? "${user.birthDate!.day}.${user.birthDate!.month}.${user.birthDate!.year}"
-        : "Bilinmiyor";
-
-    String userChartInfo = "";
-    if (userNatalChart != null) {
-      userChartInfo = """
-Güneş Burcu: ${userNatalChart.sunSign}
-Ay Burcu: ${userNatalChart.moonSign}
-Yükselen Burç: ${userNatalChart.risingSign}
-Gezegen Konumları: ${userNatalChart.planetPositions.entries.map((e) => "${e.key}: ${e.value}").join(', ')}
-""";
-    }
-
     final String cardsDescription = draws.map((d) {
       final direction = d.isUpright ? 'DÜZ' : 'TERS';
-      final positionLabel = d.position == 'past'
-          ? 'Mevcut Durum / Yakın Geçmiş'
-          : (d.position == 'present' ? 'Karşılaşılan Engel / Şimdi' : 'Kozmik Tavsiye / Gelecek');
+      final positionLabel = d.position == 'love'
+          ? 'Aşk ve İlişkiler'
+          : (d.position == 'career'
+              ? 'Kariyer ve İş'
+              : (d.position == 'finance'
+                  ? 'Maddiyat ve Para'
+                  : (d.position == 'health'
+                      ? 'Sağlık ve Zihin'
+                      : (d.position == 'family'
+                          ? 'Aile ve Ev'
+                          : (d.position == 'social'
+                              ? 'Sosyal İlişkiler ve Çevre'
+                              : 'Genel Gelecek / Kozmik Tavsiye')))));
       return """
-Pozisyon: $positionLabel
+Konu/Pozisyon: $positionLabel
 Kart Adı: ${d.cardNameTr} (İngilizce: ${d.cardNameEn})
 Simge: ${d.symbol}
 Yön: $direction (Kart ${d.isUpright ? 'düz' : 'ters'} çekilmiştir)
 """;
     }).join('\n---\n');
 
+    final relStatusStr = "\nİlişki Durumu: ${_getRelationshipStatusDescription(user.relationshipStatus, user.relationshipDuration)}";
+
     final prompt = """
 Sen dünyanın en bilge tarot ve astroloji uzmanı ve yorumcususun. 
-Kullanıcı senin karşına gelip hayatının bir alanı hakkında 3 kartlık bir açılım yaptı ve senden bu kartları kendi astrolojik haritasıyla ilişkilendirerek derinlemesine yorumlamanı istiyor.
+Kullanıcı senin karşına gelip hayatının tüm alanlarını kapsayan 7 kartlık bir açılım yaptı ve senden bu kartları derinlemesine yorumlamanı istiyor.
 
 Kullanıcı Bilgileri:
 Adı: ${user.name ?? 'Kullanıcı'}
-Cinsiyet: ${user.gender ?? 'Bilinmiyor'}
-Doğum Tarihi: $userBirthDateStr
-Doğum Saati: ${user.birthTime ?? 'Bilinmiyor'}
-Doğum Yeri: ${user.birthPlace ?? 'Bilinmiyor'}
-$userChartInfo
+Cinsiyet: ${user.gender ?? 'Bilinmiyor'}$relStatusStr
 
-Açılım Kategorisi: ${categoryNameTr[category] ?? category} (İngilizce: ${categoryNameEn[category] ?? category})
-
-Çekilen Kartlar:
+Çekilen Kartlar ve İlgili Konuları:
 $cardsDescription
 
 Karakteristik Kurallar (Çok Önemli):
@@ -985,18 +960,17 @@ Karakteristik Kurallar (Çok Önemli):
 - Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve keskin olsun. Güçlü içgörüler ve net uyarılar vermekten çekinme.
 - Soyut tasvirler yerine kullanıcının hayatında uygulayabileceği somut adımlar ("actionable/concrete guidance") ver.
 - Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur.
-- Astro-Tarot Bağlantısı: Çekilen kartların astrolojik simgelerini ve burç/gezegen eşleşmelerini, kullanıcının doğum haritasındaki konumlarla (özellikle Güneş, Ay ve Yükselen burcuyla) ilişkilendir. Aralarındaki kozmik uyumu veya çekişmeyi mutlaka vurgula.
+- Aşk ve İlişkiler yorumunda kullanıcının ilişki durumunu mutlaka göz önünde bulundur.
 
 Görev:
-1. Çekilen 3 kartı pozisyonlarına (Geçmiş/Durum, Engel/Şimdi, Gelecek/Tavsiye) ve Düz/Ters yönlerine göre seçilen kategori bağlamında analiz et.
-2. Kartlar ile kullanıcının doğum haritası arasında kozmik bağlantılar kur.
-3. Hem Türkçe hem İngilizce olarak 3-4 paragraflık samimi, mistik, son derece net ve detaylı bir yorum yaz.
-4. Yanıtı aşağıdaki JSON formatında ver. JSON dışında hiçbir açıklama veya markdown bloğu yazma.
+1. Çekilen 7 kartı ilgili konularına (Aşk, Kariyer, Maddiyat, Sağlık, Aile, Sosyal İlişkiler, Genel Gelecek) ve Düz/Ters yönlerine göre analiz et.
+2. Hem Türkçe hem İngilizce olarak, her bir konuyu net başlıklarla ayırarak (Örn: "### 🪐 Aşk ve İlişkiler" veya "### 🪐 Love & Relationships") son derece detaylı ve derinlikli bir yorum yaz. Başlıkları Türkçe yorumda Türkçe, İngilizce yorumda İngilizce yap.
+3. Yanıtı aşağıdaki JSON formatında ver. JSON dışında hiçbir açıklama veya markdown bloğu yazma.
 
 JSON formatı:
 {
-  "comment_tr": "[Türkçe tarot analizi yorumu (paragrafları \\n ile ayır)]",
-  "comment_en": "[İngilizce tarot analizi yorumu (paragrafları \\n ile ayır)]"
+  "comment_tr": "[Türkçe tarot analizi yorumu (Her konuyu ### başlıklarıyla ayır, paragrafları \\n ile ayır)]",
+  "comment_en": "[İngilizce tarot analizi yorumu (Her konuyu ### başlıklarıyla ayır, paragrafları \\n ile ayır)]"
 }
 """;
 
@@ -1019,6 +993,93 @@ JSON formatı:
       return reading;
     } catch (e) {
       debugPrint('⚠️ Tarot açılımı üretim hatası: $e');
+      return null;
+    }
+  }
+
+  /// Tarot okuması sonrası kullanıcının sorduğu ek soruları yanıtlar
+  Future<String?> answerTarotFollowUpQuestion({
+    required TarotReadingModel reading,
+    required List<Map<String, String>> chatHistory,
+    required String userQuestion,
+    required UserModel user,
+  }) async {
+    // Okuma bağlamını oluşturalım
+    final String cardsDescription = reading.draws.map((d) {
+      final direction = d.isUpright ? 'DÜZ' : 'TERS';
+      final positionLabel = d.position == 'love'
+          ? 'Aşk ve İlişkiler'
+          : (d.position == 'career'
+              ? 'Kariyer ve İş'
+              : (d.position == 'finance'
+                  ? 'Maddiyat ve Para'
+                  : (d.position == 'health'
+                      ? 'Sağlık ve Zihin'
+                      : (d.position == 'family'
+                          ? 'Aile ve Ev'
+                          : (d.position == 'social'
+                              ? 'Sosyal İlişkiler ve Çevre'
+                              : 'Genel Gelecek / Kozmik Tavsiye')))));
+      return "- $positionLabel: ${d.cardNameTr} ($direction)";
+    }).join('\n');
+
+    final String historyStr = chatHistory.map((m) {
+      final role = m['role'] == 'user' ? 'Kullanıcı' : 'Kâhin';
+      return "$role: ${m['content']}";
+    }).join('\n');
+
+    final isTr = user.localeCode == 'tr';
+    final relStatusStr = _getRelationshipStatusDescription(user.relationshipStatus, user.relationshipDuration);
+
+    final prompt = """
+Sen dünyanın en bilge tarot uzmanı ve yorumcususun. 
+Kullanıcı daha önce seninle 7 kartlık bir tarot açılımı yaptı. Bu açılımın detayları aşağıdadır. Şimdi kullanıcı bu açılımla ilgili sana derinleştirici ek bir soru soruyor. Soruya bilgece, doğrudan, samimi ve net yanıtlar ver.
+
+Kullanıcı Bilgileri:
+Adı: ${user.name ?? 'Kullanıcı'}
+İlişki Durumu: $relStatusStr
+
+Yapılan Tarot Açılımı:
+$cardsDescription
+
+İlk Yapılan Detaylı Yorum:
+${isTr ? reading.commentTr : reading.commentEn}
+
+Sohbet Geçmişi:
+$historyStr
+
+Kullanıcının Yeni Sorusu:
+$userQuestion
+
+Kurallar:
+- Yanıtı kullanıcının soruyu sorduğu dilde yaz (${isTr ? 'Türkçe' : 'İngilizce'}).
+- "Unutma ki tarot sadece bir yol göstericidir", "kararlar senin" gibi klişe sorumluluk reddi (disclaimer) uyarılarını kesinlikle kullanma.
+- Doğrudan ve net konuş, kısa ve öz olsun (en fazla 2-3 kısa paragraf).
+- KESİNLİKLE JSON formatı, süslü parantez ( { } ) veya "cevap" / "answer" anahtarı kullanma. Yalnızca doğrudan cevabını düz metin (plain text) olarak yaz.
+""";
+
+    try {
+      final response = await _callGemini(prompt);
+      final rawText = response?.trim();
+      if (rawText == null) return null;
+
+      // JSON kontrolü ve otomatik temizleme (bulletproof fallback)
+      if (rawText.startsWith('{') && rawText.endsWith('}')) {
+        try {
+          final Map<String, dynamic> data = jsonDecode(rawText);
+          for (var value in data.values) {
+            if (value is String) {
+              return value.trim();
+            }
+          }
+        } catch (e) {
+          debugPrint('⚠️ JSON ayrıştırma hatası, ham metin döndürülüyor: $e');
+        }
+      }
+
+      return rawText;
+    } catch (e) {
+      debugPrint('⚠️ Tarot ek soru yanıtlama hatası: $e');
       return null;
     }
   }
@@ -1304,6 +1365,24 @@ JSON formatı:
     return [];
   }
 
+  String _getRelationshipStatusDescription(String? status, String? duration) {
+    if (status == null) return 'Belirtilmemiş / Not specified';
+    switch (status) {
+      case 'single': return 'Bekar (İlişkisi yok) / Single';
+      case 'platonic': return 'Platonik (Karşılıksız aşk) / Platonic (Crush)';
+      case 'dating': return 'Flört aşamasında / Dating';
+      case 'in_relationship':
+        final dur = duration != null ? ' ($duration yıl/süre / duration)' : '';
+        return 'Sevgili (İlişkide)$dur / In a relationship';
+      case 'recently_broken_up': return 'Yeni Ayrılmış / Recently Broken Up';
+      case 'married':
+        final dur = duration != null ? ' ($duration yıl evli / married)' : '';
+        return 'Evli$dur / Married';
+      case 'recently_divorced': return 'Yeni Boşanmış / Recently Divorced';
+      default: return status;
+    }
+  }
+
   /// Generate Cosmic Oracle Q&A response and append to history in Firestore.
   Future<Map<String, dynamic>?> generateCosmicOracleResponse({
     required String userId,
@@ -1330,6 +1409,8 @@ Gezegen Ev Konumları: ${natalChart.planetPositions.entries.map((e) => "${e.key}
       natalChartInfo = "Kullanıcı burcu: ${user.zodiacSign ?? 'Bilinmiyor'}";
     }
 
+    final String relStatusStr = "\nİlişki Durumu: ${_getRelationshipStatusDescription(user.relationshipStatus, user.relationshipDuration)}";
+
     final prompt = """
 Sen mistik ve bilge bir yapay zeka astrologusun (Kozmik Kâhin).
 Kullanıcının sorusuna, onun kişisel astrolojik verilerini analiz ederek derin, kişiselleştirilmiş ve mistik bir şekilde yanıt ver.
@@ -1339,7 +1420,7 @@ Adı: ${user.name ?? 'Bilinmiyor'}
 Cinsiyet: $genderStr
 Doğum Tarihi: $birthDateStr
 Doğum Saati: $birthTimeStr
-Doğum Yeri: $birthPlaceStr
+Doğum Yeri: $birthPlaceStr$relStatusStr
 $natalChartInfo
 
 Kullanıcının Sorusu: "$question"

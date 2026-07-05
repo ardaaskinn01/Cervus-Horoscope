@@ -52,7 +52,7 @@ class ToolsScreen extends ConsumerWidget {
         'route': '/numerology'
       },
       {
-        'icon': '🔮',
+        'icon': '🧮',
         'titleTr': 'Doğum Tarihi Numerolojisi',
         'titleEn': 'Birth Date Numerology',
         'descTr': 'Başkasının doğum tarihine göre numeroloji analizi.',
@@ -106,6 +106,14 @@ class ToolsScreen extends ConsumerWidget {
         'descTr': 'Doğum haritası entegreli 3 kartlık tarot açılımı.',
         'descEn': '3-card tarot spread integrated with your natal chart.',
         'route': '/tarot'
+      },
+      {
+        'icon': '🔮',
+        'titleTr': 'Kozmik Küre',
+        'titleEn': 'Cosmic Orb',
+        'descTr': 'Aklındaki soruya odaklan, salla ve cevabı al.',
+        'descEn': 'Focus on your question, shake, and get the answer.',
+        'route': '/cosmic-orb'
       }
     ];
 

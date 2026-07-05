@@ -164,6 +164,8 @@ class UserNotifier extends Notifier<UserModel?> {
     String? birthPlace,
     String? gender,
     String? zodiacSign,
+    String? relationshipStatus,
+    String? relationshipDuration,
   }) async {
     final currentProfile = state ?? UserModel(
       uid: 'offline_anonymous',
@@ -244,6 +246,11 @@ class UserNotifier extends Notifier<UserModel?> {
     final bool isMainDetailsChanged = isNameChanged || isGenderChanged || isBirthPlaceChanged || isBirthDateChanged;
     final bool birthDetailsChanged = isMainDetailsChanged || isTimeChanged;
 
+    final String? statusToUse = relationshipStatus ?? currentProfile.relationshipStatus;
+    final bool clearDuration = relationshipStatus != null &&
+        statusToUse != 'in_relationship' &&
+        statusToUse != 'married';
+
     final updated = currentProfile.copyWith(
       name: name,
       birthDate: mergedBirthDate,
@@ -251,6 +258,9 @@ class UserNotifier extends Notifier<UserModel?> {
       birthPlace: birthPlace,
       gender: gender,
       zodiacSign: zodiacSign,
+      relationshipStatus: relationshipStatus,
+      relationshipDuration: clearDuration ? null : (relationshipDuration ?? currentProfile.relationshipDuration),
+      clearRelationshipDuration: clearDuration,
       profileChangeCount: (isMainDetailsChanged && !isInitialSetup)
           ? currentProfile.profileChangeCount + 1
           : currentProfile.profileChangeCount,

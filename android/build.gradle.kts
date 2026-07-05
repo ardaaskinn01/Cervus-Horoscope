@@ -14,6 +14,28 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+    val configureProject = {
+        val extension = project.extensions.findByName("android")
+        if (extension != null) {
+            val baseExtension = extension as? com.android.build.gradle.BaseExtension
+            baseExtension?.apply {
+                defaultConfig {
+                    externalNativeBuild {
+                        cmake {
+                            arguments("-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384")
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (project.state.executed) {
+        configureProject()
+    } else {
+        project.afterEvaluate {
+            configureProject()
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {

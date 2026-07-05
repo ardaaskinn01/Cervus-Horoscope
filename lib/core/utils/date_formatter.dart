@@ -22,6 +22,11 @@ class DateTextInputFormatter extends TextInputFormatter {
       buffer.write(digitsOnly[i]);
     }
 
+    // If the user manually typed a dot at a valid boundary (after 2 or 4 digits), ensure it is preserved.
+    if (newValue.text.endsWith('.') && (digitsOnly.length == 2 || digitsOnly.length == 4)) {
+      buffer.write('.');
+    }
+
     var string = buffer.toString();
     if (string.length > 10) {
       string = string.substring(0, 10);

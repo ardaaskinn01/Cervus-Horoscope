@@ -531,6 +531,26 @@ class PremiumDialogHelper {
                           ),
                         ),
                       ],
+                      // 1 Hafta Ücretsiz Deneme Rozeti (Sadece Pro Aylık paketi için)
+                      if (!isProPlus && isMonthly) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.4), width: 0.6),
+                          ),
+                          child: Text(
+                            isTr ? "1 HAFTA ÜCRETSİZ" : "1 WEEK TRIAL",
+                            style: AppTextStyles.caption.copyWith(
+                              color: Colors.greenAccent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 7.5,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -538,7 +558,9 @@ class PremiumDialogHelper {
                     package.storeProduct.description.isNotEmpty
                         ? package.storeProduct.description
                         : (isMonthly
-                            ? (isTr ? "Aylık yenilenen abonelik" : "Monthly auto-renewing subscription")
+                            ? (isTr 
+                                ? (!isProPlus ? "1 hafta ücretsiz deneme, ardından aylık yenilenir" : "Aylık yenilenen abonelik")
+                                : (!isProPlus ? "1-week free trial, then monthly auto-renewing" : "Monthly auto-renewing subscription"))
                             : (isAnnual
                                 ? (isTr ? "Yıllık yenilenen abonelik" : "Yearly auto-renewing subscription")
                                 : (isTr ? "Tek seferlik ödeme" : "One-time payment"))),

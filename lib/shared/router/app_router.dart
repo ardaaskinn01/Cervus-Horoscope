@@ -13,6 +13,7 @@ import 'package:horoscope/features/tools/numerology/numerology_screen.dart';
 import 'package:horoscope/features/tools/numerology/partner_numerology_screen.dart';
 import 'package:horoscope/features/tools/partner_natal_chart/partner_natal_chart_screen.dart';
 import 'package:horoscope/features/tools/cosmic_oracle/cosmic_oracle_screen.dart';
+import 'package:horoscope/features/tools/cosmic_orb/cosmic_orb_screen.dart';
 import 'package:horoscope/features/tarot/tarot_screen.dart';
 
 class AppRouter {
@@ -110,6 +111,11 @@ class AppRouter {
       GoRoute(
         path: '/tarot',
         pageBuilder: (context, state) => _buildPageWithTransition(state, const TarotScreen()),
+      ),
+      // Cosmic Orb
+      GoRoute(
+        path: '/cosmic-orb',
+        pageBuilder: (context, state) => _buildPageWithTransition(state, const CosmicOrbScreen()),
       ),
     ],
   );

@@ -35,6 +35,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   TimeOfDay? _birthTime;
   bool _knowsBirthTime = true;
   String _birthPlace = 'İstanbul';
+  String? _relationshipStatus;
+  String? _relationshipDuration;
 
   @override
   void dispose() {
@@ -44,7 +46,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage < 3) {
+    if (_currentPage < 4) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
@@ -100,6 +102,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       birthPlace: _birthPlace,
       gender: _gender,
       zodiacSign: _zodiacSign,
+      relationshipStatus: _relationshipStatus,
+      relationshipDuration: _relationshipDuration,
     );
 
     // Onboarding bitti flagini işaretle
@@ -123,7 +127,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
                   child: Row(
-                    children: List.generate(4, (index) {
+                    children: List.generate(5, (index) {
                       final isCompleted = index <= _currentPage;
                       return Expanded(
                         child: Container(
@@ -153,6 +157,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       _buildLanguageStep(),
                       _buildWelcomeStep(),
                       _buildProfileStep(),
+                      _buildRelationshipStep(),
                       _buildZodiacStep(),
                     ],
                   ),
@@ -606,7 +611,173 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  // Adım 3: Burç Gösterimi (Zodiac Reveal)
+  // Adım 3: İlişki Durumu
+  Widget _buildRelationshipStep() {
+    final isTurkish = ref.watch(languageProvider).languageCode == 'tr';
+    
+    final List<Map<String, String>> statuses = [
+      {'key': 'single', 'tr': 'Bekar', 'en': 'Single'},
+      {'key': 'platonic', 'tr': 'Platonik', 'en': 'Platonic / Crush'},
+      {'key': 'dating', 'tr': 'Flört', 'en': 'Dating'},
+      {'key': 'in_relationship', 'tr': 'Sevgili', 'en': 'In Relationship'},
+      {'key': 'recently_broken_up', 'tr': 'Yeni Ayrılmış', 'en': 'Recently Broken Up'},
+      {'key': 'married', 'tr': 'Evli', 'en': 'Married'},
+      {'key': 'recently_divorced', 'tr': 'Yeni Boşanmış', 'en': 'Recently Divorced'},
+    ];
+
+    final List<Map<String, String>> relationshipDurations = [
+      {'key': '0-1', 'tr': '0-1 yıl', 'en': '0-1 year'},
+      {'key': '1-3', 'tr': '1-3 yıl', 'en': '1-3 years'},
+      {'key': '3+', 'tr': '3+ yıl', 'en': '3+ years'},
+    ];
+
+    final List<Map<String, String>> marriageDurations = [
+      {'key': '0-3', 'tr': '0-3 yıl', 'en': '0-3 years'},
+      {'key': '3-7', 'tr': '3-7 yıl', 'en': '3-7 years'},
+      {'key': '7+', 'tr': '7+ yıl', 'en': '7+ years'},
+    ];
+
+    final bool isNextEnabled = _relationshipStatus != null &&
+        ((_relationshipStatus != 'in_relationship' && _relationshipStatus != 'married') ||
+            _relationshipDuration != null);
+
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isTurkish ? 'İlişki Durumun Nedir?' : 'What is Your Relationship Status?',
+            style: AppTextStyles.h2,
+          ).animate().fade(),
+          const SizedBox(height: 8),
+          Text(
+            isTurkish 
+                ? 'Sana özel aşk ve ilişki yorumları yapabilmemiz için ilişki durumunu seç.'
+                : 'Select your status for personalized love and relationship guidance.',
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          ).animate().fade(delay: 100.ms),
+          const SizedBox(height: 24),
+          
+          ...statuses.map((status) {
+            final isSelected = _relationshipStatus == status['key'];
+            final showDuration = isSelected && (status['key'] == 'in_relationship' || status['key'] == 'married');
+            
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _relationshipStatus = status['key'];
+                        _relationshipDuration = null;
+                      });
+                    },
+                    child: GlassCard(
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                      border: Border.all(
+                        color: isSelected ? AppColors.primaryGold : AppColors.borderLight,
+                        width: isSelected ? 1.5 : 1.0,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            isTurkish ? status['tr']! : status['en']!,
+                            style: AppTextStyles.label.copyWith(
+                              color: isSelected ? AppColors.primaryGold : AppColors.textPrimary,
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(Icons.check_circle_rounded, color: AppColors.primaryGold, size: 20)
+                          else
+                            Icon(Icons.circle_outlined, color: AppColors.textSecondary.withValues(alpha: 0.5), size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                
+                if (showDuration) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isTurkish ? 'İlişki Süresi' : 'Relationship Duration',
+                          style: AppTextStyles.caption.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: (status['key'] == 'in_relationship' ? relationshipDurations : marriageDurations).map((dur) {
+                            final isDurSelected = _relationshipDuration == dur['key'];
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _relationshipDuration = dur['key'];
+                                  });
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                                  padding: const EdgeInsets.symmetric(vertical: 10.0),
+                                  decoration: BoxDecoration(
+                                    color: isDurSelected ? AppColors.primaryGold.withValues(alpha: 0.15) : AppColors.cardSurface.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: isDurSelected ? AppColors.primaryGold : AppColors.borderLight,
+                                      width: isDurSelected ? 1.2 : 0.8,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      isTurkish ? dur['tr']! : dur['en']!,
+                                      style: AppTextStyles.caption.copyWith(
+                                        fontWeight: isDurSelected ? FontWeight.bold : FontWeight.normal,
+                                        color: isDurSelected ? AppColors.primaryGold : AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            );
+          }),
+          
+          const SizedBox(height: 24),
+          
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primaryGold),
+                onPressed: _previousPage,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: GradientButton(
+                  text: context.translate('onboarding_next'),
+                  onTap: isNextEnabled ? _nextPage : () {},
+                  isLoading: false,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Adım 4: Burç Gösterimi (Zodiac Reveal)
   Widget _buildZodiacStep() {
     final isTurkish = ref.watch(languageProvider).languageCode == 'tr';
     final sign = _zodiacSign;

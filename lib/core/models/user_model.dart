@@ -14,6 +14,8 @@ class UserModel {
   final bool isPremium;
   final bool isPro;
   final int profileChangeCount;
+  final String? relationshipStatus;
+  final String? relationshipDuration;
 
   UserModel({
     required this.uid,
@@ -28,6 +30,8 @@ class UserModel {
     this.isPremium = false,
     this.isPro = false,
     this.profileChangeCount = 0,
+    this.relationshipStatus,
+    this.relationshipDuration,
   });
 
   bool get isAnyPremium => isPremium || isPro;
@@ -45,6 +49,9 @@ class UserModel {
     bool? isPremium,
     bool? isPro,
     int? profileChangeCount,
+    String? relationshipStatus,
+    String? relationshipDuration,
+    bool clearRelationshipDuration = false,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -59,6 +66,8 @@ class UserModel {
       isPremium: isPremium ?? this.isPremium,
       isPro: isPro ?? this.isPro,
       profileChangeCount: profileChangeCount ?? this.profileChangeCount,
+      relationshipStatus: relationshipStatus ?? this.relationshipStatus,
+      relationshipDuration: clearRelationshipDuration ? null : (relationshipDuration ?? this.relationshipDuration),
     );
   }
 
@@ -76,6 +85,8 @@ class UserModel {
       'isPremium': isPremium,
       'isPro': isPro,
       'profileChangeCount': profileChangeCount,
+      'relationshipStatus': relationshipStatus,
+      'relationshipDuration': relationshipDuration,
     };
   }
 
@@ -93,6 +104,8 @@ class UserModel {
       'isPremium': isPremium,
       'isPro': isPro,
       'profileChangeCount': profileChangeCount,
+      'relationshipStatus': relationshipStatus,
+      'relationshipDuration': relationshipDuration,
     };
   }
 
@@ -139,6 +152,8 @@ class UserModel {
       isPremium: map['isPremium'] ?? false,
       isPro: map['isPro'] ?? false,
       profileChangeCount: map['profileChangeCount'] ?? 0,
+      relationshipStatus: map['relationshipStatus'],
+      relationshipDuration: map['relationshipDuration'],
     );
   }
 }

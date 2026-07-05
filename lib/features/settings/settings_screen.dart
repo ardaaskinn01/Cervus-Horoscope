@@ -11,7 +11,6 @@ import 'package:horoscope/core/constants/app_colors.dart';
 import 'package:horoscope/core/constants/app_text_styles.dart';
 import 'package:horoscope/core/providers/user_provider.dart';
 import 'package:horoscope/core/providers/language_provider.dart';
-import 'package:horoscope/core/providers/theme_provider.dart';
 import 'package:horoscope/core/providers/navigation_provider.dart';
 import 'package:horoscope/core/services/notification_service.dart';
 import 'package:horoscope/core/utils/astrology_utils.dart';
@@ -38,12 +37,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   DateTime? _birthDate;
   String? _birthTime;
   String? _gender;
+  String? _relationshipStatus;
+  String? _relationshipDuration;
   
   bool _isProfileEditing = false;
   bool _isSavingProfile = false;
 
   // Bildirim Alanları
-  bool _dailyNotificationEnabled = true;
   bool _fullMoonNotificationEnabled = true;
 
   // Uygulama Bilgileri
@@ -81,7 +81,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       _birthTime = user.birthTime;
       _timeController.text = user.birthTime ?? '';
       _gender = user.gender;
+      _relationshipStatus = user.relationshipStatus;
+      _relationshipDuration = user.relationshipDuration;
     }
+  }
+
+  String _getRelationshipStatusText(String? status, String? duration, bool isTr) {
+    if (status == null) return isTr ? 'Belirtilmemiş' : 'Not set';
+    switch (status) {
+      case 'single': return isTr ? 'Bekar' : 'Single';
+      case 'platonic': return isTr ? 'Platonik' : 'Platonic';
+      case 'dating': return isTr ? 'Flörtteler' : 'Dating';
+      case 'in_relationship':
+        final durStr = duration != null ? _getDurationText(duration, status, isTr) : '';
+        return isTr ? 'Sevgili ${durStr.isNotEmpty ? "($durStr)" : ""}' : 'In Relationship ${durStr.isNotEmpty ? "($durStr)" : ""}';
+      case 'recently_broken_up': return isTr ? 'Yeni Ayrılmış' : 'Recently Broken Up';
+      case 'married':
+        final durStr = duration != null ? _getDurationText(duration, status, isTr) : '';
+        return isTr ? 'Evli ${durStr.isNotEmpty ? "($durStr)" : ""}' : 'Married ${durStr.isNotEmpty ? "($durStr)" : ""}';
+      case 'recently_divorced': return isTr ? 'Yeni Boşanmış' : 'Recently Divorced';
+      default: return status;
+    }
+  }
+
+  String _getDurationText(String duration, String status, bool isTr) {
+    if (status == 'in_relationship') {
+      switch (duration) {
+        case '0-1': return isTr ? '0-1 yıl' : '0-1 year';
+        case '1-3': return isTr ? '1-3 yıl' : '1-3 years';
+        case '3+': return isTr ? '3+ yıl' : '3+ years';
+        default: return duration;
+      }
+    } else if (status == 'married') {
+      switch (duration) {
+        case '0-3': return isTr ? '0-3 yıl' : '0-3 years';
+        case '3-7': return isTr ? '3-7 yıl' : '3-7 years';
+        case '7+': return isTr ? '7+ yıl' : '7+ years';
+        default: return duration;
+      }
+    }
+    return '';
   }
 
   // Bildirim Ayarlarını SharedPreferences'tan Yükle
@@ -89,7 +128,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       setState(() {
-        _dailyNotificationEnabled = prefs.getBool('daily_notification_enabled') ?? true;
         _fullMoonNotificationEnabled = prefs.getBool('full_moon_notification_enabled') ?? true;
       });
     } catch (_) {}
@@ -152,6 +190,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         birthPlace: _birthPlaceController.text.trim(),
         gender: _gender,
         zodiacSign: recalculatedZodiac,
+        relationshipStatus: _relationshipStatus,
+        relationshipDuration: _relationshipDuration,
       );
 
       setState(() {
@@ -320,25 +360,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ref.read(languageProvider.notifier).changeLanguage(languageCode);
   }
 
-  // Bildirim Toggle
-  Future<void> _toggleDailyNotification(bool value) async {
-    HapticFeedback.lightImpact();
-    setState(() {
-      _dailyNotificationEnabled = value;
-    });
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('daily_notification_enabled', value);
-      
-      final notificationService = NotificationService();
-      if (value) {
-        await notificationService.scheduleDaily4AmNotification();
-      } else {
-        await notificationService.cancelDailyNotification();
-      }
-    } catch (_) {}
-  }
 
   Future<void> _toggleFullMoonNotification(bool value) async {
     HapticFeedback.lightImpact();
@@ -432,7 +453,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final locale = ref.watch(languageProvider);
     final isTr = locale.languageCode == 'tr';
-    final themeMode = ref.watch(themeProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -457,9 +477,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _buildLanguageSection(isTr, locale.languageCode),
             const SizedBox(height: 20),
 
-            // Tema Tercihi Kartı
-            _buildThemeSection(isTr, themeMode),
-            const SizedBox(height: 20),
+
 
             // 3. Bildirim Tercihleri Kartı
             _buildNotificationsSection(isTr),
@@ -686,6 +704,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     '$birthDateStr, ${user?.birthPlace ?? ''}',
                     style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isTr
+                        ? 'İlişki Durumu: ${_getRelationshipStatusText(user?.relationshipStatus, user?.relationshipDuration, isTr)}'
+                        : 'Relationship: ${_getRelationshipStatusText(user?.relationshipStatus, user?.relationshipDuration, isTr)}',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.primaryGold),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     isTr
@@ -845,6 +870,65 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+
+          DropdownButtonFormField<String>(
+            value: _relationshipStatus,
+            dropdownColor: AppColors.cardSurface,
+            style: TextStyle(color: AppColors.textPrimary),
+            decoration: InputDecoration(
+              labelText: isTr ? 'İlişki Durumu' : 'Relationship Status',
+              labelStyle: TextStyle(color: AppColors.textSecondary),
+              prefixIcon: const Icon(Icons.favorite_rounded, color: AppColors.primaryGold),
+              border: const OutlineInputBorder(),
+            ),
+            items: [
+              DropdownMenuItem(value: 'single', child: Text(isTr ? 'Bekar' : 'Single')),
+              DropdownMenuItem(value: 'platonic', child: Text(isTr ? 'Platonik' : 'Platonic')),
+              DropdownMenuItem(value: 'dating', child: Text(isTr ? 'Flört' : 'Dating')),
+              DropdownMenuItem(value: 'in_relationship', child: Text(isTr ? 'Sevgili' : 'In Relationship')),
+              DropdownMenuItem(value: 'recently_broken_up', child: Text(isTr ? 'Yeni Ayrılmış' : 'Recently Broken Up')),
+              DropdownMenuItem(value: 'married', child: Text(isTr ? 'Evli' : 'Married')),
+              DropdownMenuItem(value: 'recently_divorced', child: Text(isTr ? 'Yeni Boşanmış' : 'Recently Divorced')),
+            ],
+            onChanged: (val) {
+              setState(() {
+                _relationshipStatus = val;
+                _relationshipDuration = null;
+              });
+            },
+          ),
+          
+          if (_relationshipStatus == 'in_relationship' || _relationshipStatus == 'married') ...[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: _relationshipDuration,
+              dropdownColor: AppColors.cardSurface,
+              style: TextStyle(color: AppColors.textPrimary),
+              decoration: InputDecoration(
+                labelText: isTr ? 'İlişki Süresi' : 'Relationship Duration',
+                labelStyle: TextStyle(color: AppColors.textSecondary),
+                prefixIcon: const Icon(Icons.timelapse_rounded, color: AppColors.primaryGold),
+                border: const OutlineInputBorder(),
+              ),
+              items: _relationshipStatus == 'in_relationship'
+                  ? [
+                      DropdownMenuItem(value: '0-1', child: Text(isTr ? '0-1 yıl' : '0-1 year')),
+                      DropdownMenuItem(value: '1-3', child: Text(isTr ? '1-3 yıl' : '1-3 years')),
+                      DropdownMenuItem(value: '3+', child: Text(isTr ? '3+ yıl' : '3+ years')),
+                    ]
+                  : [
+                      DropdownMenuItem(value: '0-3', child: Text(isTr ? '0-3 yıl' : '0-3 years')),
+                      DropdownMenuItem(value: '3-7', child: Text(isTr ? '3-7 yıl' : '3-7 years')),
+                      DropdownMenuItem(value: '7+', child: Text(isTr ? '7+ yıl' : '7+ years')),
+                    ],
+              onChanged: (val) {
+                setState(() {
+                  _relationshipDuration = val;
+                });
+              },
+            ),
+          ],
           const SizedBox(height: 20),
 
           // Butonlar
@@ -955,91 +1039,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ).animate().fade(delay: 80.ms, duration: 350.ms);
   }
 
-  // 2b. Tema Seçimi
-  Widget _buildThemeSection(bool isTr, ThemeMode themeMode) {
-    return GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            isTr ? 'Tema Tercihi' : 'Theme Preference',
-            style: AppTextStyles.label.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-          ),
-          const Divider(),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(themeProvider.notifier).changeThemeMode(ThemeMode.light);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: themeMode == ThemeMode.light
-                          ? AppColors.primaryGold.withValues(alpha: 0.15)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: themeMode == ThemeMode.light ? AppColors.primaryGold : AppColors.borderLight,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text('☀️', style: TextStyle(fontSize: 24)),
-                        const SizedBox(height: 4),
-                        Text(
-                          isTr ? 'Açık' : 'Light',
-                          style: AppTextStyles.label.copyWith(
-                            fontWeight: themeMode == ThemeMode.light ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(themeProvider.notifier).changeThemeMode(ThemeMode.dark);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: themeMode == ThemeMode.dark
-                          ? AppColors.primaryGold.withValues(alpha: 0.15)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: themeMode == ThemeMode.dark ? AppColors.primaryGold : AppColors.borderLight,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text('🔮', style: TextStyle(fontSize: 24)),
-                        const SizedBox(height: 4),
-                        Text(
-                          isTr ? 'Karanlık' : 'Dark',
-                          style: AppTextStyles.label.copyWith(
-                            fontWeight: themeMode == ThemeMode.dark ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ).animate().fade(delay: 120.ms, duration: 350.ms);
-  }
+
 
   // 3. Bildirimler
   Widget _buildNotificationsSection(bool isTr) {
@@ -1052,16 +1052,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             style: AppTextStyles.label.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
           ),
           const Divider(),
-          // Günlük Yorum
-          SwitchListTile(
+          // Günlük Yorum (Sabit Aktif)
+          ListTile(
             title: Text(isTr ? 'Günlük Burç Yorumu' : 'Daily Horoscope', style: AppTextStyles.bodyMedium),
             subtitle: Text(
-              isTr ? 'Her sabah 04.00\'da gökyüzü raporu hazır olduğunda haber ver' : 'Notify every morning at 04:00 when cosmic report is ready',
+              isTr ? 'Her sabah 08.00\'de günlük yorum bildirimleriniz otomatik gönderilir.' : 'Your daily horoscope notifications are sent automatically every morning at 08:00.',
               style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 10),
             ),
-            value: _dailyNotificationEnabled,
-            activeColor: AppColors.primaryGold,
-            onChanged: _toggleDailyNotification,
+            trailing: const Icon(Icons.check_circle_rounded, color: AppColors.primaryGold, size: 20),
           ),
           const Divider(height: 1, color: Colors.white12),
           // Dolunay

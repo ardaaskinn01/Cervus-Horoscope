@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -22,14 +23,19 @@ class NotificationService {
     
     // 2. Yerel Saat Dilimini Ayarla
     try {
-      final String timeZoneName = DateTime.now().timeZoneName;
+      final String timeZoneName = (await FlutterTimezone.getLocalTimezone()).identifier;
       tz.setLocalLocation(tz.getLocation(timeZoneName));
     } catch (_) {
-      final int offsetInSeconds = DateTime.now().timeZoneOffset.inSeconds;
-      final location = tz.Location('Local', [0], [0], [
-        tz.TimeZone(offsetInSeconds, isDst: false, abbreviation: 'LOC')
-      ]);
-      tz.setLocalLocation(location);
+      try {
+        final String timeZoneName = DateTime.now().timeZoneName;
+        tz.setLocalLocation(tz.getLocation(timeZoneName));
+      } catch (_) {
+        final int offsetInSeconds = DateTime.now().timeZoneOffset.inSeconds;
+        final location = tz.Location('Local', [0], [0], [
+          tz.TimeZone(offsetInSeconds, isDst: false, abbreviation: 'LOC')
+        ]);
+        tz.setLocalLocation(location);
+      }
     }
 
     // 3. Platform Ayarları
@@ -57,12 +63,12 @@ class NotificationService {
 
     _initialized = true;
     
-    // 5. Günlük 04:00 Bildirimini Kur
-    await scheduleDaily4AmNotification();
+    // 5. Günlük 08:00 Bildirimini Kur (Her koşulda kurulur, kapatılamaz)
+    await scheduleDaily8AmNotification();
   }
 
-  /// Her sabah 04:00'da tetiklenecek bildirim kurar
-  Future<void> scheduleDaily4AmNotification() async {
+  /// Her sabah 08:00'da tetiklenecek bildirim kurar
+  Future<void> scheduleDaily8AmNotification() async {
     // Eski zamanlı bildirimleri temizle (Çakışmayı önle)
     try {
       await _notificationsPlugin.cancel(400);
@@ -80,7 +86,7 @@ class NotificationService {
     const iosDetails = DarwinNotificationDetails();
     const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
-    final scheduledTime = _nextInstanceOfTime(4, 0); // Sabah 04:00
+    final scheduledTime = _nextInstanceOfTime(8, 0); // Sabah 08:00
 
     await _notificationsPlugin.zonedSchedule(
       400,
@@ -92,14 +98,14 @@ class NotificationService {
       matchDateTimeComponents: DateTimeComponents.time, // Her gün aynı saatte tekrarlar
     );
     
-    debugPrint('🔔 Günlük 04:00 Bildirimi Zamanlandı: ${scheduledTime.toString()}');
+    debugPrint('🔔 Günlük 08:00 Bildirimi Zamanlandı: ${scheduledTime.toString()}');
   }
 
   /// Günlük sabah bildirimini iptal eder
   Future<void> cancelDailyNotification() async {
     try {
       await _notificationsPlugin.cancel(400);
-      debugPrint('🔔 Günlük 04:00 Bildirimi İptal Edildi.');
+      debugPrint('🔔 Günlük Bildirimi İptal Edildi.');
     } catch (_) {}
   }
 
@@ -109,7 +115,16 @@ class NotificationService {
     tz.TZDateTime scheduledDate =
         tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
     
-    if (scheduledDate.isBefore(now)) {
+    // Eğer hedef saat 8 ise ve kullanıcı 04:00 ile 08:00 arasında uygulamayı açtıysa,
+    // bugünün bildirimini atlayıp yarının 08:00 bildirimini kuruyoruz.
+    bool skipToday = false;
+    if (hour == 8 && minute == 0) {
+      if (now.hour >= 4 && now.hour < 8) {
+        skipToday = true;
+      }
+    }
+
+    if (scheduledDate.isBefore(now) || skipToday) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
     return scheduledDate;

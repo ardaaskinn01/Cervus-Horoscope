@@ -12,7 +12,7 @@ import 'package:horoscope/shared/widgets/gradient_button.dart';
 import 'package:horoscope/shared/widgets/premium_dialog_helper.dart';
 
 class LimitDialogHelper {
-  static void showAdRequiredDialog({
+  static Future<dynamic> showAdRequiredDialog({
     required BuildContext context,
     required WidgetRef ref,
     required String featureKey,
@@ -20,7 +20,7 @@ class LimitDialogHelper {
   }) {
     final isTr = ref.read(languageProvider).languageCode == 'tr';
 
-    showDialog(
+    return showDialog(
       context: context,
       barrierDismissible: true,
       builder: (dialogCtx) {

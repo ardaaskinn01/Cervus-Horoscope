@@ -400,6 +400,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_timezone:
+    dependency: "direct main"
+    description:
+      name: flutter_timezone
+      sha256: "869677426fde92dbe170fb7d2d4929f2a8343c2f5f62f08b0bb64f908630b073"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.1.0"
   flutter_web_plugins:
     dependency: transitive
     description: flutter
@@ -669,6 +677,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.6.1"
+  sensors_plus:
+    dependency: "direct overridden"
+    description:
+      name: sensors_plus
+      sha256: "6898cd4490ffc27fea4de5976585e92fae55355175d46c6c3b3d719d42f9e230"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.1"
+  sensors_plus_platform_interface:
+    dependency: transitive
+    description:
+      name: sensors_plus_platform_interface
+      sha256: bc472d6cfd622acb4f020e726433ee31788b038056691ba433fec80e448a094f
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
+  shake:
+    dependency: "direct main"
+    description:
+      name: shake
+      sha256: "107546951c6b8f5e4c2dca66dfb3aa27dd1a853b4e9a26c9aea224b167045023"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.0"
   shared_preferences:
     dependency: "direct main"
     description:
