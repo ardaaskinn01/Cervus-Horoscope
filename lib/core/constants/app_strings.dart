@@ -7,9 +7,9 @@ class AppStrings {
 
   static const Map<String, Map<String, String>> _localizedValues = {
     'tr': {
-      'app_title': 'Mistik Burçlar',
+      'app_title': 'Astris',
       'welcome_title': 'Gökyüzü Bugün Seninle Konuşuyor...',
-      'welcome_subtitle': 'Burcunuzu seçin ve evrenin size özel bugünkü enerjilerini keşfedin.',
+      'welcome_subtitle': 'Sembolünüzü seçin ve evrenin size özel bugünkü enerjilerini keşfedin.',
       'daily_scores': 'Bugünkü Enerji Puanları',
       'love': 'Aşk',
       'money': 'Para',
@@ -17,7 +17,7 @@ class AppStrings {
       'energy': 'Enerji',
       'daily_comment_title': 'Günlük Kozmik Yorum',
       'analyze_chart': 'Yıldız Haritasını Analiz Et',
-      'zodiac_list_title': 'Burçlar',
+      'zodiac_list_title': 'Kozmik Portre',
       'sample_comment': 'Bugün gökyüzü, hayata karşı hissettiğiniz heyecan ve tutkunun ön planda olacağını gösteriyor. Yıldız haritanızda beliren etkiler sayesinde, çevrenizdekilerle kurduğunuz derin bağlar daha da güçlenecek. Finansal olarak dengede durmalı, kariyer fırsatları için sakin ama cesur adımlar atmalısınız.',
       'chart_updated': 'Yıldız haritanız başarıyla güncellendi!',
       'language_select': 'Dil Seçimi',
@@ -27,7 +27,7 @@ class AppStrings {
       'onboarding_gender_male': 'Erkek',
       'onboarding_gender_female': 'Kadın',
       // Tools
-      'tools_title': 'Astroloji Araçları',
+      'tools_title': 'Kozmik Keşif Araçları',
       // Settings
       'settings_title': 'Ayarlar',
       // Version Update Check
@@ -37,9 +37,9 @@ class AppStrings {
       'update_btn_confirm': 'Güncelle',
     },
     'en': {
-      'app_title': 'Mystic Horoscope',
+      'app_title': 'Astris',
       'welcome_title': 'The Sky Speaks with You Today...',
-      'welcome_subtitle': 'Select your zodiac sign and discover the universe\'s special energies for you today.',
+      'welcome_subtitle': 'Select your symbol and discover the universe\'s special energies for you today.',
       'daily_scores': 'Today\'s Energy Scores',
       'love': 'Love',
       'money': 'Money',
@@ -47,7 +47,7 @@ class AppStrings {
       'energy': 'Energy',
       'daily_comment_title': 'Daily Cosmic Commentary',
       'analyze_chart': 'Analyze Natal Chart',
-      'zodiac_list_title': 'Zodiac Signs',
+      'zodiac_list_title': 'Cosmic Portrait',
       'sample_comment': 'Today the sky indicates that your excitement and passion for life will be at the forefront. Thanks to the influences appearing in your natal chart, the deep bonds you establish with those around you will become even stronger. You should stay balanced financially and take calm but brave steps for career opportunities.',
       'chart_updated': 'Your natal chart has been successfully updated!',
       'language_select': 'Language Selection',
@@ -57,7 +57,7 @@ class AppStrings {
       'onboarding_gender_male': 'Male',
       'onboarding_gender_female': 'Female',
       // Tools
-      'tools_title': 'Astrology Tools',
+      'tools_title': 'Cosmic Discovery Tools',
       // Settings
       'settings_title': 'Settings',
       // Version Update Check

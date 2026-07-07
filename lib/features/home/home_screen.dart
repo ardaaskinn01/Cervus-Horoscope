@@ -35,11 +35,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // Hızlı Erişim Butonları Eşleştirmesi (Yalnızca Hesaplama Araçları)
   final List<Map<String, dynamic>> _quickActions = [
-    {'icon': Icons.map_rounded, 'title': 'Astro Portre', 'titleEn': 'Astro Portrait', 'route': 1},
+    {'icon': Icons.map_rounded, 'title': 'Kozmik Portre', 'titleEn': 'Cosmic Portrait', 'route': 1},
     {'icon': Icons.favorite_rounded, 'title': 'Aşk Uyumu', 'titleEn': 'Love Compatibility', 'route': 'love'},
     {'icon': Icons.people_rounded, 'title': 'Arkadaşlık Uyumu', 'titleEn': 'Friend Compatibility', 'route': 'friend'},
-    {'icon': Icons.style_rounded, 'title': 'Kozmik Tarot', 'titleEn': 'Cosmic Tarot', 'route': 'tarot'},
-    {'icon': Icons.auto_awesome_rounded, 'title': 'Kozmik Kâhin', 'titleEn': 'Cosmic Oracle', 'route': 'cosmic_oracle'},
+    {'icon': Icons.style_rounded, 'title': 'Kozmik Arketip', 'titleEn': 'Cosmic Archetype', 'route': 'tarot'},
+    {'icon': Icons.auto_awesome_rounded, 'title': 'Kozmik Bilge', 'titleEn': 'Cosmic Sage', 'route': 'cosmic_oracle'},
     {'icon': Icons.stars_rounded, 'title': 'Başkasının Portresi', 'titleEn': 'Partner\'s Portrait', 'route': 'partner_chart'},
   ];
 

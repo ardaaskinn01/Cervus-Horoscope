@@ -29,17 +29,17 @@ class ToolsScreen extends ConsumerWidget {
       },
       {
         'icon': '📅',
-        'titleTr': 'Astroloji Takvimi',
-        'titleEn': 'Astro Calendar',
-        'descTr': '2026 gökyüzü olayları, tutulmalar ve günlük transitler.',
-        'descEn': '2026 celestial events, eclipses, and daily transits.',
+        'titleTr': 'Gökyüzü Takvimi',
+        'titleEn': 'Sky Calendar',
+        'descTr': '2026 gökyüzü olayları, tutulmalar ve kozmik döngüler.',
+        'descEn': '2026 celestial events, eclipses, and cosmic transits.',
         'route': '/astro-calendar'
       },
       {
         'icon': '☿',
-        'titleTr': 'Geri Giden Gezegenler',
-        'titleEn': 'Retrograde Periods',
-        'descTr': '2026 yılı Merkür, Venüs ve Mars retro takvimi.',
+        'titleTr': 'Retro & Kozmik Döngüler',
+        'titleEn': 'Retrograde & Cosmic Cycles',
+        'descTr': '2026 yılı Merkür, Venüs ve Mars retro takvimi ve etkileri.',
         'descEn': '2026 Mercury, Venus, and Mars retro periods.',
         'route': '/retrograde'
       },
@@ -63,48 +63,48 @@ class ToolsScreen extends ConsumerWidget {
         'icon': '💑',
         'titleTr': 'Aşk Uyumu',
         'titleEn': 'Love Compatibility',
-        'descTr': 'İki kişinin doğum haritalarına göre aşk ve sinastri.',
-        'descEn': 'Love and synastry match based on birth details.',
+        'descTr': 'İki kişinin doğum bilgilerine göre aşk ve uyum analizi.',
+        'descEn': 'Love compatibility analysis based on birth details.',
         'route': '/love-compatibility'
       },
       {
         'icon': '🤝',
         'titleTr': 'Arkadaşlık Uyumu',
         'titleEn': 'Friendship Match',
-        'descTr': 'Harita rezonansına göre sosyal arkadaşlık uyumu.',
-        'descEn': 'Social compatibility based on chart resonance.',
+        'descTr': 'Doğum bilgilerine göre sosyal arkadaşlık rezonansı ve uyumu.',
+        'descEn': 'Social friendship resonance based on birth details.',
         'route': '/friend-compatibility'
       },
       {
         'icon': '🗺️',
-        'titleTr': 'Astro Portre',
-        'titleEn': 'Astro Portrait',
-        'descTr': 'Güneş, Ay, Yükselen ve detaylı gezegen konumları.',
-        'descEn': 'Sun, Moon, Rising, and planet distributions.',
+        'titleTr': 'Kozmik Portre',
+        'titleEn': 'Cosmic Portrait',
+        'descTr': 'Elementler, nitelikler ve detaylı kozmik konum analiziniz.',
+        'descEn': 'Elements, modalities, and detailed cosmic position analysis.',
         'route': 1 // Tab değiştir
       },
       {
         'icon': '🌌',
         'titleTr': 'Başkasının Astro Portresi',
         'titleEn': 'Partner\'s Astro Portrait',
-        'descTr': 'Başka birinin doğum tarihine göre astro portresi.',
-        'descEn': 'Astro portrait of a friend or partner based on birth.',
+        'descTr': 'Partnerinizin veya arkadaşınızın detaylı karakter portre analizi.',
+        'descEn': 'Detailed character portrait of your partner or friend.',
         'route': '/partner-natal-chart'
       },
       {
         'icon': '👁️',
-        'titleTr': 'Kozmik Kâhin',
-        'titleEn': 'Cosmic Oracle',
-        'descTr': 'Yapay zeka kâhinine astroloji hakkında soru sorun.',
-        'descEn': 'Ask the AI-powered astrology oracle your questions.',
+        'titleTr': 'Kozmik Bilge',
+        'titleEn': 'Cosmic Sage',
+        'descTr': 'Yapay zeka asistanına yaşam döngüleri hakkında soru sorun.',
+        'descEn': 'Ask the AI assistant about your life cycles and patterns.',
         'route': '/cosmic-oracle'
       },
       {
         'icon': '🃏',
-        'titleTr': 'Kozmik Tarot',
-        'titleEn': 'Cosmic Tarot',
-        'descTr': 'Doğum haritası entegreli 3 kartlık tarot açılımı.',
-        'descEn': '3-card tarot spread integrated with your natal chart.',
+        'titleTr': 'Kozmik Arketip',
+        'titleEn': 'Cosmic Archetype',
+        'descTr': 'Doğum haritası entegreli 3 kartlık arketip kartı açılımı.',
+        'descEn': '3-card archetype card spread integrated with your natal chart.',
         'route': '/tarot'
       },
       {
@@ -124,7 +124,7 @@ class ToolsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text(isTr ? 'Astroloji Araçları' : 'Astrology Tools'),
+        title: Text(isTr ? 'Kozmik Keşif Araçları' : 'Cosmic Discovery Tools'),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),

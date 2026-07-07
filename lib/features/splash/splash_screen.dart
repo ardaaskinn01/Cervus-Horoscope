@@ -113,7 +113,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                isTr ? 'Doğum Haritası, Tarot ve Fazlası' : 'Birth Chart, Tarot & More',
+                isTr ? 'Kozmik Döngüler, Analiz ve Keşif' : 'Cosmic Cycles, Insights & Discovery',
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textSecondary.withValues(alpha: 0.7),
                   letterSpacing: 1.5,

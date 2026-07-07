@@ -789,7 +789,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            isTurkish ? 'Senin Burcun:' : 'Your Sign:',
+            isTurkish ? 'Kozmik Arketipin:' : 'Your Cosmic Archetype:',
             style: AppTextStyles.h3,
           ).animate().fade(),
           const SizedBox(height: 24),
@@ -810,8 +810,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           const SizedBox(height: 12),
           Text(
             isTurkish
-                ? 'Merhaba $_name, gökyüzü haritana göre bir $signName burcusun!'
-                : 'Hello $_name, according to your sky chart you are a $signName!',
+                ? 'Merhaba $_name, gökyüzü haritana göre yaşam enerjin $signName arketipiyle uyumlu!'
+                : 'Hello $_name, according to your sky chart your life energy aligns with the $signName archetype!',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyLarge,
           ).animate().fade(delay: 500.ms),
