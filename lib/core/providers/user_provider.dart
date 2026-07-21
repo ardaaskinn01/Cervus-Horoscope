@@ -74,7 +74,9 @@ class UserNotifier extends Notifier<UserModel?> {
             final Map<String, dynamic> map = jsonDecode(cacheStr);
             profile = UserModel.fromMap(map).copyWith(uid: uid);
             try {
-              await _firebaseService.saveUserProfile(profile);
+              if (profile.name != null && profile.name!.trim().isNotEmpty) {
+                await _firebaseService.saveUserProfile(profile);
+              }
             } catch (_) {}
             debugPrint('ℹ️ Firestore\'da bulunamadı, yerel önbellekteki profil kullanılacak: ${profile.name}');
           }
@@ -82,21 +84,20 @@ class UserNotifier extends Notifier<UserModel?> {
       }
 
       if (profile == null) {
-        // Yerelde de yoksa sıfırdan oluştur
+        // Yerelde de yoksa sıfırdan oluştur (Firestore'a henüz kaydetmiyoruz, onboarding tamamlanınca kaydedilecek)
         profile = UserModel(
           uid: uid,
           localeCode: currentLocale.languageCode,
           createdAt: DateTime.now(),
         );
-        try {
-          await _firebaseService.saveUserProfile(profile);
-        } catch (_) {}
       } else {
         // Eğer cihazda dil değiştiyse Firestore'u güncelle
         if (profile.localeCode != currentLocale.languageCode) {
           profile = profile.copyWith(localeCode: currentLocale.languageCode);
           try {
-            await _firebaseService.saveUserProfile(profile);
+            if (profile.name != null && profile.name!.trim().isNotEmpty) {
+              await _firebaseService.saveUserProfile(profile);
+            }
           } catch (_) {}
         }
       }
@@ -107,7 +108,9 @@ class UserNotifier extends Notifier<UserModel?> {
       if (profile.isPremium != isRcProPlus || profile.isPro != isRcPro) {
         profile = profile.copyWith(isPremium: isRcProPlus, isPro: isRcPro);
         try {
-          await _firebaseService.saveUserProfile(profile);
+          if (profile.name != null && profile.name!.trim().isNotEmpty) {
+            await _firebaseService.saveUserProfile(profile);
+          }
         } catch (_) {}
       }
 
@@ -315,7 +318,9 @@ class UserNotifier extends Notifier<UserModel?> {
       await prefs.setString('cached_user_profile', jsonEncode(updated.toJson()));
       
       if (updated.uid != 'offline_anonymous') {
-        await _firebaseService.saveUserProfile(updated);
+        if (updated.name != null && updated.name!.trim().isNotEmpty) {
+          await _firebaseService.saveUserProfile(updated);
+        }
       }
       debugPrint('ℹ️ Premium durumu güncellendi: Pro+=$isProPlus, Pro=$isPro');
     } catch (e) {

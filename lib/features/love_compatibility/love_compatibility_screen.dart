@@ -1254,10 +1254,26 @@ class _LoveCompatibilityScreenState extends ConsumerState<LoveCompatibilityScree
                   value: res.scores['loveScore'] ?? 70,
                   icon: Icons.favorite_rounded,
                 ),
-                ScoreBar(
-                  label: isTr ? 'Cinsellik ve Çekim' : 'Sexuality & Chemistry',
-                  value: res.scores['sexualityScore'] ?? 70,
-                  icon: Icons.flash_on_rounded,
+                Builder(
+                  builder: (context) {
+                    final currentUser = ref.watch(userProvider);
+                    int getAge(DateTime bDate) {
+                      final now = DateTime.now();
+                      int age = now.year - bDate.year;
+                      if (now.month < bDate.month || (now.month == bDate.month && now.day < bDate.day)) {
+                        age--;
+                      }
+                      return age;
+                    }
+                    final bool isUnder18 = (currentUser?.isUnder18 ?? false) || getAge(res.partnerBirthDate) < 18;
+                    return ScoreBar(
+                      label: isUnder18
+                          ? (isTr ? 'Çekim ve Uyum' : 'Attraction & Energy')
+                          : (isTr ? 'Cinsellik ve Çekim' : 'Sexuality & Chemistry'),
+                      value: res.scores['sexualityScore'] ?? 70,
+                      icon: Icons.flash_on_rounded,
+                    );
+                  },
                 ),
                 ScoreBar(
                   label: isTr ? 'İletişim Uyumu' : 'Communication Match',

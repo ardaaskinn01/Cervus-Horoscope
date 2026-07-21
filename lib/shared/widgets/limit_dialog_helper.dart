@@ -70,7 +70,7 @@ class LimitDialogHelper {
                     PremiumDialogHelper.show(context, ref);
                   },
                   child: Text(
-                    isTr ? 'Premium\'a Geç 🚀' : 'Upgrade to Premium 🚀',
+                    isTr ? '7 Gün Ücretsiz Deneyin 🎁' : 'Try 7 Days Free 🎁',
                     style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -145,7 +145,7 @@ class LimitDialogHelper {
                 GradientButton(
                   text: isPro
                       ? (isTr ? 'Pro+\'a Yükselt ✨' : 'Upgrade to Pro+ ✨')
-                      : (isTr ? 'Premium\'a Yükselt ✨' : 'Upgrade to Premium ✨'),
+                      : (isTr ? '7 Gün Ücretsiz Deneyin 🎁' : 'Try 7 Days Free 🎁'),
                   onTap: () {
                     Navigator.pop(dialogCtx);
                     PremiumDialogHelper.show(context, ref);

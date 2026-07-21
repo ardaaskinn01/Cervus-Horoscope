@@ -36,6 +36,18 @@ class UserModel {
 
   bool get isAnyPremium => isPremium || isPro;
 
+  int get age {
+    if (birthDate == null) return 18;
+    final now = DateTime.now();
+    int age = now.year - birthDate!.year;
+    if (now.month < birthDate!.month || (now.month == birthDate!.month && now.day < birthDate!.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  bool get isUnder18 => age < 18;
+
   UserModel copyWith({
     String? uid,
     String? name,

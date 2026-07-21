@@ -72,7 +72,65 @@ class PremiumDialogHelper {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
+
+                // 🌟 1 HAFTALIK ÜCRETSİZ DENEME VURGULU BANNER 🌟
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.greenAccent, width: 1.5),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.greenAccent.withValues(alpha: 0.22),
+                        AppColors.primaryGold.withValues(alpha: 0.12),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.greenAccent.withValues(alpha: 0.2),
+                        blurRadius: 14,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.card_giftcard_rounded, color: Colors.greenAccent, size: 22),
+                          const SizedBox(width: 8),
+                          Text(
+                            isTr ? "1 HAFTA ÜCRETSİZ DENEYİN 🎁" : "TRY 1 WEEK FOR FREE 🎁",
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: Colors.greenAccent,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        isTr
+                            ? "Bugün ₺0 ödeyin! 7 gün boyunca tüm ayrıcalıkları ücretsiz deneyin, dilediğiniz an tek tıkla iptal edin."
+                            : "Pay \$0 today! Enjoy 7 days of full Pro access for free, cancel anytime with one tap.",
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textPrimary,
+                          fontSize: 11,
+                          height: 1.35,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
                 
                 // Features
                 _buildFeatureRow(
@@ -531,22 +589,22 @@ class PremiumDialogHelper {
                           ),
                         ),
                       ],
-                      // 1 Hafta Ücretsiz Deneme Rozeti (Sadece Pro Aylık paketi için)
-                      if (!isProPlus && isMonthly) ...[
+                      // 1 Hafta Ücretsiz Deneme Rozeti (Aylık & Yıllık Paketler için Vurgulu)
+                      if (isMonthly || isAnnual) ...[
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.15),
+                            color: Colors.greenAccent.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.4), width: 0.6),
+                            border: Border.all(color: Colors.greenAccent, width: 1),
                           ),
                           child: Text(
-                            isTr ? "1 HAFTA ÜCRETSİZ" : "1 WEEK TRIAL",
+                            isTr ? "🎁 7 GÜN ÜCRETSİZ" : "🎁 7-DAY FREE TRIAL",
                             style: AppTextStyles.caption.copyWith(
                               color: Colors.greenAccent,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 7.5,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 8.5,
                             ),
                           ),
                         ),
@@ -555,16 +613,18 @@ class PremiumDialogHelper {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    package.storeProduct.description.isNotEmpty
-                        ? package.storeProduct.description
-                        : (isMonthly
-                            ? (isTr 
-                                ? (!isProPlus ? "1 hafta ücretsiz deneme, ardından aylık yenilenir" : "Aylık yenilenen abonelik")
-                                : (!isProPlus ? "1-week free trial, then monthly auto-renewing" : "Monthly auto-renewing subscription"))
-                            : (isAnnual
-                                ? (isTr ? "Yıllık yenilenen abonelik" : "Yearly auto-renewing subscription")
-                                : (isTr ? "Tek seferlik ödeme" : "One-time payment"))),
-                    style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 10),
+                    (isMonthly || isAnnual)
+                        ? (isTr 
+                            ? "✨ İlk 7 gün ₺0 • Dilediğiniz an ücretsiz iptal edin" 
+                            : "✨ First 7 days \$0 • Cancel anytime for free")
+                        : (package.storeProduct.description.isNotEmpty
+                            ? package.storeProduct.description
+                            : (isTr ? "Tek seferlik ödeme" : "One-time payment")),
+                    style: AppTextStyles.caption.copyWith(
+                      color: (isMonthly || isAnnual) ? Colors.greenAccent.shade100 : AppColors.textSecondary,
+                      fontSize: 10.5,
+                      fontWeight: (isMonthly || isAnnual) ? FontWeight.w600 : FontWeight.normal,
+                    ),
                   ),
                 ],
               ),

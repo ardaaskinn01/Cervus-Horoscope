@@ -486,9 +486,24 @@ JSON formatı:
       }
     } catch (_) {}
 
+    int calculateAge(DateTime bDate) {
+      final now = DateTime.now();
+      int age = now.year - bDate.year;
+      if (now.month < bDate.month || (now.month == bDate.month && now.day < bDate.day)) {
+        age--;
+      }
+      return age;
+    }
+
+    final bool isUserUnder18 = user.isUnder18;
+    final bool isPartnerUnder18 = calculateAge(partnerBirthDate) < 18;
+    final bool isUnder18 = isUserUnder18 || isPartnerUnder18;
+
     final bool isLove = type == 'love';
     final String scoreDesc = isLove
-        ? '"loveScore" (Aşk Potansiyeli), "sexualityScore" (Cinsellik), "communicationScore" (İletişim), "longTermScore" (Uzun Vade)'
+        ? (isUnder18
+            ? '"loveScore" (Aşk Potansiyeli), "sexualityScore" (Çekim ve Uyum), "communicationScore" (İletişim), "longTermScore" (Uzun Vade)'
+            : '"loveScore" (Aşk Potansiyeli), "sexualityScore" (Cinsellik), "communicationScore" (İletişim), "longTermScore" (Uzun Vade)')
         : '"loyaltyScore" (Sadakat), "mutualInterestScore" (Ortak İlgi), "funScore" (Eğlence), "trustScore" (Güven)';
 
     // ── 1. Partner natal chart'ı Swiss Ephemeris ile hesapla ──────────────
@@ -639,10 +654,11 @@ Karakteristik Kurallar (Çok Önemli):
 - Uyum Puanlamaları: Skorlar son derece keskin ve gerçekçi olmalıdır. En kötü uyumda bile 60'ın altına inme (60-65 bandı en kötüyü temsil etsin).
 - Keskin ve Net Analiz: Olumsuz/zorlu açılarda tam olarak nereden sorun yaşanacağını ("Güneş-Mars kare açınız nedeniyle öfke patlamaları kaçınılmaz", "Venüs-Satürn karesi duygusal mesafe yaratır" gibi) son derece net ve keskin cümlelerle açıkla.
 - Bütünsel Element ve Harita Sentezi (Astrolojik Ağırlık): Sadece elementlerin sayısal oranlarına bakarak mekanik yorumlar yapma. Bir kişinin haritasında hava/toprak çoğunlukta olsa bile, eğer Güneş (Sun), Ay (Moon), Venüs (Venus) veya Mars gibi kişisel gezegenleri Su gruplarında (Yengeç, Akrep, Balık) ise, bu kişi duygusal açıdan soğuk veya mesafeli değildir. Aksine derin duygulara, ilgi ve şefkat ihtiyacına sahiptir (örneğin Güneş ve Mars'ı Yengeç olan bir kadın son derece duygusal, korumacı ve ilgi isteyendir). Kişisel gezegenlerin (Güneş, Ay, Venüs, Mars) konumlarını, element genel dağılımının önüne koyarak duygusal yakınlık/mesafe sentezi yap.
+${isUnder18 ? '- ⚠️ 18 YAŞ ALTI KORUMA KURALI (ÇOK ÖNEMLİ): Taraflardan en az biri 18 yaşın altındadır (reşit değildir). Yorumlarında KESİNLİKLE cinsellik, +18, cinsel imalar veya fiziksel temasa dayalı müstehcen ifadelere yer verme. "sexualityScore" alanını ve ilgili tüm gezegen açısı yorumlarını cinsellik yerine "duygusal çekim", "sempatik enerji", "karşılıklı uyum ve empati" çerçevesinde ele al.' : ''}
 
 ${isLove ? '''Aşk Sinastri Yorumu için Özel Kurallar:
 - İlişki Durumu: Bu çiftin mevcut ilişki durumu "$relationshipStatusText". Yapacağın tüm analizleri, genel yorumları ve Pro analiz bölümlerini (özellikle çatışma çözümleri ve büyüme tüneli) bu ilişki durumunun dinamiklerini göz önünde bulundurarak yorumla. (Örneğin flört aşamasındalarsa daha çok birbirini tanıma ve çekim, evlilerse ev hayatı, sorumluluk paylaşımı ve uzun vadeli uyumu esas al).
-- Venüs-Mars aspektleri: Fiziksel çekim ve tutku açısından yorumla. Kadın haritasındaki Mars ve erkek haritasındaki Venüs birbirini nasıl etkiliyor?
+- Venüs-Mars aspektleri: ${isUnder18 ? 'Duygusal çekim, sempatik bağ ve ruhsal enerji açısından yorumla.' : 'Fiziksel çekim ve tutku açısından yorumla. Kadın haritasındaki Mars ve erkek haritasındaki Venüs birbirini nasıl etkiliyor?'}
 - Güneş-Ay aspektleri: Birinin ruhu diğerinin kimliğini "evde" hissettiriyor mu?
 - Satürn aspektleri: Uzun vadeli bağlılık sinyalleri mi, kısıtlama mı?
 ''' : '''Arkadaşlık Sinastri Yorumu için Özel Kurallar:
@@ -1431,6 +1447,7 @@ Karakteristik Kurallar (Çok Önemli):
 - Yorumlar doğrudan, samimi, insan eliyle yazılmış gibi ("humanized") ve son derece keskin/net olsun. Güçlü içgörüler, net uyarılar ve kesin tahminler vermekten çekinme.
 - Soyut tasvirler veya kaçamak cevaplar yerine, kullanıcının sorusu hakkında hayatında uygulayabileceği çok somut tavsiyeler ve net adımlar ("actionable/concrete guidance and direct answers") ver. Kullanıcı bu cevaptan somut bir öngörü elde etmelidir.
 - Edebi ve Yorucu Cümlelerden Kaçınma Kuralı: Ağdalı, aşırı edebi, sanatsal veya şiirsel tasvirlerden kesinlikle kaçın. Uzun, karmaşık ve yorucu cümleler yerine; kısa, son derece net, doğrudan ve anlaşılır cümleler kur. Derin sanatsal betimlemeler yapmak yerine kullanıcının hızlıca okuyup somut bir sonuç çıkarabileceği doğrudan ve sade bir dil kullan.
+${user.isUnder18 ? '- ⚠️ 18 YAŞ ALTI KORUMA KURALI (ÇOK ÖNEMLİ): Kullanıcı 18 yaşın altındadır. Yanıtlarında KESİNLİKLE +18, cinsel veya müstehcen konulara girme. Tavsiye ve rehberliğini kişisel gelişim, potansiyel, okul/gelecek, arkadaşlık ve pozitif motivasyon odaklı sun.' : ''}
 
 Görev:
 1. Bu soruyu kullanıcının astrolojik potansiyeliyle (doğum haritası, yükselen burcu, gezegen konumları vb.) ilişkilendirerek bilgece, kesin ve rehberlik edici bir biçimde doğrudan yanıtla.

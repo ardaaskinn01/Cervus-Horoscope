@@ -617,14 +617,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isTr ? "Astris Pro'ya Yükseltin" : "Upgrade to Astris Pro",
+                          isTr ? "7 Gün Ücretsiz Astris Pro 🎁" : "7 Days Free Astris Pro 🎁",
                           style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: titleColor),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           isTr 
-                              ? "Yapay zeka analizlerine sınırsız erişin ve reklamları kaldırın." 
-                              : "Access AI readings without limits and remove ads.",
+                              ? "Bugün ₺0 ödeyin! Tüm yapay zeka analizlerini 7 gün boyunca ücretsiz deneyin." 
+                              : "Pay \$0 today! Enjoy 7 days of full AI access and features for free.",
                           style: AppTextStyles.caption.copyWith(color: subtitleColor, fontSize: 11, fontWeight: FontWeight.w500),
                         ),
                         const SizedBox(height: 12),
@@ -651,14 +651,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.auto_awesome, color: AppColors.textDark, size: 16),
+                                  const Icon(Icons.card_giftcard_rounded, color: AppColors.textDark, size: 16),
                                   const SizedBox(width: 8),
                                   Text(
-                                    isTr ? "PRO'ya Geç" : "Go PRO",
+                                    isTr ? "7 Gün Ücretsiz Başlat 🚀" : "Start 7-Day Free Trial 🚀",
                                     style: TextStyle(
                                       color: AppColors.textDark,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 13,
+                                      fontSize: 12.5,
                                     ),
                                   ),
                                 ],
